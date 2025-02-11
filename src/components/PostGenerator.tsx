@@ -1,0 +1,217 @@
+import React, { useState } from 'react';
+import { Loader, RefreshCw, Calendar, Save ,Twitter, Linkedin, Instagram } from 'lucide-react';
+import { generatePost } from '../lib/openai';
+import type { ContentPlan } from '../lib/types';
+import Editor from './Editor';
+
+interface PostGeneratorProps {
+  plan: ContentPlan;
+  onSave: (updates: Partial<ContentPlan>) => Promise<void>;
+  onSchedule: () => void;
+}
+
+export function PostGenerator({ plan, onSave, onSchedule }: PostGeneratorProps) {
+  const [loading, setLoading] = useState(false);
+  const [saving, setSaving] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const [content, setContent] = useState(plan.suggestion);
+  const [tone, setTone] = useState<string>('');
+  const [posting , setPosting ] = useState<boolean | null>(false);
+ 
+
+  async function handlePostTweet() {
+    setPosting(true) ;
+
+    const response = await fetch('http://localhost:3000/post/tweet/twitter' , {  headers: {
+      'Accept': 'application/json',
+      'Content-Type': 'application/json'
+    }, method :  "POST" ,body : JSON.stringify({data  :content} )} )
+    const data = response.json() 
+    console.log(data ) ;
+    setPosting(false) ;
+    
+  }
+  const handlePostInstagram = async () => {
+    try{
+      const response = await fetch('http://localhost:3000/upload/post/instagram' ,
+        {
+          method: 'POST',
+          headers: {
+            'Authorization': `Bearer ${localStorage.getItem('instagram_access_token')}`,
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({ caption: content }),
+        }
+      );
+      const data = await response.json() ; 
+      console.log("post instagram api " , data) ; 
+    }
+    catch(err )
+    {
+      console.log(err) ; 
+    }
+  }
+  const handlePostLinkedin = async () => {
+
+    try{
+      const response = await fetch('http://localhost:3000/upload/post/linkedin' ,
+        {
+          method: 'POST',
+          headers: {
+            'Authorization': `Bearer ${localStorage.getItem('linkedIn_access_token')}`,
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({ id : "XiwWdJIUQv" ,  text: generatedContent }),
+        }
+      );
+      const data = await response.json() ; 
+      console.log("post linkedin api " , data) ;
+
+    }
+    catch(err) 
+    {
+      console.log(err)  ;
+    }
+  }
+
+  const postContentHandler =() : any  => {
+    if (plan?.platform === "twitter") {
+      handlePostTweet();
+    } else if (plan?.platform === "instagram") {
+      handlePostInstagram();
+    } else {
+      handlePostLinkedin();
+    }
+  }
+
+
+
+
+
+
+  const handleGenerate = async () => {
+    setLoading(true);
+    setError(null);
+    try {
+      const generated = await generatePost(plan.topic, plan.platform, tone);
+      setContent(generated);
+    } catch (err: any) {
+      setError(err.message);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleSave = async () => {
+    setSaving(true);
+    try {
+      await onSave({ suggestion: content });
+    } catch (err: any) {
+      setError(err.message);
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  return (
+    <div className="bg-gray-700 rounded-lg p-4 space-y-4 flex flex-col justify-between">
+      <div className="flex items-center justify-between">
+        <span className="text-purple-400 text-sm">{plan.platform} • {plan.format}</span>
+        <div className="flex items-center space-x-2">
+          <button
+            onClick={handleGenerate}
+            disabled={loading}
+            className="text-gray-400 hover:text-white disabled:opacity-50"
+            title="Generate new content"
+          >
+            {loading ? (
+              <Loader className="h-4 w-4 animate-spin" />
+            ) : (
+              <RefreshCw className="h-4 w-4" />
+            )}
+          </button>
+          <button
+            onClick={onSchedule}
+            className="text-gray-400 hover:text-white"
+            title="Schedule post"
+          >
+            <Calendar className="h-4 w-4" />
+          </button>
+        </div>
+      </div>
+
+      {error && (
+        <div className="text-red-500 text-sm">
+          {error}
+        </div>
+      )}
+
+      <div>
+        <label className="block text-sm font-medium text-gray-300 mb-1">
+          Tone
+        </label>
+        <select
+          value={tone}
+          onChange={(e) => setTone(e.target.value)}
+          className="w-full bg-gray-600 border border-gray-500 rounded-md shadow-sm py-1 px-2 text-white text-sm focus:ring-purple-500 focus:border-purple-500"
+        >
+          <option value="">Default</option>
+          <option value="professional">Professional</option>
+          <option value="casual">Casual</option>
+          <option value="humorous">Humorous</option>
+          <option value="educational">Educational</option>
+        </select>
+      </div>
+
+      <div>
+        <label className="block text-sm font-medium text-gray-300 mb-1">
+          Generated Cotent
+        </label>
+        {/* <textarea
+          value={content}
+          onChange={(e) => setContent(e.target.value)}
+          className="w-full bg-gray-600 border border-gray-500 rounded-md shadow-sm py-2 px-3 text-white text-sm focus:ring-purple-500 focus:border-purple-500"
+          rows={4}
+        /> */}
+        <Editor data = {content}  />
+      </div>
+
+      <div className="w-full    flex  items-center gap-4 ">
+        <button onClick={postContentHandler} className='px-3 py-1 bg-purple-600 hover:bg-purple-700 text-white text-sm rounded-md flex items-center gap-1 '>
+        
+
+        {posting ? (
+            <>
+              <Loader className="h-4 w-4 animate-spin" />
+              <span className='capitalize'>posting...</span>
+            </>
+          ) : (
+            <>
+              {plan.platform == "twitter" ? <Twitter className='h-4 w-4'/> : plan.platform == "instagram" ? <Instagram className='h-4 w-4'/> : <Linkedin className='h-4 w-4'/>}
+              <span className='capitalize'>post</span>
+            </>
+          )}
+        </button>
+        <button
+          onClick={handleSave}
+          disabled={saving}
+          className="px-3 py-1 bg-purple-600 hover:bg-purple-700 text-white text-sm rounded-md flex items-center gap-1 "
+        >
+          {saving ? (
+            <>
+              <Loader className="h-4 w-4 animate-spin" />
+              <span>Saving...</span>
+            </>
+          ) : (
+            <>
+              <Save className="h-4 w-4" />
+              <span>Save</span>
+            </>
+          )}
+        </button>
+
+       
+      </div>
+    </div>
+  );
+}
