@@ -1,6 +1,7 @@
 import schedule from 'node-schedule'
 import { supabase } from './config/supabase.js';
 import { scheduledJobsMap } from './index.js';
+// import {schedulePostHandler} from './controllers/instagram.controller.js' ;
 const scheduledJobs = new Map(); // Store jobs with an ID for management
 
 
@@ -15,6 +16,7 @@ const loadScheduledJobs = async () => {
         throw error ; 
     }
     console.log("Data = " , data) ; 
+    
     if(data) 
     {
       data.map((job) => {

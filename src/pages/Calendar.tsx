@@ -5,6 +5,7 @@ import { useContentPlan } from '../hooks/useContentPlan';
 import { Edit2, Clock, Send, MoreVertical, X, AlertCircle , ChevronLeft, ChevronRight, Delete } from 'lucide-react';
 import type { ScheduledPost } from '../lib/types';
 import { getSocialMediaAccountInfo } from '../lib/api';
+import Editor from '../components/Editor';
 
 interface Post {
   id: string;
@@ -42,7 +43,7 @@ function PostModal({refreshCalendar , setRefreshCalendar  ,  post, onClose}: Pos
 
   // Track if content or schedule has changed
   const hasContentChanged = content !== post.content;
-  const hasScheduleChanged = scheduledFor !== format(parseISO(post.scheduled_for),  "yyyy-MM-dd HH:mm:ss");
+  const hasScheduleChanged = scheduledFor !== format(new Date(parseISO(post.scheduled_for).getTime() + parseISO(post.scheduled_for).getTimezoneOffset() * 60000),  "yyyy-MM-dd'T'HH:mm");
   
 
   // const handleSave = async () => {
@@ -99,7 +100,7 @@ function PostModal({refreshCalendar , setRefreshCalendar  ,  post, onClose}: Pos
           }
         );
     
-        const data = response.json() ; 
+        const data = await response.json() ; 
         console.log(data)
 
       }
@@ -108,16 +109,18 @@ function PostModal({refreshCalendar , setRefreshCalendar  ,  post, onClose}: Pos
         const scheduledResponse = await fetch("http://localhost:3000/schedule/post/api" , {method : "POST"   , headers: {
         'Content-Type': 'application/json',
       } , body : JSON.stringify({data : post?.content , date  : scheduledFor , jobId  :post?.id })})
-      console.log("scheduled response from API  =  "  , scheduledResponse.json() ) ;
+        const data =  await scheduledResponse.json()  ;
+        console.log("scheduled response from API  =  "  , data ) ;
       }
       else{
         console.warn("Invalid platform selected") ;
       }
-      setRefreshCalendar(!refreshCalendar) ; 
-      onClose();
+     
     } catch (err: any) {
       setError(err.message);
     } finally {
+      setRefreshCalendar(!refreshCalendar) ; 
+      onClose();
       setSaving(false);
     }
   };
@@ -143,6 +146,10 @@ function PostModal({refreshCalendar , setRefreshCalendar  ,  post, onClose}: Pos
     setError(null);
     try {
       // await onPostNow();
+      // publish the post connect with handle post for each platform 
+      // update the status of scheduled post from 'pending' to 'published' 
+      // refresh the calendar 
+
       onClose();
     } catch (err: any) {
       setError(err.message);
@@ -173,12 +180,13 @@ function PostModal({refreshCalendar , setRefreshCalendar  ,  post, onClose}: Pos
             <label className="block text-sm font-medium text-gray-300 mb-1">
               Content
             </label>
-            <textarea
+            {/* <textarea
               value={content}
               onChange={(e) => setContent(e.target.value)}
               rows={4}
               className="w-full bg-gray-700 border border-gray-600 rounded-md shadow-sm py-2 px-3 text-white focus:ring-purple-500 focus:border-purple-500"
-            />
+            /> */}
+            <Editor data = {content}/>
           </div>
 
           <div>
@@ -372,7 +380,7 @@ export function Calendar() {
                           </p>
                           <p className="text-gray-400 text-xs">
                             {/* {format(parseISO(post.scheduled_for.replace(" ", "T")), "HH:mm:ss")} */}
-                            {format(new Date(parseISO(post.scheduled_for).getTime()), 'HH:mm')}
+                            {`${parseISO(post?.scheduled_for).getUTCHours()}:${parseISO(post?.scheduled_for).getUTCMinutes()}:${parseISO(post?.scheduled_for).getUTCSeconds()}` }
 
 
 
