@@ -3,6 +3,8 @@
 import schedule from 'node-schedule' ; 
 import fetch from 'node-fetch' ;
 import { URLSearchParams  } from 'url';
+import { scheduledJobsMap } from "../index.js";
+import { loadScheduledJobs } from '../test.js';
 
 const INSTAGRAM_APP_ID = "1074024207741727"; 
 const INSTAGRAM_APP_SECRET = "d23b1129f266b193ae8ade404851eae6";
@@ -77,7 +79,7 @@ const getUserInfo = async (req, res) => {
 }
 
 
-const uploadContent =async (ACCESS_TOKEN , IG_USER_ID , generatedContent  = "This is a sample caption posted from my nodejs application") => {
+const uploadContent =async (ACCESS_TOKEN , IG_USER_ID , generatedContent  = "This is a sample caption posted from my nodejs application" , postId = null ) => {
 
   const imageUrl = "https://res.cloudinary.com/dbnivp7nr/image/upload/v1731472487/bsuvfszuay9rp8odnbrd.jpg";
   const caption = generatedContent
@@ -103,9 +105,13 @@ const uploadContent =async (ACCESS_TOKEN , IG_USER_ID , generatedContent  = "Thi
       }),
     });
 
-    console.log(await response2.json() )
+    console.log(await response2.json() ) ;
+    if(postId) 
+    {
+        await updateScheduledPost(postId , {status : 'published'})
+    }
     return true ; 
-
+   
   }
   catch(err) 
   {
@@ -131,8 +137,12 @@ const uploadContentHandler = async (req  , res ) => {
   } 
 
 const scheduleContentHandler = async (req , res ) => {
-  const { IG_USER_ID , date  , caption } = req.body ;
+  const { IG_USER_ID , date  , caption , jobId  } = req.body ;
   console.log(req.body);
+  if(!jobId) 
+  {
+    return res.status(400).json({ error: "Invalid body : Missing jobId"}) ;
+  }
   const authHeader = req.header("Authorization") ;
   const ACCESS_TOKEN = authHeader.replace("Bearer " , "") ; 
   if(!IG_USER_ID) 
@@ -144,9 +154,29 @@ const scheduleContentHandler = async (req , res ) => {
   }
   if(!date || !caption ) return res.status(400).json({message : "Bad request :Invalid date and caption fields"}) ;
   console.log("Instagram post scheduled successfully to be posted at " + date.toString() ) ; 
+  
   try{
-    schedule.scheduleJob(date ,  () => { uploadContent(ACCESS_TOKEN , IG_USER_ID ,  caption)}  ) ;
+    const response  = await loadScheduledJobs() ; 
+    if(response) {
+      // 
+      if( scheduledJobsMap.has(jobId) && scheduledJobsMap.get(jobId)?.cancel){
+        const job = scheduledJobsMap.get(jobId) 
+        console.log("jobb" , job); 
+        job.cancel()  ; 
+        console.log("cancelling already scheduled job and scheduling a new one" )
+        scheduledJobsMap.delete(jobId) 
+        const newJob = schedule.scheduleJob(date ,  () => { uploadContent(ACCESS_TOKEN , IG_USER_ID ,  caption , jobId )}  ) ;
+        scheduledJobsMap.set(jobId , newJob) ; 
+       }
+       else{
+        console.log("scheduling new job")
+        const job =schedule.scheduleJob(date ,  () => { uploadContent(ACCESS_TOKEN , IG_USER_ID ,  caption , jobId )}  ) ;
+        console.log("job = " , job) ;
+        scheduledJobsMap.set(jobId , job) ; 
+       }
     return res.status(201).json({message:"Scheduled Instagam post for " , date })
+    }
+    
   }
   catch(error) {
     console.error("Error scheduling instagram post:", error);

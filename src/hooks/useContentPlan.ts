@@ -43,6 +43,5 @@ export function useContentPlan() {
       throw err;
     }
   }
-
   return { plans, loading, error, createPlan, updatePlan, refreshPlans: loadPlans };
 }

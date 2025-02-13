@@ -52,7 +52,6 @@ export function AIGenerator() {
     setPosting(false) ;
   }
   const handlePostInstagram = async () => {
-
     try{
       const accountInfo = await getSocialMediaAccountInfo("instagram") ; 
       const {access_token , userId } = accountInfo  ;
@@ -127,34 +126,32 @@ export function AIGenerator() {
         ? prev.filter(s => s !== source)
         : [...prev, source]
     );
-  };
+  }; 
 
   const handleGenerate = async () => {
     if (!topic) {
       setError('Please enter a topic');
       return;
     }
-
     setLoading(true);
     setError(null); 
-    handlePostLinkedin() ; 
-    // try {
-    //   const content = await generatePost(topic, platform, tone);
-    //   setGeneratedContent(content);
+    try {
+      const content = await generatePost(topic, platform, tone);
+      setGeneratedContent(content);
       
-    //   // Add to history
-    //   const historyItem: HistoryItem = {
-    //     id: crypto.randomUUID(),
-    //     topic,
-    //     content,
-    //     createdAt: new Date().toISOString()
-    //   };
-    //   setHistory(prev => [historyItem, ...prev]);
-    // } catch (err: any) {
-    //   setError(err.message);
-    // } finally {
-    //   setLoading(false);
-    // }
+      // Add to history
+      const historyItem: HistoryItem = {
+        id: crypto.randomUUID(),
+        topic,
+        content,
+        createdAt: new Date().toISOString()
+      };
+      setHistory(prev => [historyItem, ...prev]);
+    } catch (err: any) {
+      setError(err.message);
+    } finally {
+      setLoading(false);
+    }
   };
 
   const handleSave = async () => {
@@ -197,7 +194,7 @@ export function AIGenerator() {
 
   
 
-  const handleScheduleTweet = async (date: string) => {
+  const handleScheduleTweet = async (date: string , postId : null | string = null ) => {
     
 
     try {
@@ -206,14 +203,32 @@ export function AIGenerator() {
       if (!user) throw new Error('No authenticated user found');
 
       console.log(date.toString() ); 
+      const post = {
+        platform: platform ,
+        content : generatedContent ,
+        media_urls : [] , 
+        scheduled_for  :date , 
+        status : "pending" , 
+      }
+      if(!postId) 
+      {
+        const createdPost = await createPost(post) ; 
+        console.log("createdPost (in tweet) = " , createdPost ); 
+        const scheduledResponse = await fetch("http://localhost:3000/schedule/post/api" , {method : "POST"   , headers: {
+          'Content-Type': 'application/json',
+        } , body : JSON.stringify({data : generatedContent , date  : date.toString() , jobId  :createdPost?.id })})
+        console.log("scheduled response from API  =  "  , scheduledResponse.json() ) ;
+      }
+      else{
+        const scheduledResponse = await fetch("http://localhost:3000/schedule/post/api" , {method : "POST"   , headers: {
+          'Content-Type': 'application/json',
+        } , body : JSON.stringify({data : generatedContent , date  : date.toString() , jobId  :postId})})
+        console.log("scheduled response from API  =  "  , scheduledResponse.json() ) ;
+      }
 
-      const scheduledResponse = await fetch("http://localhost:3000/schedule/post/api" , {method : "POST"   , headers: {
-        'Content-Type': 'application/json',
-      } , body : JSON.stringify({data : generatedContent , date  : date.toString() })})
-      console.log("scheduled response from API  =  "  , scheduledResponse.json() ) ;
-
+      
+      
       // scheduled post using create post 
-
       setShowScheduleModal(false);
       setTopic('');
       setGeneratedContent('');
@@ -223,32 +238,51 @@ export function AIGenerator() {
     }
    
   };
-  const handleScheduleInstaPost = async (date :string) => {
+  const handleScheduleInstaPost = async (date :string , postId : null | string = null ) => {
     try{
       const accountInfo = await getSocialMediaAccountInfo("instagram") ; 
-      const {access_token , userId } = accountInfo  ;
+      const {access_token , userId } = accountInfo  ;    
+      if(!postId) 
+      {
+        const post = {
+          platform: platform ,
+          content : generatedContent ,
+          media_urls : [] , 
+          scheduled_for  :date , 
+          status : "pending" , 
+        }
+        const createdPost = await createPost(post) ; 
+        console.log("createdPost (in instagram) = " , createdPost ); 
+        const response  = await fetch("http://localhost:3000/schedule/post/instagram" , {
+          method : "POST" ,
+          headers: {
+            'Authorization': `Bearer ${access_token}`, 
+            "Content-Type" : "application/json" ,
+          } , 
+          body : JSON.stringify({ IG_USER_ID  : userId , date : date ,  caption : generatedContent , jobId : createdPost?.id })
+  
+        })
+        const data = await response.json() 
+        console.log("scheduled insta post api " , data ) ;
+      }
+      else{
+        const response  = await fetch("http://localhost:3000/schedule/post/instagram" , {
+          method : "POST" ,
+          headers: {
+            'Authorization': `Bearer ${access_token}`, 
+            "Content-Type" : "application/json" ,
+          } , 
+          body : JSON.stringify({ IG_USER_ID  : userId , date : date ,  caption : generatedContent , jobId : postId})
+  
+        })
+        const data = await response.json() 
+        console.log("scheduled insta post api " , data ) ;
+      }
 
-      const response  = await fetch("http://localhost:3000/schedule/post/instagram" , {
-        method : "POST" ,
-        headers: {
-          'Authorization': `Bearer ${access_token}`, 
-          "Content-Type" : "application/json" ,
-        } , 
-        body : JSON.stringify({ IG_USER_ID  : userId , date : date ,  caption : generatedContent })
-
-      })
-      const data = await response.json() 
-      console.log("scheduled insta post api " , data ) ;
+      
       setShowScheduleModal(false); 
       // create scheduled post 
-      const post = {
-        platform: platform ,
-        content : generatedContent ,
-        media_urls : [] , 
-        scheduled_for  :date , 
-        status : "pending" , 
-      }
-      await createPost(post) ;
+      
     }
     catch(err)  
     {
@@ -256,34 +290,54 @@ export function AIGenerator() {
     }
 
   }
-  const handleScheduleLinkedinPost = async (date : string) => {
+  const handleScheduleLinkedinPost = async (date : string ,  postId : null | string = null) => {
   try{
     const accountInfo = await getSocialMediaAccountInfo("linkedin") ; 
     const {access_token , userId  } = accountInfo  ;
 
-  const response = await fetch('http://localhost:3000/schedule/post/linkedin' ,
-        {
-          method: 'POST',
-          headers: {
-            'Authorization': `Bearer ${access_token}`,
-            'Content-Type': 'application/json',
-          },
-          body: JSON.stringify({ id :userId,  text: generatedContent  , date }),
-        }
-      );
+   if(!postId) 
+   {
+    const post = {
+      platform: platform ,
+      content : generatedContent ,
+      media_urls : [] , 
+      scheduled_for  :date , 
+      status : "pending" , 
+    }
+    const createdPost = await createPost(post) ;  
+    const response = await fetch('http://localhost:3000/schedule/post/linkedin' ,
+      {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${access_token}`,
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ id :userId,  text: generatedContent  , date  , jobId : createdPost?.id }),
+      }
+    );
+    const data = response.json() ; 
+    setShowScheduleModal(false); 
+    return data ;
+   }
+   else{
+    const response = await fetch('http://localhost:3000/schedule/post/linkedin' ,
+      {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${access_token}`,
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ id :userId,  text: generatedContent  , date  , jobId : postId }),
+      }
+    );
 
-  const data = response.json() ; 
-  const post = {
-    platform: platform ,
-    content : generatedContent ,
-    media_urls : [] , 
-    scheduled_for  :date , 
-    status : "pending" , 
+    const data = response.json() ; 
+    setShowScheduleModal(false); 
+    return data ;
+   }
+   
   }
-  await createPost(post) ;  
-  return data ;
 
-  }
   catch(err) 
   {
     console.log(err) ;

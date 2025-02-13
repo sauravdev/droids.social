@@ -1,7 +1,10 @@
+// import {scheudleJobMap} from ''
+import { scheduledJobsMap } from "../index.js";
+import { loadScheduledJobs } from "../test.js";
 const linkedInClientId = '77zwm3li56ua2a';
 const linkedInClientSecret = 'WPL_AP1.FTEeZCfxW20evekT.BoujnA==';
 const redirectUri = 'http://127.0.0.1:5173/linkedin/callback/auth/linkedIn';
-
+import schedule from 'node-schedule' ; 
 const generateAccessToken = async (req , res ) => {
   const { code } = req.body;
   try {
@@ -46,7 +49,7 @@ const getUserInfo = async (req  , res ) => {
 }
 
 
-const uploadContent = async (accessToken , id , text = "Embrace the future with a smarter world! ") => {
+const uploadContent = async (accessToken , id , text = "dummy text" , postId = null ) => {
   
   try{
     const response = await fetch("https://api.linkedin.com/rest/posts", {
@@ -71,10 +74,10 @@ const uploadContent = async (accessToken , id , text = "Embrace the future with 
       }),
       
     } )
-
-    // const data = await response.json() ; 
-    
-
+    if(postId) 
+    {
+      await updateScheduledPost(postId , {status : 'published'})
+    }
   }
   catch(err) 
   {
@@ -110,18 +113,38 @@ const uploadContentHandler = async (req , res ) => {
 
 
 const scheduleContentHandler = async (req  , res ) => {
-  const {id   ,text  , date } = req.body ; 
+  const {id   ,text  , date , jobId } = req.body ; 
   const authHeader = req.header("Authorization")
+  if(!jobId) 
+    {
+      return res.status(400).json({ error: "Invalid body : Missing jobId"}) ;
+    }
   if (!authHeader || !authHeader.startsWith('Bearer ')) {
     return res.status(401).json({ error: 'Unauthorized: No valid access token provided' });
   }
   if(!id || !date || !text ) {
     return res.status(400).json({message : "Invalid body : Incomplete data recieved"})  ;  // date is required  in the request body.  // should validate date format as well.  // date should be in ISO 8601 format.  // date should be in future.  // date should not be in past.   // date should not be in the past.   // date should not be in the past.   // date should not be in the past.   // date should not be in the past.   // date should not be in the past.   // date should not be in the past.   // date should not be in the past.   // date should not be in the past.   // date should not be in the past.   // date should not be in the past.   // date should not be in the past.   // date should not be in the past.   // date should not be in the
   }
+  const accessToken = authHeader.replace("Bearer " , "") ; 
   try{
-     schedule.scheduleJob(date ,  () => { uploadContent(accessToken , id )}  ) ;
-        return res.status(201).json({message:"Scheduled Instagam post for " , date })
-    
+    const response = await loadScheduledJobs() ;
+    if(response) {
+      if(scheduledJobsMap.has(jobId) && scheduledJobsMap.get(jobId)?.cancel){
+        const job = scheduledJobsMap.get(jobId) 
+        job.cancel()  ; 
+        console.log("cancelling already scheduled job and scheduling a new one" )
+        scheduledJobsMap.delete(jobId) 
+        const newJob = schedule.scheduleJob(date ,  () => { uploadContent(accessToken , id  , jobId )}  ) ;
+        scheduledJobsMap.set(jobId , newJob) ; 
+       }
+       else{
+        console.log("scheduling new job") ;
+        const job = schedule.scheduleJob(date ,  () => { uploadContent(accessToken , id  , jobId )}  ) ;
+        console.log("job = " , job) ;
+        scheduledJobsMap.set(jobId , job) ; 
+       }
+      return res.status(201).json({message:"Scheduled Instagam post for " , date })
+    }
   }
   catch(err) 
   {

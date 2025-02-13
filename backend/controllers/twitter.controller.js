@@ -2,6 +2,8 @@ import { TwitterApi } from 'twitter-api-v2';
 import schedule from 'node-schedule' ; 
 import fetch from 'node-fetch' ;
 import { URLSearchParams  } from 'url';
+import { scheduledJobsMap } from "../index.js";import { loadScheduledJobs } from '../test.js';
+; 
 
 // const TWITTER_CLIENT_ID = 'Y2RKeWJ2T1hzQ3dxNnBuT3BCUVI6MTpjaQ';
 // const TWITTER_CLIENT_SECRET = 'MP0G4dsn7efJqahuJL2HsEm9L9eUBcHtCsLJLVHPF-t9qVMe9Q';
@@ -77,18 +79,21 @@ const getUserInfo = async (req, res) => {
     res.status(500).json({ error: 'Failed to fetch user info' });
   }
 }
-
-const postContent = async (data ) => {
+const postContent = async (data = "Some random text" , postId = null  ) => {
   if(data == "") {
     data = "Sample data from  nodejs application"
   }
- 
     try {
       const tweetText = data ; 
       const rwClient = twitterClient.readWrite;
       await rwClient.v2.tweet(tweetText);
       console.log("Tweet posted successfully:", tweetText);
+      if(postId ) 
+      {
+        await updateScheduledPost(postId , {status : 'published'} )
+      }
       return true  
+    
     } catch (error) {
       console.error("Error posting tweet:", error);
       return false 
@@ -107,12 +112,32 @@ const postContentHandler = async (req , res ) => {
   }
 
 const schedulePostHandler = async  (req , res ) => {
-    const { data  ,date} = req.body ;
+    const { data  ,date , jobId} = req.body ;
+    if(!jobId) 
+      {
+        return res.status(400).json({ error: "Invalid body : Missing jobId"}) ;
+      }
     if(!date || !data ) return res.status(400).json({message : "Bad request :Invalid date and data fields"}) ;
     console.log("Tweet scheduled successfully to be posted at " + date.toString() ) ; 
     try{
-      schedule.scheduleJob(date ,  () => { postContent(data)}  ) ;
-      return res.status(201).json({message:"Scheduled Tweet for " , date })
+      const resposne = await loadScheduledJobs() ; 
+       if(resposne) {
+        if(scheduledJobsMap.has(jobId  && scheduledJobsMap.get(jobId)?.cancel)){
+          const job = scheduledJobsMap.get(jobId) 
+          job.cancel()  ; 
+          console.log("cancelling already scheduled job and scheduling a new one" )
+          scheduledJobsMap.delete(jobId) 
+          const newJob = schedule.scheduleJob(date ,  () => { postContent(data = "some random text" , jobId )}  ) ;
+          scheduledJobsMap.set(jobId , newJob) ; 
+         }
+         else{
+          console.log("scheduling new job") ; 
+          const job = schedule.scheduleJob(date ,  () => { postContent(data = "some random text" , jobId )}  ) ;
+          console.log("job = " , job) ;
+          scheduledJobsMap.set(jobId , job) ; 
+         }
+    return res.status(201).json({message:"Scheduled Tweet for " , date })
+       }
     }
     catch(error) {
       console.error("Error scheduling tweet:", error);

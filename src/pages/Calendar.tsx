@@ -4,6 +4,7 @@ import { useScheduledPosts } from '../hooks/useScheduledPosts';
 import { useContentPlan } from '../hooks/useContentPlan';
 import { Edit2, Clock, Send, MoreVertical, X, AlertCircle , ChevronLeft, ChevronRight, Delete } from 'lucide-react';
 import type { ScheduledPost } from '../lib/types';
+import { getSocialMediaAccountInfo } from '../lib/api';
 
 interface Post {
   id: string;
@@ -33,7 +34,6 @@ function PostModal({refreshCalendar , setRefreshCalendar  ,  post, onClose}: Pos
     const dateLocal = new Date(dateUTC.getTime() + dateUTC.getTimezoneOffset() * 60000);
     return format(dateLocal, "yyyy-MM-dd'T'HH:mm");
   });
-  
   const [saving, setSaving] = useState(false);
   const [deleting , setDeleting ] = useState(false)  ;
 
@@ -65,9 +65,54 @@ function PostModal({refreshCalendar , setRefreshCalendar  ,  post, onClose}: Pos
     setError(null);
     try {
       console.log(scheduledFor);
-      // const localDate = parseISO(scheduledFor);
-      // const utcDate = new Date(localDate.getTime() - localDate.getTimezoneOffset() * 60000).toISOString();
       await updatePost(post?.id , {scheduled_for : scheduledFor }) ; 
+      // call the backend api for rescheduling
+      if(post?.platform == "instagram") 
+      {
+        const accountInfo = await getSocialMediaAccountInfo("instagram") ; 
+        const {access_token , userId } = accountInfo  ; 
+        const response  = await fetch("http://localhost:3000/schedule/post/instagram" , {
+          method : "POST" ,
+          headers: {
+            'Authorization': `Bearer ${access_token}`, 
+            "Content-Type" : "application/json" ,
+          } , 
+          body : JSON.stringify({ IG_USER_ID  : userId , date : scheduledFor ,  caption : post?.content , jobId : post?.id})
+  
+        })
+        const data = await response.json() 
+        console.log("scheduled insta post api " , data ) ;   
+
+      }
+      else if (post?.platform == "linkedin") 
+      {
+         const accountInfo = await getSocialMediaAccountInfo("linkedin") ; 
+        const {access_token , userId  } = accountInfo  ;
+        const response = await fetch('http://localhost:3000/schedule/post/linkedin' ,
+          {
+            method: 'POST',
+            headers: {
+              'Authorization': `Bearer ${access_token}`,
+              'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({ id :userId,  text: post?.content  , date : scheduledFor  , jobId : post?.id }),
+          }
+        );
+    
+        const data = response.json() ; 
+        console.log(data)
+
+      }
+      else if(post?.platform == "twitter") 
+      {
+        const scheduledResponse = await fetch("http://localhost:3000/schedule/post/api" , {method : "POST"   , headers: {
+        'Content-Type': 'application/json',
+      } , body : JSON.stringify({data : post?.content , date  : scheduledFor , jobId  :post?.id })})
+      console.log("scheduled response from API  =  "  , scheduledResponse.json() ) ;
+      }
+      else{
+        console.warn("Invalid platform selected") ;
+      }
       setRefreshCalendar(!refreshCalendar) ; 
       onClose();
     } catch (err: any) {
@@ -110,7 +155,7 @@ function PostModal({refreshCalendar , setRefreshCalendar  ,  post, onClose}: Pos
     <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
       <div className="bg-gray-800 rounded-xl p-6 w-full max-w-lg">
         <div className="flex justify-between items-center mb-4">
-          <h3 className="text-lg font-semibold text-white">Edit Post</h3>
+          <h3 className="text-lg font-semibold text-white">Edit Post for  {post?.platform}</h3>
           <button onClick={onClose} className="text-gray-400 hover:text-white">
             <X className="h-5 w-5" />
           </button>
