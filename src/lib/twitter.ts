@@ -98,6 +98,7 @@ export async function handleTwitterCallback(code: string, returnedState: string)
     }
 
     const userData = await userResponse.json();
+    console.log("twitter response = " , userData) ; 
 
     // Get the current user's ID from Supabase
     const { data: { user } } = await supabase.auth.getUser();
@@ -109,7 +110,8 @@ export async function handleTwitterCallback(code: string, returnedState: string)
       platform: 'twitter',
       username: userData.data.username,
       access_token: tokens.access_token,
-      refresh_token: tokens.refresh_token
+      refresh_token: tokens.refresh_token,
+      userId : userData?.data?.id
     });
 
     if (dbError) throw dbError;

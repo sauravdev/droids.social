@@ -15,7 +15,7 @@ export function useScheduledPosts() {
     console.log("posts = " , posts) ; 
   } ,[posts] ) ; 
 
-  const loadPosts = async () : ScheduledPost[] =>  {
+  async function loadPosts() : ScheduledPost  {
     try {
       const data = await getScheduledPosts();
       console.log("scheduled posts = " , data) ;
@@ -66,6 +66,6 @@ export function useScheduledPosts() {
     createPost, 
     updatePost, 
     deletePost,
-    refreshPosts: loadPosts // Add the refresh function to the return value
+    loadPosts // Add the refresh function to the return value
   };
 }

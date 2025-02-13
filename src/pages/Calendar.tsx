@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { format, startOfWeek, addDays, parseISO , startOfMonth, addMonths, subMonths, eachDayOfInterval, endOfMonth, isSameMonth } from 'date-fns';
 import { useScheduledPosts } from '../hooks/useScheduledPosts';
 import { useContentPlan } from '../hooks/useContentPlan';
-import { Edit2, Clock, Send, MoreVertical, X, AlertCircle , ChevronLeft, ChevronRight } from 'lucide-react';
+import { Edit2, Clock, Send, MoreVertical, X, AlertCircle , ChevronLeft, ChevronRight, Delete } from 'lucide-react';
 import type { ScheduledPost } from '../lib/types';
 
 interface Post {
@@ -27,43 +27,48 @@ interface PostModalProps {
 function PostModal({refreshCalendar , setRefreshCalendar  ,  post, onClose}: PostModalProps) {
   console.log("post modal posts = " , post) ;
   const [content, setContent] = useState(post.content);
+
   const [scheduledFor, setScheduledFor] = useState(() => {
-    // Convert UTC to local time for input
-    const date = new Date(post.scheduled_for);
-    return format(date, "yyyy-MM-dd'T'HH:mm");
+    const dateUTC = parseISO(post.scheduled_for);
+    const dateLocal = new Date(dateUTC.getTime() + dateUTC.getTimezoneOffset() * 60000);
+    return format(dateLocal, "yyyy-MM-dd'T'HH:mm");
   });
+  
   const [saving, setSaving] = useState(false);
+  const [deleting , setDeleting ] = useState(false)  ;
+
   const [error, setError] = useState<string | null>(null);
-  const {updatePost  } = useScheduledPosts() ; 
+  const {updatePost , deletePost   } = useScheduledPosts() ; 
 
   // Track if content or schedule has changed
   const hasContentChanged = content !== post.content;
-  const hasScheduleChanged = scheduledFor !== format(new Date(post.scheduled_for), "yyyy-MM-dd'T'HH:mm");
+  const hasScheduleChanged = scheduledFor !== format(parseISO(post.scheduled_for),  "yyyy-MM-dd HH:mm:ss");
+  
 
-  const handleSave = async () => {
-    if (!hasContentChanged) return;
-    setSaving(true);
-    setError(null);
-    try {
-      // await onSave(content);
-      onClose();
-    } catch (err: any) {
-      setError(err.message);
-    } finally {
-      setSaving(false);
-    }
-  };
+  // const handleSave = async () => {
+  //   if (!hasContentChanged) return;
+  //   setSaving(true);
+  //   setError(null);
+  //   try {
+  //     // await onSave(content);
+  //     onClose();
+  //   } catch (err: any) {
+  //     setError(err.message);
+  //   } finally {
+  //     setSaving(false);
+  //   }
+  // };
 
   const handleReschedule = async () => {
     if (!hasScheduleChanged) return;
     setSaving(true);
     setError(null);
     try {
-      const localDate = parseISO(scheduledFor);
-      const utcDate = new Date(localDate.getTime() - localDate.getTimezoneOffset() * 60000).toISOString();
-      await updatePost(post?.id , {scheduled_for : utcDate }) ; 
+      console.log(scheduledFor);
+      // const localDate = parseISO(scheduledFor);
+      // const utcDate = new Date(localDate.getTime() - localDate.getTimezoneOffset() * 60000).toISOString();
+      await updatePost(post?.id , {scheduled_for : scheduledFor }) ; 
       setRefreshCalendar(!refreshCalendar) ; 
-     
       onClose();
     } catch (err: any) {
       setError(err.message);
@@ -71,6 +76,22 @@ function PostModal({refreshCalendar , setRefreshCalendar  ,  post, onClose}: Pos
       setSaving(false);
     }
   };
+  const handleDeletePost = async () : Promise<void> => {
+    setError(null); 
+    setDeleting(true) ;
+    try{
+      await deletePost(post?.id); 
+      setRefreshCalendar(!refreshCalendar)
+      onClose() ; 
+    }
+    catch(err :any ) 
+    {
+      setError(err?.message )
+    }
+    finally{
+      setDeleting(false) ;
+    }
+  }
 
   const handlePostNow = async () => {
     setSaving(true);
@@ -122,13 +143,13 @@ function PostModal({refreshCalendar , setRefreshCalendar  ,  post, onClose}: Pos
             <input
               type="datetime-local"
               value={scheduledFor}
-              onChange={(e) => setScheduledFor(e.target.value)}
+              onChange={(e ) => {setScheduledFor(e.target.value) } }
               className="w-full bg-gray-700 border border-gray-600 rounded-md shadow-sm py-2 px-3 text-white focus:ring-purple-500 focus:border-purple-500"
             />
           </div>
 
-          <div className="flex flex-wrap gap-2 justify-end">
-            <button
+          <div className="flex flex-wrap gap-2 justify-start">
+            {/* <button
               onClick={handleSave}
               disabled={saving || !hasContentChanged}
               className={`px-4 py-2 text-white rounded-md flex items-center space-x-2 ${
@@ -137,7 +158,18 @@ function PostModal({refreshCalendar , setRefreshCalendar  ,  post, onClose}: Pos
             >
               <Edit2 className="h-4 w-4" />
               <span>Save Changes</span>
+            </button> */}
+
+            <button
+              onClick={handleDeletePost}
+              disabled={deleting}
+              className={`px-4 py-2 text-white rounded-md flex items-center space-x-2 bg-purple-600 hover:bg-purple-700 disabled:opacity-50`}
+            >
+              <Delete className="h-4 w-4" />
+              <span>Delete Post</span>
             </button>
+
+
             <button
               onClick={handleReschedule}
               disabled={saving || !hasScheduleChanged}
@@ -164,15 +196,15 @@ function PostModal({refreshCalendar , setRefreshCalendar  ,  post, onClose}: Pos
 }
 export function Calendar() {
  
-  const { loading: scheduledLoading, error: scheduledError, updatePost, createPost, refreshPosts } = useScheduledPosts();
+  const { loading: scheduledLoading, error: scheduledError, updatePost, createPost, loadPosts } = useScheduledPosts();
   const { plans: contentPlans, loading: plansLoading, updatePlan, refreshPlans } = useContentPlan();
   const [selectedPost, setSelectedPost] = useState<Post | null>(null);
   const [currentDate, setCurrentDate] = useState(new Date());
   const [refreshCalendar , setRefreshCalender] = useState<boolean>(false);
-  const [allPosts , setAllPosts] = useState<any>([]) ;
+  const [allPosts , setAllPosts] = useState<Post[]>([]) ;
 
   const refresh =   async () : any  => {
-    const data  = refreshPosts() ; 
+    const data  =  await loadPosts() ; 
     console.log("refresh posts = " , data) ; 
     const newPosts  = [
       ...data 
@@ -189,8 +221,10 @@ export function Calendar() {
 
 
   useEffect(() => {
-    refresh() ; 
-  } , [refreshCalendar] ) 
+    ;(async () => {
+      await refresh() ; 
+    })()
+  } , [refreshCalendar] )
 
 
   // Calculate date range
@@ -213,16 +247,20 @@ export function Calendar() {
   
 
   const getPostsForDay = (date: Date) => {
-    return allPosts.filter(post => {
-      const postDate = new Date(post.scheduled_for);
+    return allPosts.filter((post: Post) => {
+      const postDateUTC = parseISO(post.scheduled_for); // Parse stored UTC date
+      const postDateLocal = new Date(postDateUTC.getTime() + postDateUTC.getTimezoneOffset() * 60000); // Convert to local time
+  
       return (
-        postDate.getDate() === date.getDate() &&
-        postDate.getMonth() === date.getMonth() &&
-        postDate.getFullYear() === date.getFullYear()
+        postDateLocal.getFullYear() === date.getFullYear() &&
+        postDateLocal.getMonth() === date.getMonth() &&
+        postDateLocal.getDate() === date.getDate()
       );
     });
   };
-
+  
+  
+  
   if (scheduledLoading || plansLoading) {
     return (
       <div className="flex items-center justify-center min-h-screen">
@@ -273,7 +311,8 @@ export function Calendar() {
                   >
                     <p className="text-white text-sm mb-2">{format(date, 'd')}</p>
                     <div className="space-y-2">
-                      {dayPosts.map((post) => (
+                      {dayPosts.map((post : Post) => (
+                        
                         <div
                           key={post.id}
                           onClick={() => setSelectedPost(post)}
@@ -287,7 +326,13 @@ export function Calendar() {
                             {post.content.slice(0, 20)}...
                           </p>
                           <p className="text-gray-400 text-xs">
-                            {format(new Date(post.scheduled_for), 'h:mm a')}
+                            {/* {format(parseISO(post.scheduled_for.replace(" ", "T")), "HH:mm:ss")} */}
+                            {format(new Date(parseISO(post.scheduled_for).getTime()), 'HH:mm')}
+
+
+
+                           
+                            
                           </p>
                         </div>
                       ))}
@@ -306,9 +351,6 @@ export function Calendar() {
         setRefreshCalendar = {setRefreshCalender}
           post={selectedPost}
           onClose={() => setSelectedPost(null)}
-          // onSave={handleSavePost}
-          // onReschedule={handleReschedule}
-          // // onPostNow={handlePostNow}
         />
       )}
     </div>

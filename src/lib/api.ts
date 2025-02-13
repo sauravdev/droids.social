@@ -51,6 +51,8 @@ export async function updateProfile(profile: Partial<Tables['profiles']['Update'
   return data;
 }
 
+
+
 // Profile Settings Management
 export async function getProfileSettings() {
   const { data: { user } } = await supabase.auth.getUser();
@@ -114,6 +116,21 @@ export async function getSocialAccounts() {
 
   if (error) throw error;
   return accounts;
+}
+export async function getSocialMediaAccountInfo(platform : string ) 
+{
+  const {data : {user}} = await supabase.auth.getUser() ; 
+  if(!user) throw new Error("No user found") ; 
+
+  const {data : accountInfo  , error } =   await supabase
+  .from('social_accounts')
+  .select("*")
+  .eq('platform' , platform)
+  .single() 
+
+  if(error)  throw error ;
+  return accountInfo ; 
+
 }
 
 export async function linkSocialAccount(account: Omit<Tables['social_accounts']['Insert'], 'profile_id'>) {

@@ -117,13 +117,16 @@ export function ContentStrategy() {
         scheduled_for,
         status  , 
       });
-      console.log("handle schedule response  =" , response ); 
-      setShowScheduleModal(false);
-      setSelectedPlan(null);
+    
     } catch (err: any) {
       setError(err.message);
     }
+    finally{
+      setShowScheduleModal(false);
+      setSelectedPlan(null);
+    }
   };
+  
 
   if (strategiesLoading || plansLoading) {
     return (
@@ -256,7 +259,7 @@ export function ContentStrategy() {
       {showScheduleModal && selectedPlan && (
         <ScheduleModal
           plan={selectedPlan}
-          onSchedule={() => {handleSchedule(selectedPlan?.strategy_id , selectedPlan?.platform , selectedPlan?.format , selectedPlan?.topic , selectedPlan?.suggestion , selectedPlan?.status , selectedPlan?.scheduled_for)}}
+          onSchedule={(scheduled_for : string ) => {handleSchedule(selectedPlan?.strategy_id , selectedPlan?.platform , selectedPlan?.format , selectedPlan?.topic , selectedPlan?.suggestion , selectedPlan?.status , scheduled_for)}}
           onClose={() => {
             setShowScheduleModal(false);
             setSelectedPlan(null);

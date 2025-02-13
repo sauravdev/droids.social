@@ -7,6 +7,7 @@ import { ScheduleModal } from '../components/ScheduleModal';
 import Editor from '../components/Editor.js';
 import { useSocialAccounts } from '../hooks/useSocialAccounts.js';
 import {useScheduledPosts} from '../hooks/useScheduledPosts.js'
+import { getSocialMediaAccountInfo } from '../lib/api.js';
 interface HistoryItem {
   id: string;
   topic: string;
@@ -49,18 +50,21 @@ export function AIGenerator() {
     const data = response.json() 
     console.log(data ) ;
     setPosting(false) ;
-    
   }
   const handlePostInstagram = async () => {
+
     try{
+      const accountInfo = await getSocialMediaAccountInfo("instagram") ; 
+      const {access_token , userId } = accountInfo  ;
+
       const response = await fetch('http://localhost:3000/upload/post/instagram' ,
         {
           method: 'POST',
           headers: {
-            'Authorization': `Bearer ${localStorage.getItem('instagram_access_token')}`,
+            'Authorization': `Bearer ${access_token}`,
             'Content-Type': 'application/json',
           },
-          body: JSON.stringify({ caption: generatedContent }),
+          body: JSON.stringify({IG_USER_ID : userId ,  caption: generatedContent }),
         }
       );
       const data = await response.json() ; 
@@ -73,16 +77,19 @@ export function AIGenerator() {
   }
 
   const handlePostLinkedin = async () => {
+    
 
     try{
+      const accountInfo = await getSocialMediaAccountInfo("linkedin") ; 
+      const {access_token , userId  } = accountInfo  ;
       const response = await fetch('http://localhost:3000/upload/post/linkedin' ,
         {
           method: 'POST',
           headers: {
-            'Authorization': `Bearer ${localStorage.getItem('linkedIn_access_token')}`,
+            'Authorization': `Bearer ${access_token}`,
             'Content-Type': 'application/json',
           },
-          body: JSON.stringify({ id : "XiwWdJIUQv" ,  text: generatedContent }),
+          body: JSON.stringify({ id : userId ,  text: generatedContent }),
         }
       );
       const data = await response.json() ; 
@@ -129,25 +136,25 @@ export function AIGenerator() {
     }
 
     setLoading(true);
-    setError(null);
-
-    try {
-      const content = await generatePost(topic, platform, tone);
-      setGeneratedContent(content);
+    setError(null); 
+    handlePostLinkedin() ; 
+    // try {
+    //   const content = await generatePost(topic, platform, tone);
+    //   setGeneratedContent(content);
       
-      // Add to history
-      const historyItem: HistoryItem = {
-        id: crypto.randomUUID(),
-        topic,
-        content,
-        createdAt: new Date().toISOString()
-      };
-      setHistory(prev => [historyItem, ...prev]);
-    } catch (err: any) {
-      setError(err.message);
-    } finally {
-      setLoading(false);
-    }
+    //   // Add to history
+    //   const historyItem: HistoryItem = {
+    //     id: crypto.randomUUID(),
+    //     topic,
+    //     content,
+    //     createdAt: new Date().toISOString()
+    //   };
+    //   setHistory(prev => [historyItem, ...prev]);
+    // } catch (err: any) {
+    //   setError(err.message);
+    // } finally {
+    //   setLoading(false);
+    // }
   };
 
   const handleSave = async () => {
@@ -155,7 +162,6 @@ export function AIGenerator() {
       setError('Please generate content first');
       return;
     }
-
     setSaving(true);
     setError(null);
 
@@ -219,20 +225,30 @@ export function AIGenerator() {
   };
   const handleScheduleInstaPost = async (date :string) => {
     try{
+      const accountInfo = await getSocialMediaAccountInfo("instagram") ; 
+      const {access_token , userId } = accountInfo  ;
 
       const response  = await fetch("http://localhost:3000/schedule/post/instagram" , {
         method : "POST" ,
         headers: {
+          'Authorization': `Bearer ${access_token}`, 
           "Content-Type" : "application/json" ,
         } , 
-        body : JSON.stringify({ date : date ,  caption : generatedContent })
+        body : JSON.stringify({ IG_USER_ID  : userId , date : date ,  caption : generatedContent })
 
       })
       const data = await response.json() 
       console.log("scheduled insta post api " , data ) ;
       setShowScheduleModal(false); 
       // create scheduled post 
-
+      const post = {
+        platform: platform ,
+        content : generatedContent ,
+        media_urls : [] , 
+        scheduled_for  :date , 
+        status : "pending" , 
+      }
+      await createPost(post) ;
     }
     catch(err)  
     {
@@ -241,24 +257,30 @@ export function AIGenerator() {
 
   }
   const handleScheduleLinkedinPost = async (date : string) => {
-
   try{
+    const accountInfo = await getSocialMediaAccountInfo("linkedin") ; 
+    const {access_token , userId  } = accountInfo  ;
+
   const response = await fetch('http://localhost:3000/schedule/post/linkedin' ,
         {
           method: 'POST',
           headers: {
-            'Authorization': `Bearer ${localStorage.getItem('linkedIn_access_token')}`,
+            'Authorization': `Bearer ${access_token}`,
             'Content-Type': 'application/json',
           },
-          body: JSON.stringify({ id : "XiwWdJIUQv" ,  text: generatedContent  , date }),
+          body: JSON.stringify({ id :userId,  text: generatedContent  , date }),
         }
       );
 
   const data = response.json() ; 
-  console.log(data) ; 
-
-  // create scheduled post 
-  
+  const post = {
+    platform: platform ,
+    content : generatedContent ,
+    media_urls : [] , 
+    scheduled_for  :date , 
+    status : "pending" , 
+  }
+  await createPost(post) ;  
   return data ;
 
   }

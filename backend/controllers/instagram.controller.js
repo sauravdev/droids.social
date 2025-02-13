@@ -6,7 +6,7 @@ import { URLSearchParams  } from 'url';
 
 const INSTAGRAM_APP_ID = "1074024207741727"; 
 const INSTAGRAM_APP_SECRET = "d23b1129f266b193ae8ade404851eae6";
-const INSTAGRAM_REDIRECT_URI =  "https://39f6-103-66-61-91.ngrok-free.app/auth/instagram";
+const INSTAGRAM_REDIRECT_URI =  "https://5230-125-63-73-50.ngrok-free.app/auth/instagram";
 
 const generateAccessToken = async (req, res) => {
   const { code } = req.body;
@@ -77,7 +77,7 @@ const getUserInfo = async (req, res) => {
 }
 
 
-const uploadContent =async (ACCESS_TOKEN , IG_USER_ID , generatedContent) => {
+const uploadContent =async (ACCESS_TOKEN , IG_USER_ID , generatedContent  = "This is a sample caption posted from my nodejs application") => {
 
   const imageUrl = "https://res.cloudinary.com/dbnivp7nr/image/upload/v1731472487/bsuvfszuay9rp8odnbrd.jpg";
   const caption = generatedContent
@@ -115,21 +115,33 @@ const uploadContent =async (ACCESS_TOKEN , IG_USER_ID , generatedContent) => {
 }
 
 const uploadContentHandler = async (req  , res ) => {
-    const {caption} = req.body ; 
-    const ACCESS_TOKEN = "IGAAPQ0b9h8x9BZAE9pMXNtR1NFR01TRnppMWJPMjVvS1VHdzVLMDEyT0FCZAVliNThGeFZAhaGdxOENuX1VGZA29RbTVCcTVvQkF6QnVSRHNQZAkg0Y252bV93ZAVVZAQkxWbDYyakZAud3JOZAWQ3YzRPM2hPWldPV004MFVIaWphRUMzaHY4XzR6QTY2ZAXl3";
-    const IG_USER_ID ="8985857874796578";
+    const {IG_USER_ID , caption} = req.body ; 
+    const authHeader = req.header("Authorization") ; 
+    if(!IG_USER_ID){
+      return res.status(400).json({ error: "Invalid body : Missing IG_USER_ID"}) ;
+    }
+    if (!authHeader || !authHeader.startsWith('Bearer ')) {
+      return res.status(401).json({ error: 'Unauthorized: No valid access token provided' });
+  }
+    const ACCESS_TOKEN = authHeader.replace('Bearer ', '')
+    console.log("Access token recieved in header" , ACCESS_TOKEN) ; 
     if ( await uploadContent(ACCESS_TOKEN , IG_USER_ID , caption) ) 
        {return res.status(201).json({message  :"Content posted successfully"})}
     else { return res.status(500).json({message : "Something went wrong"}) } 
   } 
 
 const scheduleContentHandler = async (req , res ) => {
-  // schedule job 
-  const ACCESS_TOKEN = "IGAAPQ0b9h8x9BZAE9pMXNtR1NFR01TRnppMWJPMjVvS1VHdzVLMDEyT0FCZAVliNThGeFZAhaGdxOENuX1VGZA29RbTVCcTVvQkF6QnVSRHNQZAkg0Y252bV93ZAVVZAQkxWbDYyakZAud3JOZAWQ3YzRPM2hPWldPV004MFVIaWphRUMzaHY4XzR6QTY2ZAXl3";
-  const IG_USER_ID ="8985857874796578";
-  const { date  , caption } = req.body ;
+  const { IG_USER_ID , date  , caption } = req.body ;
   console.log(req.body);
-  
+  const authHeader = req.header("Authorization") ;
+  const ACCESS_TOKEN = authHeader.replace("Bearer " , "") ; 
+  if(!IG_USER_ID) 
+  {
+      return res.status(400).json({ error: "Invalid body : Missing IG_USER_ID"})
+  }
+  if (!authHeader || !authHeader.startsWith('Bearer ')) {
+    return res.status(401).json({ error: 'Unauthorized: No valid access token provided' });
+  }
   if(!date || !caption ) return res.status(400).json({message : "Bad request :Invalid date and caption fields"}) ;
   console.log("Instagram post scheduled successfully to be posted at " + date.toString() ) ; 
   try{

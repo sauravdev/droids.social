@@ -5,7 +5,7 @@ import { useNavigate } from "react-router-dom";
 const loginWithInstagram = () => {
   localStorage.removeItem("code");
   localStorage.removeItem("instagram_access_token") ;
-  const authUrl = `https://www.instagram.com/oauth/authorize?enable_fb_login=0&force_authentication=1&client_id=1074024207741727&redirect_uri=https://39f6-103-66-61-91.ngrok-free.app/auth/instagram&response_type=code&scope=instagram_business_basic%2Cinstagram_business_manage_messages%2Cinstagram_business_manage_comments%2Cinstagram_business_content_publish%2Cinstagram_business_manage_insights`;
+  const authUrl = `https://www.instagram.com/oauth/authorize?enable_fb_login=0&force_authentication=1&client_id=1074024207741727&redirect_uri=https://5230-125-63-73-50.ngrok-free.app/auth/instagram&response_type=code&scope=instagram_business_basic%2Cinstagram_business_manage_messages%2Cinstagram_business_manage_comments%2Cinstagram_business_content_publish%2Cinstagram_business_manage_insights`;
   window.location.href = authUrl;
 };
 const InstagramAuth: React.FC = () => {
@@ -26,7 +26,6 @@ const InstagramAuth: React.FC = () => {
       console.log("token response (instagram ) " , access_token ) ;
       setUserAccessToken(access_token);
       localStorage.setItem("instagram_access_token", access_token);
-
     } catch (error) {
       console.error("Error fetching access token:", error);
     }
@@ -39,7 +38,8 @@ const InstagramAuth: React.FC = () => {
         `http://localhost:3000/auth/instagram/user/${localStorage.getItem("instagram_access_token")}` ,
       ) 
       const data = await response.json();
-      const {username }= data ; 
+      console.log("instagram response = " , response) ; 
+      const {username  , id }= data ; 
       setInstagramAccount(data);
 
       const { data: { user } } = await supabase.auth.getUser();
@@ -50,7 +50,8 @@ const InstagramAuth: React.FC = () => {
       platform: 'instagram',
       username: username,
       access_token: localStorage.getItem("instagram_access_token"),
-      refresh_token:localStorage.getItem("instagram_access_token")
+      refresh_token:localStorage.getItem("instagram_access_token") , 
+      userId : id 
     });
     navigateTo("/dashboard");
     // if (dbError) throw dbError;

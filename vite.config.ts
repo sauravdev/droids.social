@@ -14,6 +14,4 @@ export default defineConfig({
     cors: true, // Enable CORS for all origins
     allowedHosts: ['.ngrok-free.app'], // Allow Ngrok domains
   }
-
- 
 });

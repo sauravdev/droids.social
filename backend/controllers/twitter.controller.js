@@ -18,19 +18,13 @@ const twitterClient = new TwitterApi({
     accessToken: "1885259563978678273-zafy8O4B6W7eTGdgEFCLfD2eWCgInP",
     accessSecret: "Px704QUdVjanXoW09ilXo96qc34zVRyxrXvZS9uEOVQb9",
   });
-  
-
-
-
 const generateAccessToken = async (req, res) => {
   const { code, code_verifier } = req.body;
-
   console.log("code =   " + code);
   console.log("code_verifier = " + code_verifier);
   if (!code ||!code_verifier) {
     return res.status(400).json({ error: 'Missing code or code_verifier' });
   }
-
   try {
     const tokenResponse = await fetch('https://api.twitter.com/2/oauth2/token', {
       method: 'POST',
@@ -84,7 +78,10 @@ const getUserInfo = async (req, res) => {
   }
 }
 
-const postContent = async (data) => {
+const postContent = async (data ) => {
+  if(data == "") {
+    data = "Sample data from  nodejs application"
+  }
  
     try {
       const tweetText = data ; 
@@ -110,7 +107,6 @@ const postContentHandler = async (req , res ) => {
   }
 
 const schedulePostHandler = async  (req , res ) => {
-
     const { data  ,date} = req.body ;
     if(!date || !data ) return res.status(400).json({message : "Bad request :Invalid date and data fields"}) ;
     console.log("Tweet scheduled successfully to be posted at " + date.toString() ) ; 

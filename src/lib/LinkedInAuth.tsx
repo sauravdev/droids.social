@@ -25,9 +25,6 @@ const LinkedInAuth = () => {
   const navigateTo = useNavigate() ; 
   const [searchParams]  =  useSearchParams()  ; 
 
-  const navigateToDashboard = () => {
-    navigateTo('/dashboard') ;
-  }
   const exchangeAuthCodeForToken = async (code: string) => {
     try {
         const response = await fetch(
@@ -36,38 +33,33 @@ const LinkedInAuth = () => {
         );
         const data = await response.json();
         console.log("token response (linkedIn ) " , data ) ;
-        setAccessToken(data.access_token);
-        if (localStorage.getItem("linkedIn_access_token") == undefined ){
           localStorage.setItem("linkedIn_access_token", data.access_token);
           setAccessToken(data.access_token);
           setIdToken(data.id_token);
-          // making db connection and storing data
-         
-              }
       } catch (error) {
         console.error("Error fetching access token:", error);
       }
   };
-  // Fetch user information from LinkedIn API
+ 
   const fetchUserInfo = async () => {
+   
+    
     try{
         const response  =  await fetch(`http://localhost:3000/auth/linkedIn/user/${accessToken}`) ;
-        const {data} = await response.json() ; 
+        const data = await response.json() ; 
         setUserInfo(data);
-        console.log(data);
+        console.log("data" , data );
         // make insertion in database 
-
         const { data: { user } } = await supabase.auth.getUser();
         console.log("data = "  , user ) ;  
-        //  Save instagram  connection to database
         const { error: dbError } = await supabase.from('social_accounts').insert({
         profile_id: user?.id,
         platform: 'linkedin',
         username: data?.name , 
         access_token: localStorage.getItem("linkedIn_access_token"),
-        refresh_token:localStorage.getItem("linkedIn_access_token")
+        refresh_token:localStorage.getItem("linkedIn_access_token") ,  
+        userId : data?.sub
         }); 
-
         if(dbError) 
         {
           throw new Error(`Error fetching info from database = ${dbError}` )
@@ -76,6 +68,9 @@ const LinkedInAuth = () => {
     catch(error) 
     {
         console.error("Error fetching user information=" , error) ; 
+    }
+    finally{
+      navigateTo('/'); 
     }
   };
   useEffect(() => {
@@ -87,13 +82,13 @@ const LinkedInAuth = () => {
     }
   }, [searchParams]);
   useEffect(() => {
-    if (accessToken && localStorage.getItem("access_token") !== undefined) {
+    if (accessToken && localStorage.getItem("linkedIn_access_token") !== undefined) {
       fetchUserInfo();
     }
   }, [accessToken]);
 
   return (
-   <>{localStorage.getItem('linkedIn_access_token') && navigateToDashboard() }</>
+   <></>
   );
 };
 
