@@ -8,6 +8,7 @@ import { supabase } from '../lib/supabase';
 import type { ContentPlan, ContentStrategy as ContentStrategyType } from '../lib/types';
 import { Loader, Plus, X, Calendar } from 'lucide-react';
 import {useScheduledPosts} from '../hooks/useScheduledPosts'
+import { getSocialMediaAccountInfo } from '../lib/api';
 interface ContentPlanCardProps {
   plan: ContentPlan;
   onSave: (planId: string, updates: Partial<ContentPlan>) => Promise<void>;
@@ -117,7 +118,55 @@ export function ContentStrategy() {
         scheduled_for,
         status  , 
       });
-    
+      console.log("response  = " , response ) ; 
+      const jobId = response?.id ;
+      if(platform == "instagram") 
+            {
+              const accountInfo = await getSocialMediaAccountInfo("instagram") ; 
+              const {access_token , userId } = accountInfo  ; 
+              const response  = await fetch("http://localhost:3000/schedule/post/instagram" , {
+                method : "POST" ,
+                headers: {
+                  'Authorization': `Bearer ${access_token}`, 
+                  "Content-Type" : "application/json" ,
+                } , 
+                body : JSON.stringify({ IG_USER_ID  : userId , date : scheduled_for ,  caption : suggestion, jobId })
+        
+              })
+              const data = await response.json() 
+              console.log("scheduled insta post api " , data ) ;   
+      
+            }
+            else if (platform == "linkedin") 
+            {
+               const accountInfo = await getSocialMediaAccountInfo("linkedin") ; 
+              const {access_token , userId  } = accountInfo  ;
+              const response = await fetch('http://localhost:3000/schedule/post/linkedin' ,
+                {
+                  method: 'POST',
+                  headers: {
+                    'Authorization': `Bearer ${access_token}`,
+                    'Content-Type': 'application/json',
+                  },
+                  body: JSON.stringify({ id :userId,  text: suggestion  , date : scheduled_for  , jobId }),
+                }
+              );
+          
+              const data = await response.json() ; 
+              console.log(data)
+      
+            }
+            else if(platform == "twitter") 
+            {
+              const scheduledResponse = await fetch("http://localhost:3000/schedule/post/api" , {method : "POST"   , headers: {
+              'Content-Type': 'application/json',
+            } , body : JSON.stringify({data : suggestion , date  : scheduled_for , jobId})})
+              const data =  await scheduledResponse.json()  ;
+              console.log("scheduled response from API  =  "  , data ) ;
+            }
+            else{
+              console.warn("Invalid platform selected") ;
+            }
     } catch (err: any) {
       setError(err.message);
     }
