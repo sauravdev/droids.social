@@ -83,7 +83,7 @@ export async function generateContentStrategy(niche: string, goals: string[]): P
         }
       ],
       // model: "gpt-4-turbo-preview",
-      model:"gpt-3.5-turbo",
+      model  :"gpt-o3-mini",
       response_format: { type: "json_object" }
     });
 
@@ -106,7 +106,7 @@ export async function generatePost(
 ): Promise<string> {
   const cacheKey = `post:${topic}:${platform}:${tone || 'default'}`;
   const cached = checkCache<string>(cacheKey);
-  if (cached) return cached;
+  if (cached) return cached;  
 
   await rateLimit();
 
@@ -131,7 +131,7 @@ export async function generatePost(
           content: prompt
         }
       ],
-      model  :"gpt-3.5-turbo",
+      model  :"gpt-4o-mini",
       // model: "gpt-4-turbo-preview"
     });
 
@@ -166,7 +166,7 @@ export async function generateProfileContent(name: string, niche: string) {
         content: prompt
       }
     ],
-    model: "gpt-4-turbo-preview",
+    model  :"gpt-o3-mini",
     response_format: { type: "json_object" }
   });
 

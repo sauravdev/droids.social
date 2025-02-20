@@ -2,9 +2,10 @@ import React, { useState, useEffect } from 'react';
 import { format, startOfWeek, addDays, parseISO , startOfMonth, addMonths, subMonths, eachDayOfInterval, endOfMonth, isSameMonth } from 'date-fns';
 import { useScheduledPosts } from '../hooks/useScheduledPosts';
 import { useContentPlan } from '../hooks/useContentPlan';
-import { Edit2, Clock, Send, MoreVertical, X, AlertCircle , ChevronLeft, ChevronRight, Delete } from 'lucide-react';
+import { Edit2, Clock, Send, MoreVertical, X, AlertCircle , ChevronLeft, ChevronRight, Delete, RefreshCcw } from 'lucide-react';
 import type { ScheduledPost } from '../lib/types';
 import { getSocialMediaAccountInfo } from '../lib/api';
+
 import Editor from '../components/Editor';
 
 interface Post {
@@ -12,6 +13,7 @@ interface Post {
   content: string;
   platform: string;
   scheduled_for: string;
+  status?  :string ,
   type: 'scheduled' | 'planned';
 }
 
@@ -149,7 +151,68 @@ function PostModal({refreshCalendar , setRefreshCalendar  ,  post, onClose}: Pos
       // publish the post connect with handle post for each platform 
       // update the status of scheduled post from 'pending' to 'published' 
       // refresh the calendar 
-
+      if(post?.platform  == "instagram") 
+      {
+         try{
+              const accountInfo = await getSocialMediaAccountInfo("instagram") ; 
+              const {access_token , userId } = accountInfo  ;
+        
+              const response = await fetch('http://localhost:3000/upload/post/instagram' ,
+                {
+                  method: 'POST',
+                  headers: {
+                    'Authorization': `Bearer ${access_token}`,
+                    'Content-Type': 'application/json',
+                  },
+                  body: JSON.stringify({IG_USER_ID : userId ,  caption: post?.content , postId : post?.id }),
+                }
+              );
+              const data = await response.json() ; 
+              console.log("post instagram api " , data) ; 
+            }
+            catch(err )
+            {
+              console.log(err) ; 
+            }
+      }
+      else if(post?.platform == "linkedin" ) 
+      {
+        console.log("linked in post handler")  ;
+        try{
+              const accountInfo = await getSocialMediaAccountInfo("linkedin") ; 
+              const {access_token , userId  } = accountInfo  ;
+              const response = await fetch('http://localhost:3000/upload/post/linkedin' ,
+                {
+                  method: 'POST',
+                  headers: {
+                    'Authorization': `Bearer ${access_token}`,
+                    'Content-Type': 'application/json',
+                  },
+                  body: JSON.stringify({ id : userId ,  text: post?.content , postId : post?.id  }),
+                }
+              );
+              const data = await response.json() ; 
+              console.log("post linkedin api " , data) ;
+        
+            }
+            catch(err) 
+            {
+              console.log(err)  ;
+            }
+      }
+      else if(post?.platform == "twitter") 
+      {
+        console.log("posting from twitter ... ") 
+      const response = await fetch('http://localhost:3000/post/tweet/twitter' , {  headers: {
+        'Accept': 'application/json',
+        'Content-Type': 'application/json'
+      }, method :  "POST" ,body : JSON.stringify({data  :post?.content , postId : post?.id  } )} )
+        const data = await response.json()  ; 
+        console.log("twitter response  : " , data) ; 
+      }
+      else{
+        console.log("Invalid platform") 
+      }
       onClose();
     } catch (err: any) {
       setError(err.message);
@@ -255,6 +318,7 @@ export function Calendar() {
   const [currentDate, setCurrentDate] = useState(new Date());
   const [refreshCalendar , setRefreshCalender] = useState<boolean>(false);
   const [allPosts , setAllPosts] = useState<Post[]>([]) ;
+  const [refreshingState , setRefreshingState] = useState<boolean>(false) ;
 
   const refresh =   async () : any  => {
     const data  =  await loadPosts() ; 
@@ -274,9 +338,11 @@ export function Calendar() {
 
 
   useEffect(() => {
+    setRefreshingState(true) 
     ;(async () => {
       await refresh() ; 
     })()
+    setRefreshingState(false) ; 
   } , [refreshCalendar] )
 
 
@@ -326,7 +392,10 @@ export function Calendar() {
   return (
     <div className="space-y-8">
       <div className="flex justify-between items-center">
-        <h1 className="text-3xl font-bold text-white">Content Calendar</h1>
+       <div className = "flex gap-4 items-center ">
+       <h1 className="text-3xl font-bold text-white">Content Calendar</h1>
+       <button className={`${refreshingState ? 'animate-spin' : ""}`} onClick={() => {setRefreshingState(true) ; setRefreshCalender(!refreshCalendar)} }><RefreshCcw className = {`h-6 w-6 cursor-pointer text-gray-200  ${refreshingState  ? 'animate-spin' : ''}`} /></button>
+       </div>
         <div className="flex space-x-4">
           <button onClick={() => setCurrentDate(subMonths(currentDate, 1))} className="text-white">
             <ChevronLeft className="h-6 w-6" />
@@ -366,7 +435,7 @@ export function Calendar() {
                     <div className="space-y-2">
                       {dayPosts.map((post : Post) => (
                         
-                        <div
+                        post?.status !== "published" && <div
                           key={post.id}
                           onClick={() => setSelectedPost(post)}
                           className={`${
@@ -382,9 +451,6 @@ export function Calendar() {
                             {/* {format(parseISO(post.scheduled_for.replace(" ", "T")), "HH:mm:ss")} */}
                             {`${parseISO(post?.scheduled_for).getUTCHours()}:${parseISO(post?.scheduled_for).getUTCMinutes()}:${parseISO(post?.scheduled_for).getUTCSeconds()}` }
 
-
-
-                           
                             
                           </p>
                         </div>

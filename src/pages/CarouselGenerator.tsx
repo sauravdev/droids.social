@@ -1,10 +1,15 @@
 import React, { useState } from 'react';
 import { FileText, Download, Loader, Image as ImageIcon, Edit2, Plus, Trash2, ArrowLeft, ArrowRight, Upload, Sparkles } from 'lucide-react';
 import { generatePost } from '../lib/openai';
+import { generateImage } from '../lib/openai';
+import { supabase } from '../lib/supabase';
 import html2canvas from 'html2canvas';
 import jsPDF from 'jspdf';
+import * as pdfjsLib from 'pdfjs-dist';
+import pdfWorker from 'pdfjs-dist/build/pdf.worker?url';
+pdfjsLib.GlobalWorkerOptions.workerSrc = pdfWorker;
 import { useProfile } from '../hooks/useProfile';
-
+import { getSocialMediaAccountInfo } from '../lib/api';
 interface CarouselSlide {
   id: string;
   header: string;
@@ -17,6 +22,7 @@ interface CarouselSlide {
   contentSize: string;
   emoji: string;
   icon: string;
+  image: string;
 }
 
 const defaultSlideStyle = {
@@ -63,6 +69,9 @@ export function CarouselGenerator() {
   const [error, setError] = useState<string | null>(null);
   const [brandLogo, setBrandLogo] = useState<string | null>(null);
   const [linkedinProfile, setLinkedinProfile] = useState<string>('');
+  const [postingOnInsta , setPostingOnInsta ] = useState<boolean>(false);
+  const [postingOnLinkedin  , setPostingOnLinkedIn] = useState<boolean>(false) ; 
+  
 
   const handleBrandLogoUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
@@ -88,12 +97,13 @@ export function CarouselGenerator() {
       setError('Please enter a topic');
       return;
     }
+    
 
     setGenerating(true);
     setError(null);
 
     try {
-      const prompt = `Create a professional carousel post about "${topic}" for ${platform} with exactly 7 slides. Include emojis and make it engaging:
+      const prompt = `Create a professional carousel post about "${topic}" for ${platform} with exactly 3 slides. Include emojis and make it engaging:
 
       1. Intro slide: Attention-grabbing headline with emoji
       2-5. Four content slides: Key points with relevant emojis
@@ -102,23 +112,53 @@ export function CarouselGenerator() {
       
       Format as JSON array: [{"header": "headline", "content": "detailed text", "emoji": "relevant_emoji"}, ...]`;
 
-      const content = await generatePost(topic, platform);
+      let content = await generatePost(prompt, platform);
+      
+      const generateImg = async (prompt : string ) => {
+        try{
+          const imageURI =   await generateImage(prompt) ; 
+          console.log("image generated = "  , imageURI  )  ;  
+          try {
+            const proxyUrl = `http://localhost:3000/fetch-image?url=${encodeURIComponent(imageURI)}`;
+            const response = await fetch(proxyUrl);
+            const blob = await response.blob();
+            const imageObjectUrl = URL.createObjectURL(blob);
+            console.log("imageObjectURl = " , imageObjectUrl) ;
+            return imageObjectUrl;
+          } catch (err) {
+            console.error("Error:", err.message);
+            return null;
+          }
+        }
+        catch(err)
+        {
+          console.log("Something went wrong while generating image " , err  )
+        }
+      }
+      
       
       let slideContents;
       try {
-        slideContents = JSON.parse(content);
-      } catch {
-        // Fallback to basic format if JSON parsing fails
-        const lines = content.split('\n').filter(line => line.trim());
-        slideContents = lines.map((line, index) => ({
-          header: 'Slide Header',
-          content: line,
-          emoji: emojis[index % emojis.length]
-        }));
-      }
+        if(typeof (content) == "string" ) 
+        {
+          const regex = /^```json\s*([\s\S]*)\s*```$/;
+          const match = content.match(regex);
+        if (match) {
+          content =  match[1].trim();
 
+        }
+          slideContents = JSON.parse(content);
+        }
+        else{
+          slideContents = content 
+        }
+      } catch(err) {
+        console.log(err) ; 
+        slideContents = [] 
+        console.log("error parsing json") 
+      }
       // Ensure we have all required slides
-      while (slideContents.length < 7) {
+      while (slideContents.length < 3) {
         slideContents.push({
           header: `Slide ${slideContents.length + 1}`,
           content: 'Content here',
@@ -126,15 +166,23 @@ export function CarouselGenerator() {
         });
       }
 
-      const newSlides = slideContents.slice(0, 7).map((slide, index) => ({
-        id: `slide-${index}`,
-        header: slide.header || `Slide ${index + 1}`,
-        content: slide.content || 'Content here',
-        emoji: slide.emoji || emojis[index % emojis.length],
-        icon: icons[index % icons.length],
-        ...defaultSlideStyle,
-        ...themes[index % themes.length]
-      }));
+      const newSlides = await Promise.all(
+        slideContents.slice(0, 3).map(async (slide , index) => {
+          const image = await generateImg( `$A high-quality, detailed image related to ${topic}, visually representing ${slide.header}. The image should be purely illustrative with no text, letters, or written elements. Focus on composition, colors, and meaningful visual storytelling.`);
+          
+          return {
+            id: `slide-${index}`,
+            header: slide.header || `Slide ${index + 1}`,
+            content: slide.content || 'Content here',
+            emoji: slide.emoji || emojis[index % emojis.length],
+            icon: icons[index % icons.length],
+            image: image, 
+            ...defaultSlideStyle,
+            ...themes[index % themes.length]
+          };
+        })
+      );
+      console.log(newSlides) 
 
       setSlides(newSlides);
       setCurrentSlide(0);
@@ -144,58 +192,209 @@ export function CarouselGenerator() {
       setGenerating(false);
     }
   };
+  
+ 
+  async function uploadToSupabase(imageData: File | Blob, fileName: string): Promise<string | null> {
+      try{
+        const { data, error } = await supabase.storage
+        .from('profile-images')  
+        .upload(fileName, imageData, {
+          cacheControl: '3600', 
+          upsert: true , 
+          contentType: imageData.type || 'image/png',
+        });
+    
+      if (error) {
+        console.error('Error uploading to Supabase:', error);
+        return null;
+      }
+      const { data: urlData } = supabase.storage
+        .from('profile-images')
+        .getPublicUrl(fileName);
+    
+      return urlData?.publicUrl ?? null;
+      }
+      catch(err) 
+      {
+        console.log("error  = " , err ) 
+      } 
+  } 
 
+
+  const convertPDFToImages = async (pdfUrl) => {
+    const loadingTask = pdfjsLib.getDocument(pdfUrl);
+    const pdf = await loadingTask.promise;
+    const images = [];
+    const imageUrls = [] 
+  
+    for (let i = 1; i <= pdf.numPages; i++) {
+      const page = await pdf.getPage(i);
+      const viewport = page.getViewport({ scale: 2 });
+      const canvas = document.createElement('canvas');
+      const context = canvas.getContext('2d');
+      canvas.width = viewport.width;
+      canvas.height = viewport.height;
+      
+      const renderContext = {
+        canvasContext: context,
+        viewport: viewport
+      };
+      await page.render(renderContext).promise;
+      images.push(canvas.toDataURL('image/png'));
+
+      // Convert canvas to image data URL
+    const imgData = canvas.toDataURL('image/png');
+    const imgBlob = await (await fetch(imgData)).blob();
+    const timestamp = new Date().toISOString().replace(/[-:.TZ]/g, ""); 
+    const fileName = `uploads/Dalle-slide-${timestamp}-${i}.png`;
+    const publicUrl = await uploadToSupabase(imgBlob, fileName);
+    if (publicUrl) {
+      console.log(`Image for page ${i} uploaded successfully! Public URL: ${publicUrl}`);
+      imageUrls.push(publicUrl) ; 
+    }
+    }
+    console.log("public images url = " , imageUrls) ;
+    const caption = await generatePost(topic   , "instagram")
+    try{
+      const accountInfo = await getSocialMediaAccountInfo("instagram") ; 
+      const {access_token , userId  } = accountInfo  ;
+      const response = await fetch('http://localhost:3000/publish/carousel/instagram' ,{
+        method: "POST",
+        headers: {
+          'Authorization': `Bearer ${access_token}`,
+          "Content-Type": "application/json",
+        },
+        body : JSON.stringify({imageUrls , userId , caption})
+      })
+      const data = await response.json() ; 
+      console.log("response from insta carousel api = " ,data ) ; 
+    }
+    catch(err : any ) 
+    {
+      console.log("Something went wrong while publishing carousel " , err || err?.message  )
+    }
+  };
+ 
+
+  
   const exportToPDF = async () => {
     if (slides.length === 0) {
       setError('No slides to export');
       return;
     }
-
+  
     setExporting(true);
     setError(null);
-    
+  
     try {
-      // Use Instagram aspect ratio (1080x1350)
       const pdf = new jsPDF('p', 'px', [1080, 1350]);
-      
+      const pdfPages = [];
+  
       for (let i = 0; i < slides.length; i++) {
         const slide = document.getElementById(`slide-${i}`);
         if (!slide) continue;
-
+  
         const canvas = await html2canvas(slide, {
           scale: 2,
           backgroundColor: slides[i].backgroundColor,
           logging: false,
           useCORS: true,
-          width: 1080,
-          height: 1350
+          height: slide.clientHeight,
+          width: slide.clientWidth,
+          // width: 1080,
+          // height: 1350
         });
         
         const imgData = canvas.toDataURL('image/png');
+        pdfPages.push(imgData);
         if (i > 0) pdf.addPage([1080, 1350], 'p');
-        
-        // Add slide content
         pdf.addImage(imgData, 'PNG', 0, 0, 1080, 1350);
-        
-        // Add page number and branding
-        pdf.setFontSize(12);
-        pdf.setTextColor(150, 150, 150);
-        pdf.text(`${i + 1}/${slides.length}`, 1020, 1330);
-        if (profile?.full_name) {
-          pdf.text(`Created by ${profile.full_name}`, 40, 1330);
-        }
-        if (linkedinProfile) {
-          pdf.text(linkedinProfile.replace('https://linkedin.com/in/', '@'), 40, 1310);
-        }
       }
       
-      pdf.save(`carousel-${platform}-${new Date().getTime()}.pdf`);
-    } catch (err: any) {
-      setError('Error exporting to PDF: ' + (err.message || 'Unknown error'));
+      const pdfBlob = pdf.output('blob');
+      console.log("pdf blob" , pdfBlob) 
+      const pdfUrl = URL.createObjectURL(pdfBlob);
+      const downloadLink = document.createElement('a');
+      downloadLink.href = pdfUrl;
+      downloadLink.download = 'generated.pdf'; 
+      downloadLink.textContent = 'Download PDF';
+      document.body.appendChild(downloadLink);
+      downloadLink.click();
+      const accountInfo = await getSocialMediaAccountInfo("linkedin") ; 
+      const {access_token , userId  } = accountInfo  ;
+      const formData = new FormData();
+      formData.append('pdf', pdfBlob, 'generated.pdf');
+      formData.append('caption', 'This is my new PDF publication on LinkedIn!');
+      formData.append('id', userId);
+     
+      await fetch('http://localhost:3000/upload/carousel/linkedin', {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${access_token}`,
+        },
+        body: formData,
+    })
+        .then(response => response.json())
+        .then(data => console.log('Success:', data))
+        .catch(error => console.error('Error:', error));
+    } catch (err : any ) {
+      setError('Error exporting to PDF: ' + (err?.message || 'Unknown error'));
     } finally {
       setExporting(false);
     }
   };
+
+  const handleInstagramExport = async () => {
+    if (slides.length === 0) {
+      setError('No slides to export');
+      return;
+    }
+    setPostingOnInsta(true ); 
+    setError(null);
+     try {
+      const pdf = new jsPDF('p', 'px', [1080, 1350]);
+      const pdfPages = [];
+  
+      for (let i = 0; i < slides.length; i++) {
+        const slide = document.getElementById(`slide-${i}`);
+        if (!slide) continue;
+  
+        const canvas = await html2canvas(slide, {
+          scale: 2,
+          backgroundColor: slides[i].backgroundColor,
+          logging: false,
+          useCORS: true,
+          height: slide.clientHeight,
+          width: slide.clientWidth,
+          // width: 1080,
+          // height: 1350
+        });
+        
+        const imgData = canvas.toDataURL('image/png');
+        pdfPages.push(imgData);
+        if (i > 0) pdf.addPage([1080, 1350], 'p');
+        pdf.addImage(imgData, 'PNG', 0, 0, 1080, 1350);
+      }
+      
+      const pdfBlob = pdf.output('blob');
+      console.log("pdf blob" , pdfBlob) 
+      const pdfUrl = URL.createObjectURL(pdfBlob);
+      await convertPDFToImages(pdfUrl);
+    }
+    catch(error : any ) 
+    {
+      console.log('Something went wrong = ' ,  error || error?.message )
+    }
+    finally {
+      setPostingOnInsta(false) ; 
+    }
+
+  }
+  const handleLinkedinExport = () => {
+    setPostingOnLinkedIn(true) ; 
+    exportToPDF() 
+    setPostingOnLinkedIn(false) ;
+  }
 
   return (
     <div className="space-y-8">
@@ -328,6 +527,46 @@ export function CarouselGenerator() {
                 )}
               </button>
             )}
+
+
+          {slides.length > 0 && (
+              <button
+                onClick={handleInstagramExport}
+                disabled={postingOnInsta}
+                className="flex-1 bg-purple-600 hover:bg-purple-700 text-white px-4 py-2 rounded-lg flex items-center justify-center space-x-2 disabled:opacity-50"
+              >
+                {postingOnInsta ? (
+                  <>
+                    <Loader className="h-5 w-5 animate-spin" />
+                    <span>Posting...</span>
+                  </>
+                ) : (
+                  <>
+                    <Download className="h-5 w-5" />
+                    <span className='capitalize'>Post to instagram</span>
+                  </>
+                )}
+              </button>
+            )}
+             {slides.length > 0 && (
+              <button
+                onClick={handleLinkedinExport}
+                disabled={postingOnLinkedin}
+                className="flex-1 bg-[#1E40AF] hover:bg-[#2753e6]  text-[#FFFFFF] px-4 py-2 rounded-lg flex items-center justify-center space-x-2 disabled:opacity-50"
+              >
+                {postingOnLinkedin ? (
+                  <>
+                    <Loader className="h-5 w-5 animate-spin" />
+                    <span>Exporting...</span>
+                  </>
+                ) : (
+                  <>
+                    <Download className="h-5 w-5" />
+                    <span className='capitalize'>Post to linkedin</span>
+                  </>
+                )}
+              </button>
+            )}
           </div>
 
           {error && (
@@ -340,90 +579,120 @@ export function CarouselGenerator() {
 
       {/* Preview and Editor sections */}
       {slides.length > 0 && (
-        <div className="bg-gray-800 rounded-xl p-6">
+        <div  className="bg-gray-800 rounded-xl p-6">
           <h2 className="text-xl font-bold text-white mb-4">Preview & Edit</h2>
           
-          <div className="relative w-full" style={{ paddingBottom: '125%' }}> {/* 1080:1350 aspect ratio */}
-            <div
-              id={`slide-${currentSlide}`}
-              className="absolute inset-0 flex flex-col items-center justify-between p-12"
-              style={{
-                backgroundColor: slides[currentSlide].backgroundColor,
-                color: slides[currentSlide].textColor,
-                backgroundImage: slides[currentSlide].backgroundColor.includes('gradient') ? slides[currentSlide].backgroundColor : undefined
+          {/* Slides Container - Displays All Slides */}
+  <div className="flex flex-col gap-4 w-full">
+    {slides.map((slide, index) => (
+      <div
+        onClick={() => {setCurrentSlide(index)}}
+        id = {`slide-${index}`}
+        key={slide.id}
+        className={`${currentSlide == index ?"border-2" : ""} carousel-slide flex flex-col items-center justify-between p-4 rounded-lg shadow-lg w-full `}
+        style={{
+          backgroundColor: slide.backgroundColor,
+          color: slide.textColor,
+          backgroundImage: slide.backgroundColor.includes('gradient') ? slide.backgroundColor : undefined,
+          minHeight: 'auto', 
+          height: 'auto', 
+          overflow: 'visible',
+          paddingBottom: '20px'
+        }}
+      >
+        {/* Brand Logo */}
+        {brandLogo && (
+          <img src={brandLogo} alt="Brand logo" className="h-16 object-contain mb-4" />
+        )}
+
+        {/* Slide Image */}
+        {slide.image && (
+          <img
+            className="rounded-sm w-full h-auto max-h-[500px] object-cover mx-auto"
+            src={slide?.image}
+            alt="alternate text"
+          />
+        )}
+
+        {/* Slide Content */}
+        <div className=" flex flex-col items-center justify-center space-y-2 w-full gap-2 my-10 px-20">
+          <h2
+            style={{ fontFamily: slide.headerFont, fontSize: slide.headerSize }}
+            className="text-center font-bold flex items-center space-x-2 w-full"
+          >
+            <span>{slide.emoji}</span>
+            <input
+              className="text-center bg-transparent border-none outline-none w-full"
+              type="text"
+              value={slide.header}
+              onChange={(e) => updateSlide(slide.id, { header: e.target.value })}
+            />
+          </h2>
+
+          <div
+            contentEditable="true"
+            suppressContentEditableWarning={true}
+            style={{
+                width: '100%',
+                minHeight: '40px',
+                height: 'auto',
+                maxWidth: '100%',
+                overflowWrap: 'break-word', 
+                wordBreak: 'break-word', 
+                whiteSpace: 'pre-wrap',
+                padding: '5px',
+               
+                outline: 'none',
+                textAlign: 'center',
+    }}
+    className="bg-transparent text-xl"
+    onChange={(e) => updateSlide(slide.id, { content:e.target.value })} // Updates state on change
+>
+    {slide.content}
+</div>
+
+
+          {/* <p
+            style={{ fontFamily: slide.contentFont, fontSize: slide.contentSize }}
+            className="text-center flex items-start space-x-2 w-full"
+          >
+            <span className="text-2xl">{slide.icon}</span>
+            <textarea
+            
+             style={{ 
+              wordBreak: 'break-word',
+              height: 'auto',
+              whiteSpace: 'pre-wrap',
+              overflowY: 'hidden', 
+              minHeight: '40px',   
+              minWidth : "100%"
+              
               }}
-            >
-              {/* Brand Logo */}
-              {brandLogo && (
-                <img src={brandLogo} alt="Brand logo" className="h-16 object-contain mb-4" />
-              )}
-              
-              {/* Slide Content */}
-              <div className="flex-1 flex flex-col items-center justify-center space-y-8 w-full">
-                <h2
-                  style={{
-                    fontFamily: slides[currentSlide].headerFont,
-                    fontSize: slides[currentSlide].headerSize
-                  }}
-                  className="text-center font-bold flex items-center space-x-2"
-                >
-                  <span>{slides[currentSlide].emoji}</span>
-                  <span>{slides[currentSlide].header}</span>
-                </h2>
-                <p
-                  style={{
-                    fontFamily: slides[currentSlide].contentFont,
-                    fontSize: slides[currentSlide].contentSize
-                  }}
-                  className="text-center flex items-start space-x-2"
-                >
-                  <span className="text-2xl">{slides[currentSlide].icon}</span>
-                  <span>{slides[currentSlide].content}</span>
-                </p>
-              </div>
-              
-              {/* Footer */}
-              <div className="w-full flex justify-between items-center text-sm opacity-75">
-                <div>Created by {profile?.full_name || 'User'}</div>
-                {linkedinProfile && (
-                  <div>{linkedinProfile.replace('https://linkedin.com/in/', '@')}</div>
-                )}
-              </div>
-            </div>
+            className="bg-transparent outline-none w-full px-44 text-center"
+              value={slide.content}
+              // value="This is a long text that should break into the next line automatically when the width of the container is exceeded. Let's test it out!"
+              onChange={(e) => {updateSlide(slide.id, { content: e.target.value } ) ;  e.target.style.height = "auto" 
+              e.target.style.height = e.target.scrollHeight + "px"; } }
+            />
+          </p> */}
+        </div>
 
-            {/* Navigation Controls */}
-            {currentSlide > 0 && (
-              <button
-                onClick={() => setCurrentSlide(prev => prev - 1)}
-                className="absolute left-4 top-1/2 -translate-y-1/2 p-2 bg-black bg-opacity-50 rounded-full text-white hover:bg-opacity-75"
-              >
-                <ArrowLeft className="h-6 w-6" />
-              </button>
-            )}
-            {currentSlide < slides.length - 1 && (
-              <button
-                onClick={() => setCurrentSlide(prev => prev + 1)}
-                className="absolute right-4 top-1/2 -translate-y-1/2 p-2 bg-black bg-opacity-50 rounded-full text-white hover:bg-opacity-75"
-              >
-                <ArrowRight className="h-6 w-6" />
-              </button>
-            )}
+        {/* Footer */}
+        <div className="w-full flex justify-between items-center text-sm opacity-75">
+          <div>Created by {profile?.full_name || 'User'}</div>
+          {linkedinProfile && <div>{linkedinProfile.replace('https://linkedin.com/in/', '@')}</div>}
+        </div>
+      </div>
+    ))}
+  </div>
 
-            {/* Slide Counter */}
-            <div className="absolute bottom-4 left-1/2 -translate-x-1/2 bg-black bg-opacity-50 px-3 py-1 rounded-full">
-              <span className="text-white text-sm">
-                {currentSlide + 1} / {slides.length}
-              </span>
-            </div>
-          </div>
-
-          {/* Slide Editor */}
+          {/* Slide Editor  */}
           <div className="mt-6 space-y-4">
             <div>
               <label className="block text-sm font-medium text-gray-300 mb-2">
                 Theme
               </label>
-              <div className="grid grid-cols-4 gap-2">
+           <div className="grid grid-cols-4 gap-2">
                 {themes.map((theme, index) => (
                   <button
                     key={index}
@@ -431,10 +700,13 @@ export function CarouselGenerator() {
                       backgroundColor: theme.bg,
                       textColor: theme.text
                     })}
-                    className="h-10 rounded-lg cursor-pointer border-2 border-transparent hover:border-purple-500 transition-colors"
+                    className="h-10 rounded-lg cursor-pointer  border-transparent hover:border-purple-500 transition-colors"
                     style={{
                       background: theme.bg,
-                      backgroundImage: theme.bg.includes('gradient') ? theme.bg : undefined
+                      backgroundImage: theme.bg.includes('gradient') ? theme.bg : undefined,
+                      minHeight: 'auto', // Ensures the slide grows dynamically
+                      padding: '20px',  // Adds space to prevent cropping
+                      breakInside: 'avoid', // Helps prevent content splitting in PDFs
                     }}
                   />
                 ))}
@@ -501,3 +773,96 @@ export function CarouselGenerator() {
     </div>
   );
 }
+
+
+
+
+
+
+
+
+
+// // Initialize Supabase client
+// import { createClient } from '@supabase/supabase-js';
+
+// const supabase = createClient('YOUR_SUPABASE_URL', 'YOUR_SUPABASE_ANON_KEY');
+
+// // Function to upload the image to Supabase Storage
+// async function uploadToSupabase(imageData, fileName) {
+//   const { data, error } = await supabase.storage
+//     .from('your_bucket_name') // Replace with your bucket name
+//     .upload(fileName, imageData, {
+//       cacheControl: '3600', // Set the cache control to 1 hour
+//       upsert: true, // If the file already exists, overwrite it
+//     });
+
+//   if (error) {
+//     console.error('Error uploading to Supabase:', error);
+//     return null;
+//   }
+
+//   // Get the public URL for the uploaded image
+//   const publicUrl = supabase.storage
+//     .from('your_bucket_name')
+//     .getPublicUrl(fileName);
+
+//   return publicUrl.publicURL;
+// }
+
+// try {
+//   const loadingTask = pdfjsLib.getDocument(pdfUrl);
+//   const pdf = await loadingTask.promise;
+
+//   for (let i = 1; i <= pdf.numPages; i++) {
+//     const page = await pdf.getPage(i);
+//     const viewport = page.getViewport({ scale: 2 });
+//     const canvas = document.createElement('canvas');
+//     const context = canvas.getContext('2d');
+
+//     if (context === null) {
+//       console.error(`Failed to get 2D context for page ${i}`);
+//       continue; // Skip this page if context is null
+//     }
+
+//     canvas.width = viewport.width;
+//     canvas.height = viewport.height;
+
+//     const renderContext = {
+//       canvasContext: context,
+//       viewport: viewport
+//     };
+    
+//     await page.render(renderContext);
+
+//     // Convert canvas to image data URL
+//     const imgData = canvas.toDataURL('image/png');
+
+//     // Convert the image data URL to a Blob for uploading
+//     const imgBlob = await (await fetch(imgData)).blob();
+
+//     // Define the file name for the image
+//     const fileName = `slide-${i}.png`;
+
+//     // Upload the image to Supabase and get the public URL
+//     const publicUrl = await uploadToSupabase(imgBlob, fileName);
+
+//     if (publicUrl) {
+//       console.log(`Image for page ${i} uploaded successfully! Public URL: ${publicUrl}`);
+//     }
+
+//     // Optionally, you can automatically trigger the download as you were doing earlier
+//     const link = document.createElement('a');
+//     link.href = publicUrl;
+//     link.download = fileName;
+//     document.body.appendChild(link);
+
+//     setTimeout(() => {
+//       link.click();
+//       document.body.removeChild(link); // Cleanup
+//     }, 500); // Adding a slight delay to ensure sequential downloads
+//   }
+
+//   console.log('All images uploaded and ready to download!');
+// } catch (error) {
+//   console.error('Error converting PDF:', error);
+// }

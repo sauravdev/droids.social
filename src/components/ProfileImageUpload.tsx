@@ -38,7 +38,7 @@ export function ProfileImageUpload({ currentUrl, onUpload, type }: ProfileImageU
       console.log("uploaded file path  = " , data?.path) ; 
 
       // Get public URL
-      const {data : {publicUrl}} = supabase.storage
+      const {data : {publicUrl}} =  supabase.storage
         .from('profile-images')
         .getPublicUrl(filePath);
       if(!publicUrl) {

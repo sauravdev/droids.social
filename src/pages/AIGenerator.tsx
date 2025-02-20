@@ -47,14 +47,14 @@ export function AIGenerator() {
       'Accept': 'application/json',
       'Content-Type': 'application/json'
     }, method :  "POST" ,body : JSON.stringify({data  :generatedContent} )} )
-    const data = response.json() 
+    const data = await response.json() 
     console.log(data ) ;
     setPosting(false) ;
   }
   const handlePostInstagram = async () => {
     try{
       const accountInfo = await getSocialMediaAccountInfo("instagram") ; 
-      const {access_token , userId } = accountInfo  ;
+      const {access_token , userId  } = accountInfo  ;
 
       const response = await fetch('http://localhost:3000/upload/post/instagram' ,
         {
@@ -63,7 +63,7 @@ export function AIGenerator() {
             'Authorization': `Bearer ${access_token}`,
             'Content-Type': 'application/json',
           },
-          body: JSON.stringify({IG_USER_ID : userId ,  caption: generatedContent }),
+          body: JSON.stringify({IG_USER_ID : userId ,  caption: generatedContent   }),
         }
       );
       const data = await response.json() ; 

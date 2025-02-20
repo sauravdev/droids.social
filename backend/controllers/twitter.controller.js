@@ -2,7 +2,8 @@ import { TwitterApi } from 'twitter-api-v2';
 import schedule from 'node-schedule' ; 
 import fetch from 'node-fetch' ;
 import { URLSearchParams  } from 'url';
-import { scheduledJobsMap } from "../index.js";import { loadScheduledJobs } from '../test.js';
+import { scheduledJobsMap } from "../index.js";
+import { loadScheduledJobs  ,updateScheduledPost } from '../test.js';
 ; 
 
 // const TWITTER_CLIENT_ID = 'Y2RKeWJ2T1hzQ3dxNnBuT3BCUVI6MTpjaQ';
@@ -48,13 +49,12 @@ const generateAccessToken = async (req, res) => {
 
     const tokens = await tokenResponse.json();
     console.log(tokens);
-    res.json(tokens);
+    return res.json(tokens);
   } catch (error) {
     console.error('Error fetching token:', error);
-    res.status(500).json({ error: 'Failed to fetch token' });
+    return res.status(500).json({ error: 'Failed to fetch token' });
   }
 }
-
 const getUserInfo = async (req, res) => {
   const { access_token } = req.headers;
   console.log("access token for user " + access_token);
@@ -73,10 +73,10 @@ const getUserInfo = async (req, res) => {
    
     const userData = await userResponse.json();
     console.log("user data " + JSON.stringify(userData));
-    res.json(userData);
+    return res.json(userData);
   } catch (error) {
     console.error('Error fetching user info:', error);
-    res.status(500).json({ error: 'Failed to fetch user info' });
+    return res.status(500).json({ error: 'Failed to fetch user info' });
   }
 }
 const postContent = async (data = "Some random text" , postId = null  ) => {
@@ -103,9 +103,9 @@ const postContent = async (data = "Some random text" , postId = null  ) => {
 
 const postContentHandler = async (req , res ) => {
     console.log(req.body);
-    const {data} = req.body ;
+    const {data , postId } = req.body ;
     if(!data) return res.status(400).json({message : "Bad request : Empty body received"})
-    if (  postContent(data ) ) {
+    if (  postContent(data , postId  ) ) {
       return res.status(201).json({message : "Tweet posted successfully"})
     }
     return res.status(500).json({message : "Something went wrong" })

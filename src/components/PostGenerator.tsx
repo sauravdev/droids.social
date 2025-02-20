@@ -3,6 +3,7 @@ import { Loader, RefreshCw, Calendar, Save ,Twitter, Linkedin, Instagram } from 
 import { generatePost } from '../lib/openai';
 import type { ContentPlan } from '../lib/types';
 import Editor from './Editor';
+import { getSocialMediaAccountInfo } from '../lib/api';
 
 interface PostGeneratorProps {
   plan: ContentPlan;
@@ -21,57 +22,61 @@ export function PostGenerator({ plan, onSave, onSchedule }: PostGeneratorProps) 
 
   async function handlePostTweet() {
     setPosting(true) ;
-
     const response = await fetch('http://localhost:3000/post/tweet/twitter' , {  headers: {
       'Accept': 'application/json',
       'Content-Type': 'application/json'
-    }, method :  "POST" ,body : JSON.stringify({data  :content} )} )
+    }, method :  "POST" ,body : JSON.stringify({data  :plan?.suggestion} )} )
     const data = response.json() 
     console.log(data ) ;
     setPosting(false) ;
     
   }
   const handlePostInstagram = async () => {
-    try{
-      const response = await fetch('http://localhost:3000/upload/post/instagram' ,
-        {
-          method: 'POST',
-          headers: {
-            'Authorization': `Bearer ${localStorage.getItem('instagram_access_token')}`,
-            'Content-Type': 'application/json',
-          },
-          body: JSON.stringify({ caption: content }),
-        }
-      );
-      const data = await response.json() ; 
-      console.log("post instagram api " , data) ; 
-    }
-    catch(err )
-    {
-      console.log(err) ; 
-    }
+  try{
+        const accountInfo = await getSocialMediaAccountInfo("instagram") ; 
+        const {access_token , userId  } = accountInfo  ;
+  
+        const response = await fetch('http://localhost:3000/upload/post/instagram' ,
+          {
+            method: 'POST',
+            headers: {
+              'Authorization': `Bearer ${access_token}`,
+              'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({IG_USER_ID : userId ,  caption: plan?.suggestion  }),
+          }
+        );
+        const data = await response.json() ; 
+        console.log("post instagram api " , data) ; 
+      }
+      catch(err )
+      {
+        console.log(err) ; 
+      }
   }
   const handlePostLinkedin = async () => {
 
-    try{
-      const response = await fetch('http://localhost:3000/upload/post/linkedin' ,
-        {
-          method: 'POST',
-          headers: {
-            'Authorization': `Bearer ${localStorage.getItem('linkedIn_access_token')}`,
-            'Content-Type': 'application/json',
-          },
-          body: JSON.stringify({ id : "XiwWdJIUQv" ,  text: generatedContent }),
+     try{
+          const accountInfo = await getSocialMediaAccountInfo("linkedin") ; 
+          const {access_token , userId  } = accountInfo  ;
+          const response = await fetch('http://localhost:3000/upload/post/linkedin' ,
+            {
+              method: 'POST',
+              headers: {
+                'Authorization': `Bearer ${access_token}`,
+                'Content-Type': 'application/json',
+              },
+              body: JSON.stringify({ id : userId ,  text: plan?.suggestion }),
+            }
+          );
+          const data = await response.json() ; 
+          console.log("post linkedin api " , data) ;
+    
         }
-      );
-      const data = await response.json() ; 
-      console.log("post linkedin api " , data) ;
-
-    }
-    catch(err) 
-    {
-      console.log(err)  ;
-    }
+        catch(err) 
+        {
+          console.log(err)  ;
+        }
   }
 
   const postContentHandler =() : any  => {

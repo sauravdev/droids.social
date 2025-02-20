@@ -4,11 +4,11 @@ import schedule from 'node-schedule' ;
 import fetch from 'node-fetch' ;
 import { URLSearchParams  } from 'url';
 import { scheduledJobsMap } from "../index.js";
-import { loadScheduledJobs } from '../test.js';
-
+import { loadScheduledJobs , updateScheduledPost } from '../test.js';
+import axios from 'axios' ;
 const INSTAGRAM_APP_ID = "1074024207741727"; 
 const INSTAGRAM_APP_SECRET = "d23b1129f266b193ae8ade404851eae6";
-const INSTAGRAM_REDIRECT_URI =  "https://5230-125-63-73-50.ngrok-free.app/auth/instagram";
+const INSTAGRAM_REDIRECT_URI =  "https://5a42-125-63-73-50.ngrok-free.app/auth/instagram";
 
 const generateAccessToken = async (req, res) => {
   const { code } = req.body;
@@ -34,6 +34,7 @@ const generateAccessToken = async (req, res) => {
     );
 
     
+    
     const tokenData = await tokenResponse.json();
     console.log("tokenData" , tokenData) ; 
     if(!tokenData)
@@ -41,10 +42,21 @@ const generateAccessToken = async (req, res) => {
       return res.status(500).json({error :  "Something went wrong : while fetching token"}) ;
     }
     const { access_token, user_id } = tokenData;
-    console.log("Access token: " + access_token) ;
+    const longLivedTokenResponse = await fetch(
+      `https://graph.instagram.com/access_token?grant_type=ig_exchange_token&client_secret=${INSTAGRAM_APP_SECRET}&access_token=${access_token}`
+    );
+
+    const longLivedTokenData = await longLivedTokenResponse.json();
+    console.log("Long-lived tokenData:", longLivedTokenData);
+
+    if (!longLivedTokenData.access_token) {
+      return res
+        .status(500)
+        .json({ error: "Something went wrong while fetching long-lived token" });
+    }
     res.status(200).json({
-      access_token: access_token,
-      user_id,
+      access_token: longLivedTokenData.access_token,
+      user_id , 
     });
   } catch (error) {
     console.error("Error exchanging Instagram token:", error);
@@ -81,7 +93,7 @@ const getUserInfo = async (req, res) => {
 
 const uploadContent =async (ACCESS_TOKEN , IG_USER_ID , generatedContent  = "This is a sample caption posted from my nodejs application" , postId = null ) => {
 
-  const imageUrl = "https://res.cloudinary.com/dbnivp7nr/image/upload/v1731472487/bsuvfszuay9rp8odnbrd.jpg";
+  // const imageUrl = "https://res.cloudinary.com/dbnivp7nr/image/upload/v1731472487/bsuvfszuay9rp8odnbrd.jpg";
   const caption = generatedContent
   try{
 
@@ -121,7 +133,7 @@ const uploadContent =async (ACCESS_TOKEN , IG_USER_ID , generatedContent  = "Thi
 }
 
 const uploadContentHandler = async (req  , res ) => {
-    const {IG_USER_ID , caption} = req.body ; 
+    const {IG_USER_ID , caption , postId } = req.body ; 
     const authHeader = req.header("Authorization") ; 
     if(!IG_USER_ID){
       return res.status(400).json({ error: "Invalid body : Missing IG_USER_ID"}) ;
@@ -131,7 +143,7 @@ const uploadContentHandler = async (req  , res ) => {
   }
     const ACCESS_TOKEN = authHeader.replace('Bearer ', '')
     console.log("Access token recieved in header" , ACCESS_TOKEN) ; 
-    if ( await uploadContent(ACCESS_TOKEN , IG_USER_ID , caption) ) 
+    if ( await uploadContent(ACCESS_TOKEN , IG_USER_ID , caption , postId) ) 
        {return res.status(201).json({message  :"Content posted successfully"})}
     else { return res.status(500).json({message : "Something went wrong"}) } 
   } 
@@ -183,4 +195,84 @@ const scheduleContentHandler = async (req , res ) => {
     return res.status(500).json({message : "Failed to schedule instagram post" })
   }
 }
-export {generateAccessToken , getUserInfo  , uploadContentHandler , scheduleContentHandler }
+async function publishCarousel(imageUrls , ACCESS_TOKEN , IG_USER_ID , caption) {
+  console.log(imageUrls)
+  try {
+    const mediaContainerIds = [];
+    for (const imageUrl of imageUrls) {
+      const uploadResponse = await axios.post(
+        `https://graph.instagram.com/v19.0/${IG_USER_ID}/media`,
+        {
+          image_url: imageUrl,
+          caption
+        },
+        {
+          headers: { Authorization: `Bearer ${ACCESS_TOKEN}` },
+        }
+      );
+      if (uploadResponse.data.id) {
+        mediaContainerIds.push(uploadResponse.data.id);
+      }
+    }
+    if (mediaContainerIds.length === 0) {
+      throw new Error("Failed to upload images");
+    }
+    const carouselResponse = await axios.post(
+      `https://graph.instagram.com/v19.0/${IG_USER_ID}/media`,
+      {
+        media_type: "CAROUSEL",
+        children: mediaContainerIds,
+        caption 
+      },
+      {
+        headers: { Authorization: `Bearer ${ACCESS_TOKEN}` },
+      }
+    );
+    const publishResponse = await axios.post(
+      `https://graph.instagram.com/v19.0/${IG_USER_ID}/media_publish`,
+      {
+        creation_id: carouselResponse.data.id,
+      },
+      {
+        headers: { Authorization: `Bearer ${ACCESS_TOKEN}` },
+      }
+    );
+
+    console.log("Carousel published successfully! Post ID:", publishResponse.data.id);
+    return publishResponse.data.id;
+  } catch (error) {
+    console.error("Error publishing carousel:", error || error.response?.data || error.message);
+    throw new Error("Failed to publish carousel");
+  }
+}
+
+const publishInstagramCarousel = async (req, res) => {
+  const {imageUrls  , userId , caption}  = req.body;
+  const authHeader = req.header("Authorization") ;
+  
+  if(!userId) 
+    {
+        return res.status(400).json({ error: "Invalid body : Missing IG_USER_ID"})
+    }
+    if (!authHeader || !authHeader.startsWith('Bearer ')) {
+      return res.status(401).json({ error: 'Unauthorized: No valid access token provided' });
+    }
+    const ACCESS_TOKEN = authHeader.replace('Bearer ', '')
+    console.log("access toke ="  ,ACCESS_TOKEN ) 
+  try {
+    const postId = await publishCarousel(imageUrls , ACCESS_TOKEN , userId , caption);
+    res.status(200).json({
+      success: true,
+      message: "Carousel post published successfully!",
+      postId,
+    });
+  } catch (error) {
+    res.status(500).json({
+      success: false,
+      message: "Error publishing carousel post",
+      error: error.message,
+    });
+  }
+}
+
+export {generateAccessToken , getUserInfo  , uploadContentHandler , scheduleContentHandler  , publishInstagramCarousel}

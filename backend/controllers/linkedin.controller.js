@@ -1,10 +1,13 @@
 // import {scheudleJobMap} from ''
 import { scheduledJobsMap } from "../index.js";
-import { loadScheduledJobs } from "../test.js";
+import { loadScheduledJobs , updateScheduledPost } from "../test.js";
+import { PDFDocument } from 'pdf-lib';
 const linkedInClientId = '77zwm3li56ua2a';
 const linkedInClientSecret = 'WPL_AP1.FTEeZCfxW20evekT.BoujnA==';
 const redirectUri = 'http://127.0.0.1:5173/linkedin/callback/auth/linkedIn';
 import schedule from 'node-schedule' ; 
+import axios from 'axios'
+import fs from 'fs' ; 
 const generateAccessToken = async (req , res ) => {
   const { code } = req.body;
   try {
@@ -49,10 +52,10 @@ const getUserInfo = async (req  , res ) => {
 }
 
 
-const uploadContent = async (accessToken , id , text = "dummy text" , postId = null ) => {
+const uploadContent = async (accessToken , id ,postId = null , text = "Certainly! SocialBee offers various valuable properties such as user-friendly in management."  ) => {
   
   try{
-    const response = await fetch("https://api.linkedin.com/rest/posts", {
+    const response = await fetch("https://api.linkedin.com/v2/rest/posts", {
       method: "POST",
       headers: {
           'LinkedIn-Version': 202401,
@@ -78,6 +81,7 @@ const uploadContent = async (accessToken , id , text = "dummy text" , postId = n
     {
       await updateScheduledPost(postId , {status : 'published'})
     }
+    console.log("linkedin scheduled post published successfully")
   }
   catch(err) 
   {
@@ -87,7 +91,7 @@ const uploadContent = async (accessToken , id , text = "dummy text" , postId = n
 }
 
 const uploadContentHandler = async (req , res ) => {
-  const { id   , text  } = req.body ; 
+  const { id   , text  , postId  } = req.body ; 
   console.log(req.body) ;
   const authHeader = req.header("Authorization")
   if (!authHeader || !authHeader.startsWith('Bearer ')) {
@@ -102,7 +106,7 @@ const uploadContentHandler = async (req , res ) => {
   const accessToken = authHeader.replace("Bearer " , "") ; 
   console.log("accessToken" , accessToken) ;
   try{
-      await  uploadContent(accessToken , id   )
+      await  uploadContent(accessToken , id , postId    )
       return res.status(201).json({message : `post uploaded successfully`})
   }
   catch(err) 
@@ -154,4 +158,111 @@ const scheduleContentHandler = async (req  , res ) => {
   }
 
 }
-export {generateAccessToken ,getUserInfo , uploadContentHandler , scheduleContentHandler } 
+
+
+const postLinkedinCarousel = async (req, res) => {
+  const {caption , id } = req.body; 
+  console.log("caption = " , caption ) ; 
+  console.log("id = " , id ) ; 
+  const authHeader = req.header("Authorization")
+  if(!id) 
+    {
+      return res.status(400).json({message : "invalid body"})
+    }
+  if (!authHeader || !authHeader.startsWith('Bearer ')) {
+    return res.status(401).json({ error: 'Unauthorized: No valid access token provided' });
+  }
+ 
+
+  if (!req.file) {
+    return res.status(400).json({ error: 'No PDF file uploaded' });
+  }
+  console.log("req file = " , req.file)
+  const accessToken = authHeader.replace("Bearer " , "") ; 
+  console.log("accessToken" , accessToken) ;
+  
+  try {
+    const initializeUploadResponse = await axios.post(
+      'https://api.linkedin.com/documents?action=initializeUpload',
+      {
+        "initializeUploadRequest": {
+              "owner": `urn:li:person:${id}`
+        }
+      }
+      ,
+      {
+        headers: {
+          'Authorization': `Bearer ${accessToken}`,
+          'Content-Type': 'application/json',
+          'X-Restli-Protocol-Version': '2.0.0',
+          'LinkedIn-Version': 202502,
+        }
+      }
+    );
+    console.log("initalize response " , initializeUploadResponse) ; 
+    const uploadData = initializeUploadResponse.data.value;
+    const uploadUrl = uploadData.uploadUrl;
+    const assetUrn = uploadData.document;
+    const fileBuffer = fs.readFileSync(req.file.path);
+    await axios.put(uploadUrl, fileBuffer, {
+      headers: {
+        'Authorization': `Bearer ${accessToken}`,
+        'Content-Type': 'application/pdf',
+        'LinkedIn-Version': 202502,
+      }
+    });
+    // const postResponse = await axios.post(
+    //   'https://api.linkedin.com/v2/ugcPosts',
+    //   {
+    //     author: `urn:li:person:${id}`,
+    //     lifecycleState: "PUBLISHED",
+    //     specificContent: {
+    //       "com.linkedin.ugc.ShareContent": {
+    //         shareCommentary: {
+    //           text: caption || "Check out this document!"
+    //         },
+    //         shareMediaCategory: "DOCUMENT",
+    //         media: [
+    //           {
+    //             status: "READY",
+    //             media: assetUrn,
+    //             title: {
+    //               text: req.file.originalname
+    //             }
+    //           }
+    //         ]
+    //       }
+    //     },
+    //     visibility: {
+    //       "com.linkedin.ugc.MemberNetworkVisibility": "PUBLIC"
+    //     }
+    //   },
+    //   {
+    //     headers: {
+    //       'Authorization': `Bearer ${accessToken}`,
+    //       'Content-Type': 'application/json',
+    //       'X-Restli-Protocol-Version': '2.0.0'
+    //     }
+    //   }
+    // );
+    fs.unlinkSync(req.file.path);
+    res.status(200).json({ 
+      success: true, 
+      // postUrl: `https://www.linkedin.com/feed/update/${postResponse.data.id}`
+    });
+    
+  } catch (error) {
+    console.error('LinkedIn share error:',error ||  error.response?.data || error.message);
+    if (req.file?.path) {
+      fs.unlinkSync(req.file.path);
+    }
+    
+    res.status(500).json({ 
+      error: 'Failed to share PDF', 
+      details: error.response?.data || error.message 
+    });
+  }
+
+};
+
+export {generateAccessToken ,getUserInfo , uploadContentHandler , scheduleContentHandler  , postLinkedinCarousel } 
