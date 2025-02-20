@@ -59,7 +59,7 @@ const InstagramAuth: React.FC = () => {
       console.error("Error fetching Instagram account:", error);
     }
   };
-
+ 
   useEffect(() => {
     const code = searchParams.get("code");
     if (code && !localStorage.getItem("code") ) {
