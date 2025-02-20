@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
-import { FileText, Download, Loader, Image as ImageIcon, Edit2, Plus, Trash2, ArrowLeft, ArrowRight, Upload, Sparkles } from 'lucide-react';
+
+import {Twitter, Linkedin, Instagram  , FileText, Download, Loader, Image as ImageIcon, Edit2, Plus, Trash2, ArrowLeft, ArrowRight, Upload, Sparkles } from 'lucide-react';
 import { generatePost } from '../lib/openai';
 import { generateImage } from '../lib/openai';
 import { supabase } from '../lib/supabase';
@@ -10,6 +11,8 @@ import pdfWorker from 'pdfjs-dist/build/pdf.worker?url';
 pdfjsLib.GlobalWorkerOptions.workerSrc = pdfWorker;
 import { useProfile } from '../hooks/useProfile';
 import { getSocialMediaAccountInfo } from '../lib/api';
+import { ScheduleModal } from '../components/ScheduleModal';
+import { useScheduledPosts } from '../hooks/useScheduledPosts';
 interface CarouselSlide {
   id: string;
   header: string;
@@ -60,6 +63,7 @@ const themes = [
 
 export function CarouselGenerator() {
   const { profile } = useProfile();
+  const {createPost} = useScheduledPosts() ; 
   const [topic, setTopic] = useState('');
   const [platform, setPlatform] = useState<'linkedin' | 'instagram'>('linkedin');
   const [slides, setSlides] = useState<CarouselSlide[]>([]);
@@ -71,6 +75,10 @@ export function CarouselGenerator() {
   const [linkedinProfile, setLinkedinProfile] = useState<string>('');
   const [postingOnInsta , setPostingOnInsta ] = useState<boolean>(false);
   const [postingOnLinkedin  , setPostingOnLinkedIn] = useState<boolean>(false) ; 
+  const [showScheduleModal , setShowScheduleModal] = useState<boolean>(false) ; 
+
+  const [schedulingInstagramCarousel , setSchedulingInstagramCarousel ] = useState<boolean>(false) ; 
+
   
 
   const handleBrandLogoUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
@@ -113,6 +121,7 @@ export function CarouselGenerator() {
       Format as JSON array: [{"header": "headline", "content": "detailed text", "emoji": "relevant_emoji"}, ...]`;
 
       let content = await generatePost(prompt, platform);
+      
       
       const generateImg = async (prompt : string ) => {
         try{
@@ -254,26 +263,13 @@ export function CarouselGenerator() {
     }
     }
     console.log("public images url = " , imageUrls) ;
-    const caption = await generatePost(topic   , "instagram")
-    try{
-      const accountInfo = await getSocialMediaAccountInfo("instagram") ; 
-      const {access_token , userId  } = accountInfo  ;
-      const response = await fetch('http://localhost:3000/publish/carousel/instagram' ,{
-        method: "POST",
-        headers: {
-          'Authorization': `Bearer ${access_token}`,
-          "Content-Type": "application/json",
-        },
-        body : JSON.stringify({imageUrls , userId , caption})
-      })
-      const data = await response.json() ; 
-      console.log("response from insta carousel api = " ,data ) ; 
-    }
-    catch(err : any ) 
-    {
-      console.log("Something went wrong while publishing carousel " , err || err?.message  )
-    }
+    console.log("image urls = " , imageUrls) ; 
+    const caption = await generatePost(topic   , "instagram") ;
+    return {imageUrls ,caption } 
+    
   };
+
+  
  
 
   
@@ -366,8 +362,6 @@ export function CarouselGenerator() {
           useCORS: true,
           height: slide.clientHeight,
           width: slide.clientWidth,
-          // width: 1080,
-          // height: 1350
         });
         
         const imgData = canvas.toDataURL('image/png');
@@ -379,7 +373,26 @@ export function CarouselGenerator() {
       const pdfBlob = pdf.output('blob');
       console.log("pdf blob" , pdfBlob) 
       const pdfUrl = URL.createObjectURL(pdfBlob);
-      await convertPDFToImages(pdfUrl);
+      const {imageUrls , caption }  = await convertPDFToImages(pdfUrl);
+      try{
+        const accountInfo = await getSocialMediaAccountInfo("instagram") ; 
+        const {access_token , userId  } = accountInfo  ;
+        const response = await fetch('http://localhost:3000/publish/carousel/instagram' ,{
+          method: "POST",
+          headers: {
+            'Authorization': `Bearer ${access_token}`,
+            "Content-Type": "application/json",
+          },
+          body : JSON.stringify({imageUrls , userId , caption})
+        })
+        const data = await response.json() ; 
+        console.log("response from insta carousel api = " ,data ) ; 
+      }
+      catch(err : any ) 
+      {
+        console.log("Something went wrong while publishing carousel " , err || err?.message  )
+      }
+     
     }
     catch(error : any ) 
     {
@@ -390,9 +403,105 @@ export function CarouselGenerator() {
     }
 
   }
-  const handleLinkedinExport = () => {
+
+
+  const handleScheduleCarouselOnInstagram = async (date : string    , postId : null | string = null) => {
+    setSchedulingInstagramCarousel(true ) ;
+    if (slides.length === 0) {
+      setError('No slides to export');
+      return;
+    }
+    setError(null);
+    try{
+      const pdf = new jsPDF('p', 'px', [1080, 1350]);
+      const pdfPages = [];
+  
+      for (let i = 0; i < slides.length; i++) {
+        const slide = document.getElementById(`slide-${i}`);
+        if (!slide) continue;
+  
+        const canvas = await html2canvas(slide, {
+          scale: 2,
+          backgroundColor: slides[i].backgroundColor,
+          logging: false,
+          useCORS: true,
+          height: slide.clientHeight,
+          width: slide.clientWidth,
+        });
+        
+        const imgData = canvas.toDataURL('image/png');
+        pdfPages.push(imgData);
+        if (i > 0) pdf.addPage([1080, 1350], 'p');
+        pdf.addImage(imgData, 'PNG', 0, 0, 1080, 1350);
+      }
+      
+      const pdfBlob = pdf.output('blob');
+      console.log("pdf blob" , pdfBlob) 
+      const pdfUrl = URL.createObjectURL(pdfBlob);
+      const {imageUrls , caption }  = await convertPDFToImages(pdfUrl);
+      const accountInfo = await getSocialMediaAccountInfo("instagram") ; 
+      const {access_token , userId } = accountInfo  ;  
+      if(!postId) 
+        {
+          const post = {
+            platform: platform ,
+            content : caption ,
+            media_urls : [] , 
+            scheduled_for  :date , 
+            status : "pending" , 
+          }
+          const createdPost = await createPost(post) ; 
+          console.log("createdPost (in instagram) = " , createdPost ); 
+          const response  = await fetch("http://localhost:3000/schedule/carousel/instagram" , {
+            method : "POST" ,
+            headers: {
+              'Authorization': `Bearer ${access_token}`, 
+              "Content-Type" : "application/json" ,
+            } , 
+            body : JSON.stringify({ imageUrls , userId , date : date ,  caption, jobId : createdPost?.id })
+          })
+          const data = await response.json() 
+          console.log("scheduled insta post api " , data ) ;
+        }  
+    }
+    catch(error : any ) 
+    {
+      setError(error?.message)  ; 
+      console.log("Something went wrong while scheduling carousel post for instagram => " , error || error?.message )
+    }
+    finally{
+      setSchedulingInstagramCarousel(false) ; 
+
+    }
+
+  }
+
+  const handleScheduleCarouselOnLinkedin = (date  :string   ,  postId : null | string = null) => {
+
+  }
+
+  const handleLinkedinExport = async () => {
     setPostingOnLinkedIn(true) ; 
-    exportToPDF() 
+    // exportToPDF() 
+    const caption = await generatePost(topic   , "linkedin")
+    try{
+      const accountInfo = await getSocialMediaAccountInfo("linkedin") ; 
+      const {access_token , userId  } = accountInfo  ;
+      const response = await fetch('http://localhost:3000/upload/multi/images' ,{
+        method: "POST",
+        headers: {
+          'Authorization': `Bearer ${access_token}`,
+          "Content-Type": "application/json",
+        },
+        body : JSON.stringify({  caption , id : userId })
+      })
+      const data = await response.json() ; 
+      console.log("response from insta carousel api = " ,data ) ; 
+    }
+    catch(err : any ) 
+    {
+      console.log("Something went wrong while publishing carousel " , err || err?.message  )
+    }
     setPostingOnLinkedIn(false) ;
   }
 
@@ -529,7 +638,7 @@ export function CarouselGenerator() {
             )}
 
 
-          {slides.length > 0 && (
+          {slides.length > 0 && platform == "instagram" &&  (
               <button
                 onClick={handleInstagramExport}
                 disabled={postingOnInsta}
@@ -542,13 +651,32 @@ export function CarouselGenerator() {
                   </>
                 ) : (
                   <>
-                    <Download className="h-5 w-5" />
-                    <span className='capitalize'>Post to instagram</span>
+                    <Instagram className="h-5 w-5" />
+                    <span className='capitalize'>Post</span>
                   </>
                 )}
               </button>
             )}
-             {slides.length > 0 && (
+             {slides.length > 0 && platform == "instagram" &&  (
+              <button
+                onClick={() => {setShowScheduleModal(true)}}
+                disabled={schedulingInstagramCarousel}
+                className="flex-1 bg-purple-600 hover:bg-purple-700 text-white px-4 py-2 rounded-lg flex items-center justify-center space-x-2 disabled:opacity-50"
+              >
+                {schedulingInstagramCarousel ? (
+                  <>
+                    <Loader className="h-5 w-5 animate-spin" />
+                    <span>Scheduling...</span>
+                  </>
+                ) : (
+                  <>
+                    <Instagram className="h-5 w-5" />
+                    <span className='capitalize'>Schedule</span>
+                  </>
+                )}
+              </button>
+            )}
+             {slides.length > 0 && platform == "linkedin" &&  (
               <button
                 onClick={handleLinkedinExport}
                 disabled={postingOnLinkedin}
@@ -561,8 +689,27 @@ export function CarouselGenerator() {
                   </>
                 ) : (
                   <>
-                    <Download className="h-5 w-5" />
-                    <span className='capitalize'>Post to linkedin</span>
+                    <Linkedin className="h-5 w-5" />
+                    <span className='capitalize'>Post</span>
+                  </>
+                )}
+              </button>
+            )}
+            {slides.length > 0 && platform == "linkedin" &&  (
+              <button
+                onClick={() => {setShowScheduleModal(true ) }}
+                disabled={postingOnLinkedin}
+                className="flex-1 bg-[#1E40AF] hover:bg-[#2753e6]  text-[#FFFFFF] px-4 py-2 rounded-lg flex items-center justify-center space-x-2 disabled:opacity-50"
+              >
+                {postingOnLinkedin ? (
+                  <>
+                    <Loader className="h-5 w-5 animate-spin" />
+                    <span>Scheduling...</span>
+                  </>
+                ) : (
+                  <>
+                    <Linkedin className="h-5 w-5" />
+                    <span className='capitalize'>Schedule</span>
                   </>
                 )}
               </button>
@@ -650,31 +797,6 @@ export function CarouselGenerator() {
 >
     {slide.content}
 </div>
-
-
-          {/* <p
-            style={{ fontFamily: slide.contentFont, fontSize: slide.contentSize }}
-            className="text-center flex items-start space-x-2 w-full"
-          >
-            <span className="text-2xl">{slide.icon}</span>
-            <textarea
-            
-             style={{ 
-              wordBreak: 'break-word',
-              height: 'auto',
-              whiteSpace: 'pre-wrap',
-              overflowY: 'hidden', 
-              minHeight: '40px',   
-              minWidth : "100%"
-              
-              }}
-            className="bg-transparent outline-none w-full px-44 text-center"
-              value={slide.content}
-              // value="This is a long text that should break into the next line automatically when the width of the container is exceeded. Let's test it out!"
-              onChange={(e) => {updateSlide(slide.id, { content: e.target.value } ) ;  e.target.style.height = "auto" 
-              e.target.style.height = e.target.scrollHeight + "px"; } }
-            />
-          </p> */}
         </div>
 
         {/* Footer */}
@@ -704,9 +826,9 @@ export function CarouselGenerator() {
                     style={{
                       background: theme.bg,
                       backgroundImage: theme.bg.includes('gradient') ? theme.bg : undefined,
-                      minHeight: 'auto', // Ensures the slide grows dynamically
-                      padding: '20px',  // Adds space to prevent cropping
-                      breakInside: 'avoid', // Helps prevent content splitting in PDFs
+                      minHeight: 'auto', 
+                      padding: '20px', 
+                      breakInside: 'avoid',
                     }}
                   />
                 ))}
@@ -770,99 +892,24 @@ export function CarouselGenerator() {
           </div>
         </div>
       )}
+       {showScheduleModal && (
+              <ScheduleModal
+                plan={{
+                  id: '',
+                  profile_id: '',
+                  platform,
+                  format: 'text',
+                  topic,
+                  suggestion: '',
+                  status: 'pending',
+                  scheduled_for: new Date().toISOString(),
+                  created_at: new Date().toISOString(),
+                  updated_at: new Date().toISOString()
+                }}
+                onSchedule={platform ==  "instagram" ? handleScheduleCarouselOnInstagram : handleScheduleCarouselOnLinkedin}
+                onClose={() => setShowScheduleModal(false)}
+              />
+            )}
     </div>
   );
 }
-
-
-
-
-
-
-
-
-
-// // Initialize Supabase client
-// import { createClient } from '@supabase/supabase-js';
-
-// const supabase = createClient('YOUR_SUPABASE_URL', 'YOUR_SUPABASE_ANON_KEY');
-
-// // Function to upload the image to Supabase Storage
-// async function uploadToSupabase(imageData, fileName) {
-//   const { data, error } = await supabase.storage
-//     .from('your_bucket_name') // Replace with your bucket name
-//     .upload(fileName, imageData, {
-//       cacheControl: '3600', // Set the cache control to 1 hour
-//       upsert: true, // If the file already exists, overwrite it
-//     });
-
-//   if (error) {
-//     console.error('Error uploading to Supabase:', error);
-//     return null;
-//   }
-
-//   // Get the public URL for the uploaded image
-//   const publicUrl = supabase.storage
-//     .from('your_bucket_name')
-//     .getPublicUrl(fileName);
-
-//   return publicUrl.publicURL;
-// }
-
-// try {
-//   const loadingTask = pdfjsLib.getDocument(pdfUrl);
-//   const pdf = await loadingTask.promise;
-
-//   for (let i = 1; i <= pdf.numPages; i++) {
-//     const page = await pdf.getPage(i);
-//     const viewport = page.getViewport({ scale: 2 });
-//     const canvas = document.createElement('canvas');
-//     const context = canvas.getContext('2d');
-
-//     if (context === null) {
-//       console.error(`Failed to get 2D context for page ${i}`);
-//       continue; // Skip this page if context is null
-//     }
-
-//     canvas.width = viewport.width;
-//     canvas.height = viewport.height;
-
-//     const renderContext = {
-//       canvasContext: context,
-//       viewport: viewport
-//     };
-    
-//     await page.render(renderContext);
-
-//     // Convert canvas to image data URL
-//     const imgData = canvas.toDataURL('image/png');
-
-//     // Convert the image data URL to a Blob for uploading
-//     const imgBlob = await (await fetch(imgData)).blob();
-
-//     // Define the file name for the image
-//     const fileName = `slide-${i}.png`;
-
-//     // Upload the image to Supabase and get the public URL
-//     const publicUrl = await uploadToSupabase(imgBlob, fileName);
-
-//     if (publicUrl) {
-//       console.log(`Image for page ${i} uploaded successfully! Public URL: ${publicUrl}`);
-//     }
-
-//     // Optionally, you can automatically trigger the download as you were doing earlier
-//     const link = document.createElement('a');
-//     link.href = publicUrl;
-//     link.download = fileName;
-//     document.body.appendChild(link);
-
-//     setTimeout(() => {
-//       link.click();
-//       document.body.removeChild(link); // Cleanup
-//     }, 500); // Adding a slight delay to ensure sequential downloads
-//   }
-
-//   console.log('All images uploaded and ready to download!');
-// } catch (error) {
-//   console.error('Error converting PDF:', error);
-// }

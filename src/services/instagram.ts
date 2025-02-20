@@ -5,8 +5,7 @@ import { INSTA_APIPATH } from "../constants";
 
 export class InstagramServices {
 
-   private static token:string = 'EAAQOGd4dBrcBO7Wp0PGYZBmgZAgTjeZA3eIprB5For5PjVyKeQ9Y5jrc4otBDrqZCKQ5oaKNcMi1eDvh8IwxoYZABauAt1CTViw3C8ozkWrjN7iffq78KVpjg01nTB7EolJdlU7GOtAP6j6YyR09v0POXg5DdWZB0lc7zq9OHhMc7Uvo4dZAO8ovedVJGq9y4By4m7tThqXy8rwb2vmCZCZBOSgja5QZDZD'
-
+   private static token:string = 'EAAQOGd4dBrcBO3Nol3FWZByLrO48mJsJsyZBj40mTSh8wZCrl8UFV1vOYDKrpUhBaNLSoqw33CXKI0Th2ISbI3sv3ZBpaPmQFqNIt1J7vAEHmZAvxZA52dvK66GaQRYsJ1aIt1ZA1pjqSytTnZBVEEp7SOimBz1F9VIeHd0dlOZCh48Fzl8aDCmWNZB7SCSZBbISiJ3Qzlz5ZCNol5LVSfMXnnbMfAplrwZDZD'
     static async fetchLinkedAccounts(instaToken:string){
 
         try {

@@ -195,7 +195,7 @@ const scheduleContentHandler = async (req , res ) => {
     return res.status(500).json({message : "Failed to schedule instagram post" })
   }
 }
-async function publishCarousel(imageUrls , ACCESS_TOKEN , IG_USER_ID , caption) {
+async function publishCarousel(imageUrls , ACCESS_TOKEN , IG_USER_ID , caption , postId = null ) {
   console.log(imageUrls)
   try {
     const mediaContainerIds = [];
@@ -239,6 +239,10 @@ async function publishCarousel(imageUrls , ACCESS_TOKEN , IG_USER_ID , caption) 
     );
 
     console.log("Carousel published successfully! Post ID:", publishResponse.data.id);
+    if(postId) 
+    {
+      await updateScheduledPost(postId , {status : 'published'})
+    }
     return publishResponse.data.id;
   } catch (error) {
     console.error("Error publishing carousel:", error || error.response?.data || error.message);
@@ -247,7 +251,7 @@ async function publishCarousel(imageUrls , ACCESS_TOKEN , IG_USER_ID , caption) 
 }
 
 const publishInstagramCarousel = async (req, res) => {
-  const {imageUrls  , userId , caption}  = req.body;
+  const {imageUrls  , userId , caption }  = req.body;
   const authHeader = req.header("Authorization") ;
   
   if(!userId) 
@@ -274,5 +278,48 @@ const publishInstagramCarousel = async (req, res) => {
     });
   }
 }
+const scheduleInstagramCarousel = async (req  , res ) => {
+  const {imageUrls  , userId , date  ,  caption , jobId}  = req.body;
+  const authHeader = req.header("Authorization") ;
+  if (!authHeader || !authHeader.startsWith('Bearer ')) {
+    return res.status(401).json({ error: 'Unauthorized: No valid access token provided' });
+  }
+  if(!jobId || !imageUrls || !userId || !date || !caption  ) 
+  {
+      return res.status(400).json({ error: "Invalid body"}) ;
+  }
+    const ACCESS_TOKEN = authHeader.replace('Bearer ', '')
+    console.log("access toke ="  ,ACCESS_TOKEN ) 
+  try {
+    const response  = await loadScheduledJobs() ; 
+    if(response) {
+      if( scheduledJobsMap.has(jobId) && scheduledJobsMap.get(jobId)?.cancel){
+        const job = scheduledJobsMap.get(jobId) 
+        console.log("jobb" , job); 
+        job.cancel()  ; 
+        console.log("cancelling already scheduled job and scheduling a new one" )
+        scheduledJobsMap.delete(jobId) 
+        const newJob = schedule.scheduleJob(date ,  () => {   publishCarousel(imageUrls , ACCESS_TOKEN , userId , caption , jobId)}  ) ;
+        scheduledJobsMap.set(jobId , newJob) ; 
+       }
+       else{
+        console.log("scheduling new job")
+        const job =schedule.scheduleJob(date ,  () => { publishCarousel(imageUrls , ACCESS_TOKEN , userId , caption , jobId)}  ) ;
+        console.log("job = " , job) ;
+        scheduledJobsMap.set(jobId , job) ; 
+       }
+    return res.status(201).json({message:"Scheduled Instagam CAROUSEL for " , date })
+    }
 
-export {generateAccessToken , getUserInfo  , uploadContentHandler , scheduleContentHandler  , publishInstagramCarousel}
+
+  } catch (error) {
+    res.status(500).json({
+      success: false,
+      message: "Error publishing carousel post",
+      error: error.message,
+    });
+  }
+
+}
+
+export {generateAccessToken , getUserInfo  , uploadContentHandler , scheduleContentHandler  , publishInstagramCarousel , scheduleInstagramCarousel}

@@ -182,87 +182,111 @@ const postLinkedinCarousel = async (req, res) => {
   console.log("accessToken" , accessToken) ;
   
   try {
-    const initializeUploadResponse = await axios.post(
-      'https://api.linkedin.com/documents?action=initializeUpload',
-      {
-        "initializeUploadRequest": {
-              "owner": `urn:li:person:${id}`
-        }
-      }
-      ,
-      {
-        headers: {
-          'Authorization': `Bearer ${accessToken}`,
-          'Content-Type': 'application/json',
-          'X-Restli-Protocol-Version': '2.0.0',
-          'LinkedIn-Version': 202502,
-        }
-      }
+    const filePath = req.file.path;
+    const registerResponse = await axios.post(
+        "https://api.linkedin.com/v2/assets?action=registerUpload",
+        {
+          "registerUploadRequest": {
+            "owner": `urn:li:person:${id}`,
+            "recipes": ["urn:li:digitalmediaRecipe:document"],
+            "serviceRelationships": [
+              {
+                "relationshipType": "OWNER",
+                "identifier": "urn:li:userGeneratedContent"
+              }
+            ]
+          }
+        },
+        { headers: { Authorization: `Bearer ${accessToken}`, "Content-Type": "application/json" } }
     );
-    console.log("initalize response " , initializeUploadResponse) ; 
-    const uploadData = initializeUploadResponse.data.value;
-    const uploadUrl = uploadData.uploadUrl;
-    const assetUrn = uploadData.document;
-    const fileBuffer = fs.readFileSync(req.file.path);
-    await axios.put(uploadUrl, fileBuffer, {
-      headers: {
-        'Authorization': `Bearer ${accessToken}`,
-        'Content-Type': 'application/pdf',
-        'LinkedIn-Version': 202502,
-      }
+
+    const asset = registerResponse.data.value.asset;
+    const uploadUrl = registerResponse.data.value.uploadMechanism["com.linkedin.digitalmedia.uploading.MediaUploadHttpRequest"].uploadUrl;
+    const pdfData = fs.readFileSync(filePath);
+    await axios.put(uploadUrl, pdfData, {
+        headers: { "Content-Type": "application/pdf" },
     });
-    // const postResponse = await axios.post(
-    //   'https://api.linkedin.com/v2/ugcPosts',
-    //   {
-    //     author: `urn:li:person:${id}`,
-    //     lifecycleState: "PUBLISHED",
-    //     specificContent: {
-    //       "com.linkedin.ugc.ShareContent": {
-    //         shareCommentary: {
-    //           text: caption || "Check out this document!"
-    //         },
-    //         shareMediaCategory: "DOCUMENT",
-    //         media: [
-    //           {
-    //             status: "READY",
-    //             media: assetUrn,
-    //             title: {
-    //               text: req.file.originalname
-    //             }
-    //           }
-    //         ]
-    //       }
-    //     },
-    //     visibility: {
-    //       "com.linkedin.ugc.MemberNetworkVisibility": "PUBLIC"
-    //     }
-    //   },
-    //   {
-    //     headers: {
-    //       'Authorization': `Bearer ${accessToken}`,
-    //       'Content-Type': 'application/json',
-    //       'X-Restli-Protocol-Version': '2.0.0'
-    //     }
-    //   }
-    // );
-    fs.unlinkSync(req.file.path);
-    res.status(200).json({ 
-      success: true, 
-      // postUrl: `https://www.linkedin.com/feed/update/${postResponse.data.id}`
-    });
-    
-  } catch (error) {
-    console.error('LinkedIn share error:',error ||  error.response?.data || error.message);
-    if (req.file?.path) {
-      fs.unlinkSync(req.file.path);
-    }
-    
-    res.status(500).json({ 
-      error: 'Failed to share PDF', 
-      details: error.response?.data || error.message 
-    });
-  }
+    const publishResponse = await axios.post(
+        "https://api.linkedin.com/v2/ugcPosts",
+        {
+            author: `urn:li:person:${id}`,
+            lifecycleState: "PUBLISHED",
+            specificContent: {
+                "com.linkedin.ugc.ShareContent": {
+                    shareCommentary: { text: "Check out this document!" },
+                    shareMediaCategory: "DOCUMENT",
+                    media: [{ status: "READY", description: { text: "PDF Carousel" }, media: asset, title: { text: "My PDF" } }],
+                },
+            },
+            visibility: { "com.linkedin.ugc.MemberNetworkVisibility": "PUBLIC" },
+        },
+        { headers: { Authorization: `Bearer ${accessToken}`, "Content-Type": "application/json" } }
+    );
+
+    res.json({ message: "PDF Uploaded and Post Created!", postResponse: publishResponse.data });
+} catch (error) {
+    console.error(error);
+    res.status(500).json({ error: "Failed to upload PDF" });
+}
+
+
 
 };
 
-export {generateAccessToken ,getUserInfo , uploadContentHandler , scheduleContentHandler  , postLinkedinCarousel } 
+
+const postMultipleImagesLinkedin = async (req , res ) => {
+  const imageUrls = [
+  "https://zkzdqldpzvjeftxbzgvh.supabase.co/storage/v1/object/public/profile-images/uploads/Dalle-slide-20250220084749049-1.png",
+  "https://zkzdqldpzvjeftxbzgvh.supabase.co/storage/v1/object/public/profile-images/uploads/Dalle-slide-20250220084809260-2.png",
+  "https://zkzdqldpzvjeftxbzgvh.supabase.co/storage/v1/object/public/profile-images/uploads/Dalle-slide-20250220084823063-3.png"]
+  console.log("image urls = " , imageUrls) 
+  const {  caption , id } = req.body; 
+  console.log("caption = " , caption ) ; 
+  console.log("id = " , id ) ; 
+  const authHeader = req.header("Authorization")
+  if(!id) 
+    {
+      return res.status(400).json({message : "invalid body"})
+    }
+  if (!authHeader || !authHeader.startsWith('Bearer ')) {
+    return res.status(401).json({ error: 'Unauthorized: No valid access token provided' });
+  }
+  const accessToken = authHeader.replace("Bearer " , "") ; 
+  console.log("accessToken" , accessToken) ;
+  try {
+    const postData = {
+        author: `urn:li:person:${id}`,
+        lifecycleState: "PUBLISHED",
+        specificContent: {
+            "com.linkedin.ugc.ShareContent": {
+                shareCommentary: { text: caption  },
+                shareMediaCategory: "IMAGE",
+                media: imageUrls.map((url) => ({
+                    status: "READY",
+                    originalUrl: url, 
+                })),
+            },
+        },
+        visibility: { "com.linkedin.ugc.MemberNetworkVisibility": "PUBLIC" },
+    };
+
+    const postResponse = await axios.post(
+        "https://api.linkedin.com/v2/ugcPosts",
+        postData,
+        {
+            headers: {
+                Authorization: `Bearer ${accessToken}`,
+                "Content-Type": "application/json",
+            },
+        }
+    );
+
+    console.log("Post created:", postResponse.data);
+    return res.status(201).json({message : "carousel posted on linkedin"})
+} catch (error) {
+    console.error("Error creating post:", error )  ;
+    return res.status(500).json({message : `Something went wrong = ${ error}`})
+}
+}
+
+export {generateAccessToken ,getUserInfo , uploadContentHandler , scheduleContentHandler  , postLinkedinCarousel , postMultipleImagesLinkedin } 
