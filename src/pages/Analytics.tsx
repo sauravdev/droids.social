@@ -2,7 +2,8 @@ import React, { useEffect, useState } from 'react';
 import { TrendingUp, Users, MessageSquare, BarChart3, Calendar, ArrowUp, ArrowDown, Twitter, Linkedin, Instagram } from 'lucide-react';
 import { useSocialAccounts } from '../hooks/useSocialAccounts';
 import { InstagramServices } from '../services/instagram';
-
+import { getSocialMediaAccountInfo } from '../lib/api';
+import { BACKEND_APIPATH } from '../constants';
 // Time range options
 const timeRanges = [
   { label: '1M', value: '1month' },
@@ -27,16 +28,18 @@ export function Analytics() {
   const [period , setPeriod] = useState<string>('days_28'); 
   const [cardToggle,setCardToggle]= useState<boolean>(false);
   const [cardType , setCardType] = useState<string>('');
+
+  const [twitterInsights  , setTwitterInsights ] = useState({}) ; 
   const [platforms , setPlatforms] = useState([
     {
       name: "Twitter",
       icon: <Twitter className="h-6 w-6 text-white" />,
       color: "bg-blue-600",
-      followers: "0",
-      engagement: "0.0%",
+      followers: "6",
+      engagement: "63.5%",
       growth: 0,
-      posts: 0 ,
-      reach:'0.0%'
+      posts: 2 ,
+      reach:'100.0%'
       
     },
     {
@@ -71,6 +74,33 @@ export function Analytics() {
   const[instaPost, setInstaPost] = useState<number>();
   const[instaEngagement, setInstaEngagement] = useState<string>();
   const[instaReach, setInstaReach] = useState<number>();
+
+  const getTwitterInsights = async () => {
+
+    const {access_token , userId } = await getSocialMediaAccountInfo("twitter") ;
+    console.log("user id =" , userId) ;
+    const response = await fetch(`${BACKEND_APIPATH.BASEURL}/twitter/insights` , {
+      method : 'POST' , 
+      headers: {
+        'Authorization': `Bearer ${access_token}`, 
+        "Content-Type" : "application/json" ,
+      } , 
+      body : JSON.stringify({id : userId }) 
+    })
+    const data = await response.json() ; 
+    console.log("twitter insights = " , data) ; 
+    return data ;
+
+
+  }
+
+  useEffect(() => {
+
+    ;(async () => {
+      await getTwitterInsights()  ;
+    })() 
+
+  } , [] ) ; 
  
 
   useEffect(()=>{
@@ -197,6 +227,7 @@ useEffect(()=>{
       }
     }
 
+
     const showMetricData = ()=>{
       console.log("show type" ,cardType)
       if(cardType === 'Instagram'){
@@ -206,11 +237,11 @@ useEffect(()=>{
           metricCardData.totalPosts = instaPost  || 0
           metricCardData.reach = instaReach || 0
       }
-      else{
-        metricCardData.engagementRate ='0.00%'
-        metricCardData.totalFollowers  = '0'
-        metricCardData.totalPosts = 0
-        metricCardData.reach = 0
+      else if(cardType == "Twitter") {
+        metricCardData.engagementRate ='10.00%'
+        metricCardData.totalFollowers  = '6'
+        metricCardData.totalPosts = 2
+        metricCardData.reach = 100
       }
       setCardToggle(!cardToggle)
     }
@@ -288,7 +319,7 @@ useEffect(()=>{
       {/* Historical Performance */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         {/* Top Performing Content */}
-        <div className="bg-gray-800 rounded-xl p-6">
+        {/* <div className="bg-gray-800 rounded-xl p-6">
           <h2 className="text-xl font-bold text-white mb-4">Top Performing Content</h2>
           <div className="space-y-4">
             {topContent.map((content, index) => (
@@ -314,10 +345,10 @@ useEffect(()=>{
               </div>
             ))}
           </div>
-        </div>
+        </div> */}
 
         {/* AI Insights */}
-        <div className="bg-gray-800 rounded-xl p-6">
+        {/* <div className="bg-gray-800 rounded-xl p-6">
           <h2 className="text-xl font-bold text-white mb-4">AI Insights</h2>
           <div className="space-y-4">
             {aiInsights.map((insight, index) => (
@@ -336,7 +367,7 @@ useEffect(()=>{
               </div>
             ))}
           </div>
-        </div>
+        </div> */}
       </div>
     </div>
   );
@@ -460,58 +491,58 @@ function MetricCard({ icon, title, value, change, positive, timeRange  }: Metric
 // ];
 
 const topContent = [
-  {
-    platform: "twitter",
-    title: "AI in Social Media Management",
-    excerpt: "Exploring how AI is revolutionizing social media management...",
-    date: "2 weeks ago",
-    engagement: "2.4K",
-    reach: "15.2K",
-    growth: 45
-  },
-  {
-    platform: "linkedin",
-    title: "Future of Digital Marketing",
-    excerpt: "Insights into the evolving landscape of digital marketing...",
-    date: "1 month ago",
-    engagement: "1.8K",
-    reach: "12.5K",
-    growth: 32
-  },
-  {
-    platform: "instagram",
-    title: "Behind the Scenes",
-    excerpt: "A day in the life of our development team...",
-    date: "3 weeks ago",
-    engagement: "3.2K",
-    reach: "18.7K",
-    growth: -5
-  }
+  // {
+  //   platform: "twitter",
+  //   title: "AI in Social Media Management",
+  //   excerpt: "Exploring how AI is revolutionizing social media management...",
+  //   date: "2 weeks ago",
+  //   engagement: "2.4K",
+  //   reach: "15.2K",
+  //   growth: 45
+  // },
+  // {
+  //   platform: "linkedin",
+  //   title: "Future of Digital Marketing",
+  //   excerpt: "Insights into the evolving landscape of digital marketing...",
+  //   date: "1 month ago",
+  //   engagement: "1.8K",
+  //   reach: "12.5K",
+  //   growth: 32
+  // },
+  // {
+  //   platform: "instagram",
+  //   title: "Behind the Scenes",
+  //   excerpt: "A day in the life of our development team...",
+  //   date: "3 weeks ago",
+  //   engagement: "3.2K",
+  //   reach: "18.7K",
+  //   growth: -5
+  // }
 ];
 
 const aiInsights = [
-  {
-    type: "positive",
-    title: "Growing Engagement",
-    description: "Your engagement rate has increased by 25% in the last month, primarily driven by video content on LinkedIn.",
-    recommendation: "Consider creating more video content, especially during peak hours (2-4 PM EST)."
-  },
-  {
-    type: "warning",
-    title: "Content Gap Detected",
-    description: "There's a noticeable drop in engagement during weekends.",
-    recommendation: "Try scheduling 2-3 posts for weekends to maintain consistent engagement."
-  },
-  {
-    type: "negative",
-    title: "Declining Instagram Reach",
-    description: "Your Instagram reach has decreased by 15% in the past two weeks.",
-    recommendation: "Experiment with more Reels and Stories, which have shown higher reach potential."
-  },
-  {
-    type: "positive",
-    title: "Hashtag Performance",
-    description: "The hashtag #TechInnovation has generated 45% more impressions than your other hashtags.",
-    recommendation: "Include this hashtag in relevant future posts to maximize reach."
-  }
+  // {
+  //   type: "positive",
+  //   title: "Growing Engagement",
+  //   description: "Your engagement rate has increased by 25% in the last month, primarily driven by video content on LinkedIn.",
+  //   recommendation: "Consider creating more video content, especially during peak hours (2-4 PM EST)."
+  // },
+  // {
+  //   type: "warning",
+  //   title: "Content Gap Detected",
+  //   description: "There's a noticeable drop in engagement during weekends.",
+  //   recommendation: "Try scheduling 2-3 posts for weekends to maintain consistent engagement."
+  // },
+  // {
+  //   type: "negative",
+  //   title: "Declining Instagram Reach",
+  //   description: "Your Instagram reach has decreased by 15% in the past two weeks.",
+  //   recommendation: "Experiment with more Reels and Stories, which have shown higher reach potential."
+  // },
+  // {
+  //   type: "positive",
+  //   title: "Hashtag Performance",
+  //   description: "The hashtag #TechInnovation has generated 45% more impressions than your other hashtags.",
+  //   recommendation: "Include this hashtag in relevant future posts to maximize reach."
+  // }
 ];

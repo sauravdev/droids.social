@@ -7,6 +7,37 @@ const openai = new OpenAI({
   dangerouslyAllowBrowser: true // Note: In production, API calls should be made through a backend
 });
 
+
+interface ProcessRequest {
+  keyword: string;
+  source: string[];
+  N?: number;
+  converted_source?: string[];
+  content_types?: string[];
+}
+
+async function processContent(data: ProcessRequest): Promise<void> {
+  try {
+    const response = await fetch('http://64.227.142.60:5009/api/process', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify({data : "cricket"})
+    });
+
+    if (!response.ok) {
+      throw new Error(`HTTP error! status: ${response.status}`);
+    }
+    
+    const result = await response.json();
+    console.log('API response:', result);
+  } catch (error) {
+    console.error('Error processing content:', error);
+  }
+}
+
+
 // Cache for API responses
 const cache = new Map<string, { data: any; timestamp: number }>();
 const CACHE_DURATION = 1000 * 60 * 5; // 5 minutes
@@ -166,7 +197,44 @@ export async function generateProfileContent(name: string, niche: string) {
         content: prompt
       }
     ],
-    model  :"gpt-o3-mini",
+    model  :"gpt-4o-mini",
+    response_format: { type: "json_object" }
+  });
+
+  const response = completion.choices[0].message.content;
+  if (!response) throw new Error('Failed to generate profile content');
+
+  return JSON.parse(response);
+}
+
+
+
+export async function generateAIContentSuggestion() {
+const prompt = `Generate a JSON array of social media growth tips to help increase reach and followers. Each item in the array should follow this structure:
+{
+  "type": "Category of the tip (e.g., Engagement, Hashtags, Content Strategy, Posting Time, Algorithm Optimization, etc.)",
+  "title": "A short and catchy title summarizing the tip",
+  "description": "A detailed explanation, including actionable advice on how to use this strategy effectively"
+}
+
+Ensure:
+- Return a object having key as tips and value as array
+- At least 5 unique social media growth tips  
+- A mix of strategies related to engagement, posting consistency, algorithm hacks, audience interaction, and content optimization  
+- The response should be a valid JSON array.`;
+
+  const completion = await openai.chat.completions.create({
+    messages: [
+      {
+        role: "system",
+        content: "You are an expert at creating engaging professional profiles."
+      },
+      {
+        role: "user",
+        content: prompt
+      }
+    ],
+    model  :"gpt-4o-mini",
     response_format: { type: "json_object" }
   });
 

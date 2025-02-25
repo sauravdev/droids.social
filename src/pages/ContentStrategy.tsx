@@ -9,6 +9,7 @@ import type { ContentPlan, ContentStrategy as ContentStrategyType } from '../lib
 import { Loader, Plus, X, Calendar } from 'lucide-react';
 import {useScheduledPosts} from '../hooks/useScheduledPosts'
 import { getSocialMediaAccountInfo } from '../lib/api';
+import { BACKEND_APIPATH } from '../constants';
 interface ContentPlanCardProps {
   plan: ContentPlan;
   onSave: (planId: string, updates: Partial<ContentPlan>) => Promise<void>;
@@ -124,7 +125,7 @@ export function ContentStrategy() {
             {
               const accountInfo = await getSocialMediaAccountInfo("instagram") ; 
               const {access_token , userId } = accountInfo  ; 
-              const response  = await fetch("http://localhost:3000/schedule/post/instagram" , {
+              const response  = await fetch(`${BACKEND_APIPATH.BASEURL}/schedule/post/instagram` , {
                 method : "POST" ,
                 headers: {
                   'Authorization': `Bearer ${access_token}`, 
@@ -141,7 +142,7 @@ export function ContentStrategy() {
             {
                const accountInfo = await getSocialMediaAccountInfo("linkedin") ; 
               const {access_token , userId  } = accountInfo  ;
-              const response = await fetch('http://localhost:3000/schedule/post/linkedin' ,
+              const response = await fetch(`${BACKEND_APIPATH.BASEURL}/schedule/post/linkedin`,
                 {
                   method: 'POST',
                   headers: {
@@ -158,7 +159,7 @@ export function ContentStrategy() {
             }
             else if(platform == "twitter") 
             {
-              const scheduledResponse = await fetch("http://localhost:3000/schedule/post/api" , {method : "POST"   , headers: {
+              const scheduledResponse = await fetch(`${BACKEND_APIPATH.BASEURL}/schedule/post/api` , {method : "POST"   , headers: {
               'Content-Type': 'application/json',
             } , body : JSON.stringify({data : suggestion , date  : scheduled_for , jobId})})
               const data =  await scheduledResponse.json()  ;

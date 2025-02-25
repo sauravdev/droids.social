@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 import { Calendar, MessageSquare, Users, TrendingUp, Twitter, Linkedin, Instagram, Link2 } from 'lucide-react';
 import { useProfile } from '../hooks/useProfile';
 import { useScheduledPosts } from '../hooks/useScheduledPosts';
@@ -9,11 +9,30 @@ import { useNavigate } from 'react-router-dom';
 import { loginWithInstagram } from '../lib/InstagramAuth';
 import LinkedInAuth from '../lib/LinkedInAuth';
 import { handleLogin } from '../lib/LinkedInAuth';
+import { generateAIContentSuggestion } from '../lib/openai';
 
+interface suggestion{
+  type : string , 
+  title : string , 
+  description : string , 
+
+  
+}
 export function Dashboard() {
   const { profile, loading: profileLoading } = useProfile();
-  const { posts, loading: postsLoading } = useScheduledPosts();
+  const { loadPosts , loading: postsLoading } = useScheduledPosts();
   const { accounts, loading: accountsLoading } = useSocialAccounts();
+  const [posts, setPosts] = useState<ScheduledPost[]>([]);
+  const [suggestions ,  setSuggestions ] = useState<suggestion[]>([]) ; 
+  useEffect(() => {
+    ;(async () => {
+      const newPosts = await loadPosts() ; 
+      const response  = await  generateAIContentSuggestion() ; 
+      console.log(response ) ; 
+      setSuggestions(response?.tips) ; 
+      setPosts(newPosts) ; 
+    })()
+  } , [] ) ; 
 
 
   if (profileLoading || postsLoading || accountsLoading) {
@@ -143,17 +162,17 @@ export function Dashboard() {
       {/* AI Suggestions */}
       <div className="bg-gray-800 rounded-xl p-6">
         <h2 className="text-xl font-bold text-white mb-4">AI Suggestions</h2>
-        <div className="space-y-4">
+        {suggestions && suggestions?.length > 0 && <div className="space-y-4">
           {suggestions.map((suggestion, index) => (
             <div key={index} className="bg-gray-700 p-4 rounded-lg">
               <div className="flex items-center space-x-2 mb-2">
-                <div className={`w-2 h-2 rounded-full ${suggestion.type === 'high' ? 'bg-green-500' : 'bg-yellow-500'}`} />
-                <span className="text-white font-medium">{suggestion.title}</span>
+                <div className={`w-2 h-2 rounded-full ${suggestion?.type === 'high' ? 'bg-green-500' : 'bg-yellow-500'}`} />
+                <span className="text-white font-medium">{suggestion?.title}</span>
               </div>
-              <p className="text-gray-400">{suggestion.description}</p>
+              <p className="text-gray-400">{suggestion?.description}</p>
             </div>
           ))}
-        </div>
+        </div>}
       </div>
     </div>
   );
@@ -179,15 +198,15 @@ function StatCard({ icon, title, value, trend }: StatCardProps) {
   );
 }
 
-const suggestions = [
-  {
-    type: "high",
-    title: "Engagement Opportunity",
-    description: "A trending hashtag #TechTips is gaining traction. Consider creating a thread sharing your expertise."
-  },
-  {
-    type: "medium",
-    title: "Content Gap",
-    description: "Your audience engages well with tutorial content. Consider posting more how-to guides this week."
-  }
-];
+// const suggestions = [
+//   {
+//     type: "high",
+//     title: "Engagement Opportunity",
+//     description: "A trending hashtag #TechTips is gaining traction. Consider creating a thread sharing your expertise."
+//   },
+//   {
+//     type: "medium",
+//     title: "Content Gap",
+//     description: "Your audience engages well with tutorial content. Consider posting more how-to guides this week."
+//   }
+// ];

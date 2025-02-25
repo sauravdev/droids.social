@@ -28,6 +28,8 @@ const scheduledJobsMap = new Map();
 //   console.log(`key = ${key} , value = ${value}`)
 // })
 // }
+
+
 app.get("/fetch-image", async (req, res) => {
   try {
     const imageUrl = req.query.url; // Get the image URL from the frontend
@@ -48,6 +50,32 @@ app.listen(port, async () => {
   }
   console.log(`Proxy server is running at http://localhost:${port}`);
 });
+
+
+try {
+  const response = await fetch('http://64.227.142.60:5009/api/process', {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json'
+    },
+    body: JSON.stringify(
+      {
+        "keyword": "machine learning",
+        "source": ["arxiv", "twitter"],
+        "N": 2,
+        "converted_source": ["twitter", "linkedin", "blog", "instagram"],
+        "content_types": ["text", "image", "video"]
+      
+  
+      }
+    )
+  });
+  
+  const result = await response.json();
+  console.log('API response:', result );
+} catch (error) {
+  console.error('Error processing content:', error);
+}
 
 
 

@@ -125,6 +125,7 @@ export async function getSocialMediaAccountInfo(platform : string )
   const {data : accountInfo  , error } =   await supabase
   .from('social_accounts')
   .select("*")
+  .eq("profile_id" , user?.id) 
   .eq('platform' , platform)
   .single() 
 

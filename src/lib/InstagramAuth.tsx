@@ -2,6 +2,7 @@ import React, { useEffect, useState } from "react";
 import { useSearchParams } from "react-router-dom";
 import { supabase } from './supabase';
 import { useNavigate } from "react-router-dom";
+import { BACKEND_APIPATH } from "../constants";
 const loginWithInstagram = () => {
   localStorage.removeItem("code");
   localStorage.removeItem("instagram_access_token") ;
@@ -17,7 +18,7 @@ const InstagramAuth: React.FC = () => {
   const fetchAccessToken = async (code: string) => {
     try {
       const response = await fetch(
-        `http://localhost:3000/auth/instagram/token`,
+        `${BACKEND_APIPATH.BASEURL}/auth/instagram/token`,
         { headers: { 'Content-Type': 'application/json' }, method: "POST" , body  : JSON.stringify({code}) }
       );
       
@@ -35,7 +36,7 @@ const InstagramAuth: React.FC = () => {
   const fetchInstagramAccount = async () => {
     try {
       const response = await fetch(
-        `http://localhost:3000/auth/instagram/user/${localStorage.getItem("instagram_access_token")}` ,
+        `${BACKEND_APIPATH.BASEURL}/auth/instagram/user/${localStorage.getItem("instagram_access_token")}` ,
       ) 
       const data = await response.json();
       console.log("instagram response = " , response) ; 

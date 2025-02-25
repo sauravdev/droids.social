@@ -4,7 +4,7 @@ import { generatePost } from '../lib/openai';
 import type { ContentPlan } from '../lib/types';
 import Editor from './Editor';
 import { getSocialMediaAccountInfo } from '../lib/api';
-
+import { BACKEND_APIPATH } from '../constants';
 interface PostGeneratorProps {
   plan: ContentPlan;
   onSave: (updates: Partial<ContentPlan>) => Promise<void>;
@@ -22,7 +22,7 @@ export function PostGenerator({ plan, onSave, onSchedule }: PostGeneratorProps) 
 
   async function handlePostTweet() {
     setPosting(true) ;
-    const response = await fetch('http://localhost:3000/post/tweet/twitter' , {  headers: {
+    const response = await fetch(`${BACKEND_APIPATH.BASEURL}/post/tweet/twitter` , {  headers: {
       'Accept': 'application/json',
       'Content-Type': 'application/json'
     }, method :  "POST" ,body : JSON.stringify({data  :plan?.suggestion} )} )
@@ -36,7 +36,7 @@ export function PostGenerator({ plan, onSave, onSchedule }: PostGeneratorProps) 
         const accountInfo = await getSocialMediaAccountInfo("instagram") ; 
         const {access_token , userId  } = accountInfo  ;
   
-        const response = await fetch('http://localhost:3000/upload/post/instagram' ,
+        const response = await fetch(`${BACKEND_APIPATH.BASEURL}/upload/post/instagram` ,
           {
             method: 'POST',
             headers: {
@@ -59,7 +59,7 @@ export function PostGenerator({ plan, onSave, onSchedule }: PostGeneratorProps) 
      try{
           const accountInfo = await getSocialMediaAccountInfo("linkedin") ; 
           const {access_token , userId  } = accountInfo  ;
-          const response = await fetch('http://localhost:3000/upload/post/linkedin' ,
+          const response = await fetch(`${BACKEND_APIPATH.BASEURL}/upload/post/linkedin` ,
             {
               method: 'POST',
               headers: {

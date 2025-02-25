@@ -5,7 +5,7 @@ import { useContentPlan } from '../hooks/useContentPlan';
 import { Edit2, Clock, Send, MoreVertical, X, AlertCircle , ChevronLeft, ChevronRight, Delete, RefreshCcw } from 'lucide-react';
 import type { ScheduledPost } from '../lib/types';
 import { getSocialMediaAccountInfo } from '../lib/api';
-
+import { BACKEND_APIPATH } from '../constants';
 import Editor from '../components/Editor';
 
 interface Post {
@@ -74,7 +74,7 @@ function PostModal({refreshCalendar , setRefreshCalendar  ,  post, onClose}: Pos
       {
         const accountInfo = await getSocialMediaAccountInfo("instagram") ; 
         const {access_token , userId } = accountInfo  ; 
-        const response  = await fetch("http://localhost:3000/schedule/post/instagram" , {
+        const response  = await fetch(`${BACKEND_APIPATH.BASEURL}/schedule/post/instagram` , {
           method : "POST" ,
           headers: {
             'Authorization': `Bearer ${access_token}`, 
@@ -91,7 +91,7 @@ function PostModal({refreshCalendar , setRefreshCalendar  ,  post, onClose}: Pos
       {
          const accountInfo = await getSocialMediaAccountInfo("linkedin") ; 
         const {access_token , userId  } = accountInfo  ;
-        const response = await fetch('http://localhost:3000/schedule/post/linkedin' ,
+        const response = await fetch(`${BACKEND_APIPATH.BASEURL}/schedule/post/linkedin` ,
           {
             method: 'POST',
             headers: {
@@ -108,7 +108,7 @@ function PostModal({refreshCalendar , setRefreshCalendar  ,  post, onClose}: Pos
       }
       else if(post?.platform == "twitter") 
       {
-        const scheduledResponse = await fetch("http://localhost:3000/schedule/post/api" , {method : "POST"   , headers: {
+        const scheduledResponse = await fetch(`${BACKEND_APIPATH.BASEURL}/schedule/post/api` , {method : "POST"   , headers: {
         'Content-Type': 'application/json',
       } , body : JSON.stringify({data : post?.content , date  : scheduledFor , jobId  :post?.id })})
         const data =  await scheduledResponse.json()  ;
@@ -157,7 +157,7 @@ function PostModal({refreshCalendar , setRefreshCalendar  ,  post, onClose}: Pos
               const accountInfo = await getSocialMediaAccountInfo("instagram") ; 
               const {access_token , userId } = accountInfo  ;
         
-              const response = await fetch('http://localhost:3000/upload/post/instagram' ,
+              const response = await fetch(`${BACKEND_APIPATH.BASEURL}/upload/post/instagram`,
                 {
                   method: 'POST',
                   headers: {
@@ -181,7 +181,7 @@ function PostModal({refreshCalendar , setRefreshCalendar  ,  post, onClose}: Pos
         try{
               const accountInfo = await getSocialMediaAccountInfo("linkedin") ; 
               const {access_token , userId  } = accountInfo  ;
-              const response = await fetch('http://localhost:3000/upload/post/linkedin' ,
+              const response = await fetch(`${BACKEND_APIPATH.BASEURL}/upload/post/linkedin` ,
                 {
                   method: 'POST',
                   headers: {
@@ -203,7 +203,7 @@ function PostModal({refreshCalendar , setRefreshCalendar  ,  post, onClose}: Pos
       else if(post?.platform == "twitter") 
       {
         console.log("posting from twitter ... ") 
-      const response = await fetch('http://localhost:3000/post/tweet/twitter' , {  headers: {
+      const response = await fetch(`${BACKEND_APIPATH.BASEURL}/post/tweet/twitter` , {  headers: {
         'Accept': 'application/json',
         'Content-Type': 'application/json'
       }, method :  "POST" ,body : JSON.stringify({data  :post?.content , postId : post?.id  } )} )
@@ -394,7 +394,7 @@ export function Calendar() {
       <div className="flex justify-between items-center">
        <div className = "flex gap-4 items-center ">
        <h1 className="text-3xl font-bold text-white">Content Calendar</h1>
-       <button className={`${refreshingState ? 'animate-spin' : ""}`} onClick={() => {setRefreshingState(true) ; setRefreshCalender(!refreshCalendar)} }><RefreshCcw className = {`h-6 w-6 cursor-pointer text-gray-200  ${refreshingState  ? 'animate-spin' : ''}`} /></button>
+       <button className={`${refreshingState ? 'animate-spin' : ""}`} onClick={() => {setRefreshingState(true) ; setRefreshCalender(!refreshCalendar)} }><RefreshCcw className = {`h-6 w-6 text-gray-800    ${refreshingState  ? 'animate-spin' : ''}`} /></button>
        </div>
         <div className="flex space-x-4">
           <button onClick={() => setCurrentDate(subMonths(currentDate, 1))} className="text-white">
@@ -407,7 +407,7 @@ export function Calendar() {
         </div>
       </div>
 
-      <div className="space-y-8">
+      <div onClick={() => {setRefreshCalender(!refreshCalendar)}} className="space-y-8">
         {Object.entries(months).map(([monthKey, days]) => (
           <div key={monthKey} className="bg-gray-800 rounded-xl p-6">
             <h2 className="text-xl font-semibold text-white mb-4">

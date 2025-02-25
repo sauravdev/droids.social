@@ -8,6 +8,7 @@ import Editor from '../components/Editor.js';
 import { useSocialAccounts } from '../hooks/useSocialAccounts.js';
 import {useScheduledPosts} from '../hooks/useScheduledPosts.js'
 import { getSocialMediaAccountInfo } from '../lib/api.js';
+import { BACKEND_APIPATH } from '../constants/';
 interface HistoryItem {
   id: string;
   topic: string;
@@ -43,7 +44,7 @@ export function AIGenerator() {
   async function handlePostTweet() {
     setPosting(true) ;
 
-    const response = await fetch('http://localhost:3000/post/tweet/twitter' , {  headers: {
+    const response = await fetch(`${BACKEND_APIPATH.BASEURL}/post/tweet/twitter` , {  headers: {
       'Accept': 'application/json',
       'Content-Type': 'application/json'
     }, method :  "POST" ,body : JSON.stringify({data  :generatedContent} )} )
@@ -56,7 +57,7 @@ export function AIGenerator() {
       const accountInfo = await getSocialMediaAccountInfo("instagram") ; 
       const {access_token , userId  } = accountInfo  ;
 
-      const response = await fetch('http://localhost:3000/upload/post/instagram' ,
+      const response = await fetch(`${BACKEND_APIPATH.BASEURL}/upload/post/instagram`,
         {
           method: 'POST',
           headers: {
@@ -81,7 +82,7 @@ export function AIGenerator() {
     try{
       const accountInfo = await getSocialMediaAccountInfo("linkedin") ; 
       const {access_token , userId  } = accountInfo  ;
-      const response = await fetch('http://localhost:3000/upload/post/linkedin' ,
+      const response = await fetch(`${BACKEND_APIPATH.BASEURL}/upload/post/linkedin` ,
         {
           method: 'POST',
           headers: {
@@ -138,7 +139,6 @@ export function AIGenerator() {
     try {
       const content = await generatePost(topic, platform, tone);
       setGeneratedContent(content);
-      
       // Add to history
       const historyItem: HistoryItem = {
         id: crypto.randomUUID(),
@@ -214,13 +214,13 @@ export function AIGenerator() {
       {
         const createdPost = await createPost(post) ; 
         console.log("createdPost (in tweet) = " , createdPost ); 
-        const scheduledResponse = await fetch("http://localhost:3000/schedule/post/api" , {method : "POST"   , headers: {
+        const scheduledResponse = await fetch(`${BACKEND_APIPATH.BASEURL}/schedule/post/api` , {method : "POST"   , headers: {
           'Content-Type': 'application/json',
         } , body : JSON.stringify({data : generatedContent , date  : date.toString() , jobId  :createdPost?.id })})
         console.log("scheduled response from API  =  "  , scheduledResponse.json() ) ;
       }
       else{
-        const scheduledResponse = await fetch("http://localhost:3000/schedule/post/api" , {method : "POST"   , headers: {
+        const scheduledResponse = await fetch(`${BACKEND_APIPATH.BASEURL}/schedule/post/api` , {method : "POST"   , headers: {
           'Content-Type': 'application/json',
         } , body : JSON.stringify({data : generatedContent , date  : date.toString() , jobId  :postId})})
         console.log("scheduled response from API  =  "  , scheduledResponse.json() ) ;
@@ -253,7 +253,7 @@ export function AIGenerator() {
         }
         const createdPost = await createPost(post) ; 
         console.log("createdPost (in instagram) = " , createdPost ); 
-        const response  = await fetch("http://localhost:3000/schedule/post/instagram" , {
+        const response  = await fetch(`${BACKEND_APIPATH.BASEURL}/schedule/post/instagram` , {
           method : "POST" ,
           headers: {
             'Authorization': `Bearer ${access_token}`, 
@@ -266,7 +266,7 @@ export function AIGenerator() {
         console.log("scheduled insta post api " , data ) ;
       }
       else{
-        const response  = await fetch("http://localhost:3000/schedule/post/instagram" , {
+        const response  = await fetch(`${BACKEND_APIPATH.BASEURL}/schedule/post/instagram` , {
           method : "POST" ,
           headers: {
             'Authorization': `Bearer ${access_token}`, 
@@ -305,7 +305,7 @@ export function AIGenerator() {
       status : "pending" , 
     }
     const createdPost = await createPost(post) ;  
-    const response = await fetch('http://localhost:3000/schedule/post/linkedin' ,
+    const response = await fetch(`${BACKEND_APIPATH.BASEURL}/schedule/post/linkedin` ,
       {
         method: 'POST',
         headers: {
@@ -320,7 +320,7 @@ export function AIGenerator() {
     return data ;
    }
    else{
-    const response = await fetch('http://localhost:3000/schedule/post/linkedin' ,
+    const response = await fetch(`${BACKEND_APIPATH.BASEURL}/schedule/post/linkedin`,
       {
         method: 'POST',
         headers: {

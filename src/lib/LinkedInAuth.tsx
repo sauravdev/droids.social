@@ -2,6 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import { supabase } from './supabase';
 import { useNavigate } from'react-router-dom';
+import { BACKEND_APIPATH } from '../constants';
 
 const handleLogin = () => {
   localStorage.removeItem("linkedIn_access_token");
@@ -28,7 +29,7 @@ const LinkedInAuth = () => {
   const exchangeAuthCodeForToken = async (code: string) => {
     try {
         const response = await fetch(
-          `http://localhost:3000/auth/linkedIn/token`,
+          `${BACKEND_APIPATH.BASEURL}/auth/linkedIn/token`,
           { headers: { 'Content-Type': 'application/json' }, method: "POST" , body  : JSON.stringify({code}) }
         );
         const data = await response.json();
@@ -45,7 +46,7 @@ const LinkedInAuth = () => {
    
     
     try{
-        const response  =  await fetch(`http://localhost:3000/auth/linkedIn/user/${accessToken}`) ;
+        const response  =  await fetch(`${BACKEND_APIPATH.BASEURL}/auth/linkedIn/user/${accessToken}`) ;
         const data = await response.json() ; 
         setUserInfo(data);
         console.log("data" , data );

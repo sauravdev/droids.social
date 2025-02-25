@@ -1,13 +1,11 @@
 import axios from "axios";
 import { errorHandler, responseHandler } from "./responseHandler";
 import { INSTA_APIPATH } from "../constants";
- 
+
 
 export class InstagramServices {
-
-   private static token:string = 'EAAQOGd4dBrcBO3Nol3FWZByLrO48mJsJsyZBj40mTSh8wZCrl8UFV1vOYDKrpUhBaNLSoqw33CXKI0Th2ISbI3sv3ZBpaPmQFqNIt1J7vAEHmZAvxZA52dvK66GaQRYsJ1aIt1ZA1pjqSytTnZBVEEp7SOimBz1F9VIeHd0dlOZCh48Fzl8aDCmWNZB7SCSZBbISiJ3Qzlz5ZCNol5LVSfMXnnbMfAplrwZDZD'
+   private static token:string = 'EAAQOGd4dBrcBO3PyNi6W7PKcd3t9o7eODrNSJLwSxn0WiFKX4Kyq0feg5P6FzlfZACMtLETJeQw1TleI4rmZAiYDMnhEuPEq3vDxlyR6zpVe3VqzeMUZCc92hIct4z2KyQ0eOfQ3zqbYATaGyDM2z90YZBjigG7Aqv7xWiz4gRDHHIxgkxyOpH7IwScZBaBeOZAElzlnp3kN62ZBHh9zLpx7kUSDQZDZD'
     static async fetchLinkedAccounts(instaToken:string){
-
         try {
            const res = await axios.get(`${INSTA_APIPATH.BASEURL}/${INSTA_APIPATH.VERSION}/me/accounts?access_token=${this.token}`);
            return responseHandler(res)

@@ -3,11 +3,9 @@ import { getScheduledPosts, createScheduledPost, updateScheduledPost, deleteSche
 
 
 export function useScheduledPosts() {
-  
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [posts, setPosts] = useState<ScheduledPost[]>([]);
-
   useEffect(() => {
     loadPosts();
   }, []);
@@ -66,6 +64,6 @@ export function useScheduledPosts() {
     createPost, 
     updatePost, 
     deletePost,
-    loadPosts // Add the refresh function to the return value
+    loadPosts 
   };
 }

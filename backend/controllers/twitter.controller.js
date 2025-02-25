@@ -10,16 +10,16 @@ import { loadScheduledJobs  ,updateScheduledPost } from '../test.js';
 // const TWITTER_CLIENT_SECRET = 'MP0G4dsn7efJqahuJL2HsEm9L9eUBcHtCsLJLVHPF-t9qVMe9Q';
 // const REDIRECT_URI = 'http://localhost:5173/callback/twitter';
 
-const TWITTER_CLIENT_ID = 'RU5fRHA4eU4yNGFIWFAxXy1vRHY6MTpjaQ';
-const TWITTER_CLIENT_SECRET = 'FAQL-iZ6_0cGjjVEIrF2xqFtJv3lBbBhZkocclY8lZyUAkXee2';
+const TWITTER_CLIENT_ID = 'Y2RKeWJ2T1hzQ3dxNnBuT3BCUVI6MTpjaQ';
+const TWITTER_CLIENT_SECRET = 'kufZxX-Bz9f6uNyTqt4rGVytSoucxMkxEC_mjXywJdCaK7LNn6';
 const REDIRECT_URI = `http://localhost:5173/callback/twitter`;
 
 
 const twitterClient = new TwitterApi({
-    appKey:"D7gu7UvfHW6eSnNUQpAPRFnIE",
-    appSecret: "dZ88s1jBR0SxdtfFhDTN3qGdUGpEd6h3w4CQlUHwce4IpznJv6",
-    accessToken: "1885259563978678273-zafy8O4B6W7eTGdgEFCLfD2eWCgInP",
-    accessSecret: "Px704QUdVjanXoW09ilXo96qc34zVRyxrXvZS9uEOVQb9",
+    appKey:"q3YtflSi3IPte1PjEpS4kwHql",
+    appSecret: "xhnluIVG29rPXxb00nzwOp5jwsWFnWcyrd7PHtIERsroywbO7z",
+    accessToken: "1882376046340866048-VAnej1QhJB8viefa3BCH1qRM7utYpz",
+    accessSecret: "g0ESFoZLyyZTJ1r03ip6Cb7Uy2tNkbZ8ranoGa4edtiF7",
   });
 const generateAccessToken = async (req, res) => {
   const { code, code_verifier } = req.body;
@@ -144,5 +144,32 @@ const schedulePostHandler = async  (req , res ) => {
       return res.status(500).json({message : "Failed to schedule tweet" })
     }
   } 
+  const getInsights = async ( req  , res ) => {
+    const {id} = req.body ;
+    console.log("id = "  , id) ;
+    const authHeader = req.header("Authorization") ;
+    const ACCESS_TOKEN = authHeader.replace("Bearer " , "") ; 
+    
+    if(!id) 
+    {
+      return res.status(400).json({message : "invalid body : id field is absent"}) ;
+    }
+    if (!authHeader || !authHeader.startsWith('Bearer ')) {
+      return res.status(401).json({ error: 'Unauthorized: No valid access token provided' });
+    }
+  
+    try{
+      const response = await fetch(`https://api.twitter.com/2/users/${id}?user.fields=public_metrics` , {
+        headers: { Authorization: `Bearer ${ACCESS_TOKEN}` },
+      })
+      const data = await response.json() ; 
+      return res.status(200).json(data) ;  
+    }
+    catch(error) 
+    {
+      console.log("Something went wrong " , error || error?.message) ; 
+      return res.status(500).json(`Something went wrong ${error?.message}`) ; 
+    }
+  }
 
-export {generateAccessToken , getUserInfo  ,postContent , postContentHandler ,schedulePostHandler  }  
+export {generateAccessToken , getUserInfo  ,postContent , postContentHandler ,schedulePostHandler  ,getInsights }  

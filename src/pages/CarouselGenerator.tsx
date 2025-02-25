@@ -13,6 +13,7 @@ import { useProfile } from '../hooks/useProfile';
 import { getSocialMediaAccountInfo } from '../lib/api';
 import { ScheduleModal } from '../components/ScheduleModal';
 import { useScheduledPosts } from '../hooks/useScheduledPosts';
+import { BACKEND_APIPATH } from '../constants';
 interface CarouselSlide {
   id: string;
   header: string;
@@ -128,7 +129,7 @@ export function CarouselGenerator() {
           const imageURI =   await generateImage(prompt) ; 
           console.log("image generated = "  , imageURI  )  ;  
           try {
-            const proxyUrl = `http://localhost:3000/fetch-image?url=${encodeURIComponent(imageURI)}`;
+            const proxyUrl = `${BACKEND_APIPATH.BASEURL}/fetch-image?url=${encodeURIComponent(imageURI)}`;
             const response = await fetch(proxyUrl);
             const blob = await response.blob();
             const imageObjectUrl = URL.createObjectURL(blob);
@@ -316,23 +317,23 @@ export function CarouselGenerator() {
       downloadLink.textContent = 'Download PDF';
       document.body.appendChild(downloadLink);
       downloadLink.click();
-      const accountInfo = await getSocialMediaAccountInfo("linkedin") ; 
-      const {access_token , userId  } = accountInfo  ;
-      const formData = new FormData();
-      formData.append('pdf', pdfBlob, 'generated.pdf');
-      formData.append('caption', 'This is my new PDF publication on LinkedIn!');
-      formData.append('id', userId);
+      // const accountInfo = await getSocialMediaAccountInfo("linkedin") ; 
+      // const {access_token , userId  } = accountInfo  ;
+      // const formData = new FormData();
+      // formData.append('pdf', pdfBlob, 'generated.pdf');
+      // formData.append('caption', 'This is my new PDF publication on LinkedIn!');
+      // formData.append('id', userId);
      
-      await fetch('http://localhost:3000/upload/carousel/linkedin', {
-        method: 'POST',
-        headers: {
-          'Authorization': `Bearer ${access_token}`,
-        },
-        body: formData,
-    })
-        .then(response => response.json())
-        .then(data => console.log('Success:', data))
-        .catch(error => console.error('Error:', error));
+    //   await fetch('http://localhost:3000/upload/carousel/linkedin', {
+    //     method: 'POST',
+    //     headers: {
+    //       'Authorization': `Bearer ${access_token}`,
+    //     },
+    //     body: formData,
+    // })
+    //     .then(response => response.json())
+    //     .then(data => console.log('Success:', data))
+    //     .catch(error => console.error('Error:', error));
     } catch (err : any ) {
       setError('Error exporting to PDF: ' + (err?.message || 'Unknown error'));
     } finally {
@@ -377,7 +378,7 @@ export function CarouselGenerator() {
       try{
         const accountInfo = await getSocialMediaAccountInfo("instagram") ; 
         const {access_token , userId  } = accountInfo  ;
-        const response = await fetch('http://localhost:3000/publish/carousel/instagram' ,{
+        const response = await fetch(`${BACKEND_APIPATH.BASEURL}/publish/carousel/instagram` ,{
           method: "POST",
           headers: {
             'Authorization': `Bearer ${access_token}`,
@@ -452,7 +453,7 @@ export function CarouselGenerator() {
           }
           const createdPost = await createPost(post) ; 
           console.log("createdPost (in instagram) = " , createdPost ); 
-          const response  = await fetch("http://localhost:3000/schedule/carousel/instagram" , {
+          const response  = await fetch(`${BACKEND_APIPATH.BASEURL}/schedule/carousel/instagram`, {
             method : "POST" ,
             headers: {
               'Authorization': `Bearer ${access_token}`, 
@@ -487,7 +488,7 @@ export function CarouselGenerator() {
     try{
       const accountInfo = await getSocialMediaAccountInfo("linkedin") ; 
       const {access_token , userId  } = accountInfo  ;
-      const response = await fetch('http://localhost:3000/upload/multi/images' ,{
+      const response = await fetch(`${BACKEND_APIPATH.BASEURL}/upload/multi/images` ,{
         method: "POST",
         headers: {
           'Authorization': `Bearer ${access_token}`,

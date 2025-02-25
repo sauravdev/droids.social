@@ -1,13 +1,13 @@
 import { supabase } from './supabase';
 import { generateState, generateCodeVerifier, generateCodeChallenge } from './oauth';
-
+import { BACKEND_APIPATH } from '../constants';
 // const TWITTER_CLIENT_ID = 'Y2RKeWJ2T1hzQ3dxNnBuT3BCUVI6MTpjaQ';
 // const TWITTER_CLIENT_SECRET = 'MP0G4dsn7efJqahuJL2HsEm9L9eUBcHtCsLJLVHPF-t9qVMe9Q';
 // const REDIRECT_URI = `http://localhost:5173/callback/twitter`;
 
-const TWITTER_CLIENT_ID = 'RU5fRHA4eU4yNGFIWFAxXy1vRHY6MTpjaQ';
-const TWITTER_CLIENT_SECRET = 'FAQL-iZ6_0cGjjVEIrF2xqFtJv3lBbBhZkocclY8lZyUAkXee2';
+const TWITTER_CLIENT_ID = 'Y2RKeWJ2T1hzQ3dxNnBuT3BCUVI6MTpjaQ';
 const REDIRECT_URI = `http://localhost:5173/callback/twitter`;
+
 // Store OAuth state and PKCE values in localStorage
 function storeOAuthState(state: string, codeVerifier: string) {
   localStorage.setItem('twitter_oauth_state', state);
@@ -66,7 +66,7 @@ export async function handleTwitterCallback(code: string, returnedState: string)
     // Exchange code for tokens
     console.log("code = " , code);
     console.log("code verifier = " , codeVerifier);
-    const tokenResponse = await fetch('http://localhost:3000/twitter/oauth/token', {
+    const tokenResponse = await fetch(`${BACKEND_APIPATH.BASEURL}/twitter/oauth/token`, {
       method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({
@@ -86,7 +86,7 @@ export async function handleTwitterCallback(code: string, returnedState: string)
 
    
     // get user info 
-    const userResponse = await fetch('http://localhost:3000/twitter/users/me', {
+    const userResponse = await fetch(`${BACKEND_APIPATH.BASEURL}/twitter/users/me`, {
       method: 'GET',
       headers: {
         access_token: tokens.access_token,
