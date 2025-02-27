@@ -15,6 +15,7 @@ export function useProfileSettings() {
     async function loadSettings() {
       try {
         const data = await getProfileSettings();
+        console.log("profile information = " , data) ; 
         if (mounted) {
           setSettings(data);
           setError(null);

@@ -3,11 +3,15 @@ import { Twitter, Linkedin, Instagram, Link2, Unlink, Loader } from 'lucide-reac
 import { useSocialAccounts } from '../hooks/useSocialAccounts';
 import { initializeTwitterAuth } from '../lib/twitter';
 import { initializeLinkedInAuth } from '../lib/linkedin';
-
+import { getSocialAccounts, getSocialMediaAccountInfo } from '../lib/api';
+import { BACKEND_APIPATH } from '../constants';
 interface PlatformConfig {
   name: string;
   icon: React.ReactNode;
   color: string;
+}
+interface SocialAccountsManagerProps {
+  handleFetchProfileInfo : any 
 }
 
 const platforms: Record<string, PlatformConfig> = {
@@ -28,11 +32,12 @@ const platforms: Record<string, PlatformConfig> = {
   }
 };
 
-export function SocialAccountsManager() {
+export function SocialAccountsManager({handleFetchProfileInfo} : SocialAccountsManagerProps) {
   const { accounts, loading, error, unlinkAccount } = useSocialAccounts();
   const [connecting, setConnecting] = useState<string | null>(null);
   const [disconnecting, setDisconnecting] = useState<string | null>(null);
   const [updateError, setUpdateError] = useState<string | null>(null);
+  const [selectedPlatform , setSelectedPlatform] = useState<string>("") ; 
 
   const handleConnect = async (platform: string) => {
     setConnecting(platform);
@@ -75,6 +80,8 @@ export function SocialAccountsManager() {
     );
   }
 
+  
+
   return (
     <div>
       <h2 className="text-lg font-medium text-white mb-4">Connected Accounts</h2>
@@ -92,7 +99,7 @@ export function SocialAccountsManager() {
           const isLoading = connecting === platform || disconnecting === platform;
 
           return (
-            <div key={platform} className="flex items-center justify-between bg-gray-700 p-4 rounded-lg">
+            <div key={platform} onClick={() => {setSelectedPlatform(platform) ; handleFetchProfileInfo(platform) }} className={`flex items-center justify-between bg-gray-700 p-4 rounded-lg ${selectedPlatform  == platform ? "border-2 border-purple-500 " : ""} ` }>
               <div className="flex items-center space-x-3">
                 <div className={`${config.color}`}>
                   {config.icon}

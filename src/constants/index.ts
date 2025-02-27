@@ -6,3 +6,6 @@ export const INSTA_APIPATH = {
 export const BACKEND_APIPATH = {
     BASEURL : import.meta.env.VITE_BACKEND_URL,
 }
+export const PYTHON_SERVER_URI = {
+    BASEURL :  import.meta.env.VITE_PYTHON_SERVER_URI
+}

@@ -1,12 +1,15 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Loader, Sparkles } from 'lucide-react';
+import { Loader, Sparkles  ,Twitter } from 'lucide-react';
 import { useProfile } from '../hooks/useProfile';
 import { useProfileSettings } from '../hooks/useProfileSettings';
 import { useAuth } from '../context/AuthContext';
 import { generateProfileContent, generateImage } from '../lib/openai';
 import { SocialAccountsManager } from '../components/SocialAccountsManager';
 import { ProfileImageUpload } from '../components/ProfileImageUpload';
+import { BACKEND_APIPATH } from '../constants';
+import { supabase } from '../lib/supabase';
+import { getSocialMediaAccountInfo } from '../lib/api';
 
 export function ProfileSettings() {
   const navigate = useNavigate();
@@ -15,7 +18,7 @@ export function ProfileSettings() {
   const { settings, loading: settingsLoading, error: settingsError, updateSettings } = useProfileSettings();
   
   const [fullName, setFullName] = useState(profile?.full_name || '');
-  const [bio, setBio] = useState(settings?.bio || '');
+  const [bio, setBio] = useState( settings?.bio || '');
   const [niche, setNiche] = useState('');
   const [timezone, setTimezone] = useState(settings?.timezone || 'UTC');
   const [notificationPreferences, setNotificationPreferences] = useState(
@@ -24,6 +27,40 @@ export function ProfileSettings() {
   const [updating, setUpdating] = useState(false);
   const [generating, setGenerating] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [updateTwitterProfile , setUpdateTwitterProfile] = useState<boolean>(false) ; 
+  const [publicAvatarTwitterUrl , setPublicAvatarTwitterUrl] = useState<string | null > (null) ; 
+  const [publicBannarTwitterUrl  , setPublicBannarTwitterUrl] = useState<string | null> (null) ; 
+  const [content , setContent ] = useState<any>({}) ;
+
+  useEffect(() => {
+    setFullName(profile?.full_name) ; 
+    setBio(settings?.bio) ;
+  } , [profile , settings] ) 
+   async function uploadToSupabase(imageData: File | Blob, fileName: string): Promise<string | null> {
+        try{
+          const { data, error } = await supabase.storage
+          .from('profile-images')  
+          .upload(fileName, imageData, {
+            cacheControl: '3600', 
+            upsert: true , 
+            contentType: imageData.type || 'image/png',
+          });
+      
+        if (error) {
+          console.error('Error uploading to Supabase:', error);
+          return null;
+        }
+        const { data: urlData } = supabase.storage
+          .from('profile-images')
+          .getPublicUrl(fileName);
+      
+        return urlData?.publicUrl ?? null;
+        }
+        catch(err) 
+        {
+          console.log("error  = " , err ) 
+        } 
+    }
   
 
   const handleGenerateProfile = async () => {
@@ -37,28 +74,49 @@ export function ProfileSettings() {
 
     try {
       // Generate profile content
-      const content = await generateProfileContent(fullName, niche);
+      const newContent = await generateProfileContent(fullName, niche);
+      setContent(newContent) ; 
       
       // Generate images using the generated prompts
       const [avatarUrl, bannerUrl] = await Promise.all([
-        generateImage(content.profileImagePrompt),
-        generateImage(content.bannerImagePrompt)
+        generateImage(newContent.profileImagePrompt),
+        generateImage(newContent.bannerImagePrompt)
       ]);
+      console.log("avatarUrl , bannerUrl = " , avatarUrl , " ",  bannerUrl) ; 
+      const proxyAvatarUrl = `${BACKEND_APIPATH.BASEURL}/fetch-image?url=${encodeURIComponent(avatarUrl)}`;
+      const response = await fetch(proxyAvatarUrl);
+      const avatarImgBLOB = await response.blob();
+      const timestamp = new Date().toISOString().replace(/[-:.TZ]/g, "");
+      const fileName = `uploads/Dalle-avatar-${timestamp}.png`;
+      const publicAvatarUrl = await uploadToSupabase(avatarImgBLOB, fileName);
+      if (publicAvatarUrl) {
+        console.log("public url after uploading to supabase = " , publicAvatarUrl) ; 
+        setPublicAvatarTwitterUrl(publicAvatarUrl)
+      }
+      const proxyBannerUrl = `${BACKEND_APIPATH.BASEURL}/fetch-image?url=${encodeURIComponent(bannerUrl)}`;
+      const bannar = await fetch(proxyBannerUrl);
+      const bannarImgBlob = await bannar.blob();
+      const newtimestamp = new Date().toISOString().replace(/[-:.TZ]/g, "");
+      const bannarFilename = `uploads/Dalle-avatar-${newtimestamp}.png`;
+      const publicBannarUrl = await uploadToSupabase(bannarImgBlob, bannarFilename);
+      if(publicBannarUrl) 
+      {
+        console.log("public url after uploading to supabase = " , publicBannarUrl) ; 
+        setPublicBannarTwitterUrl(publicBannarUrl)
+      }
+    
 
-      // Update profile and settings
       await Promise.all([
         updateProfile({
           full_name: fullName,
-          avatar_url: avatarUrl
+          avatar_url: publicAvatarUrl
         }),
         updateSettings({
-          bio: content.longBio,
-          banner_image_url: bannerUrl
+          bio: newContent.longBio,
+          banner_image_url: publicBannarUrl
         })
       ]);
-
-      // Update local state
-      setBio(content.longBio);
+      setBio(newContent.longBio);
     } catch (err: any) {
       setError(err.message);
     } finally {
@@ -72,10 +130,7 @@ export function ProfileSettings() {
     setError(null);
 
     try {
-      // Update profile
       await updateProfile({ full_name: fullName });
-
-      // Update settings
       await updateSettings({
         bio,
         timezone,
@@ -100,6 +155,98 @@ export function ProfileSettings() {
     );
   }
 
+  const handleTwitterProfileUpdate = async () => {
+    setUpdateTwitterProfile(true ) ;  
+
+      try{
+        const response = await fetch(`${BACKEND_APIPATH.BASEURL}/twitter/update/profile` ,{
+          method  :"POST" , 
+          headers : {
+            "Content-Type": "application/json",
+          } ,
+          body  : JSON.stringify({name : fullName , bio : content?.longBio , avatar : publicAvatarTwitterUrl   })
+        })
+        const data = await response.json() ; 
+        console.log("response = "  , data  ) ;  
+      }
+      catch(error : any ) 
+      {
+        setError(error?.message);
+        console.log("Something went wrong while updating profile information = " , error || error?.message )
+      }
+      finally{
+        setUpdateTwitterProfile(false) ; 
+      }
+
+    
+
+
+
+
+   
+  }
+  const handleFetchProfileInfo  = async (platform : string ) => {
+    console.log(platform) ; 
+    if(platform == "twitter") 
+    {
+     const {access_token } = await getSocialMediaAccountInfo(platform)  ;
+     try{
+ 
+       const userResponse = await fetch(`${BACKEND_APIPATH.BASEURL}/twitter/users/me`, {
+         method: 'GET',
+         headers: {
+           access_token 
+         },
+       });
+       const userData = await userResponse.json()  ;
+       console.log("user data  = " , userData) ; 
+       setFullName(userData?.data?.name) 
+     }
+     catch(err : any ) 
+     {
+       console.log("Something went wrong " , err?.message || err ) 
+       
+     } 
+    }
+    else if(platform == "instagram") 
+    {
+      try{
+        const {access_token  }  = await getSocialMediaAccountInfo(platform) ; 
+        const response = await fetch(
+              `${BACKEND_APIPATH.BASEURL}/auth/instagram/user/${access_token}` ,
+            ) 
+        const data = await response.json();
+        console.log("user data  = " , data)  ; 
+        setFullName(data?.username)
+      }
+      catch(err : any ) 
+      {
+        console.log("Something went wrong " , err?.message || err ) 
+        
+      } 
+    }
+  
+    else if(platform == "linkedin") 
+    {
+ 
+      try{
+        const {access_token } = await getSocialMediaAccountInfo(platform ) ;
+        const response  =  await fetch(`${BACKEND_APIPATH.BASEURL}/auth/linkedIn/user/${access_token}`) ;
+        const data = await response.json() ; 
+        console.log("user data = " , data) ;
+        setFullName(data?.name) 
+        
+      }
+      catch(err : any ) 
+      {
+        console.log("Something went wrong " , err?.message || err ) 
+        
+      } 
+    }
+      
+    }
+ 
+   
   return (
     <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
       <div className="mb-8">
@@ -149,7 +296,7 @@ export function ProfileSettings() {
             <input
               type="text"
               id="fullName"
-              value={fullName}
+              value={ fullName}
               onChange={(e) => setFullName(e.target.value)}
               className="mt-1 block w-full bg-gray-700 border border-gray-600 rounded-md shadow-sm py-2 px-3 text-white focus:ring-purple-500 focus:border-purple-500"
               required
@@ -176,7 +323,7 @@ export function ProfileSettings() {
             </label>
             <textarea
               id="bio"
-              value={bio}
+              value={ bio}
               onChange={(e) => setBio(e.target.value)}
               rows={4}
               className="mt-1 block w-full bg-gray-700 border border-gray-600 rounded-md shadow-sm py-2 px-3 text-white focus:ring-purple-500 focus:border-purple-500"
@@ -189,7 +336,7 @@ export function ProfileSettings() {
             </label>
             <select
               id="timezone"
-              value={timezone}
+              value={settings?.timezone || timezone}
               onChange={(e) => setTimezone(e.target.value)}
               className="mt-1 block w-full bg-gray-700 border border-gray-600 rounded-md shadow-sm py-2 px-3 text-white focus:ring-purple-500 focus:border-purple-500"
             >
@@ -265,12 +412,30 @@ export function ProfileSettings() {
                 'Save Changes'
               )}
             </button>
+
+            {!generating && bio !== "" &&   <button
+              onClick={() => {handleTwitterProfileUpdate() }}
+              type="submit"
+              disabled={updateTwitterProfile}
+              className="flex-1 flex justify-center capitazlize  items-center px-4 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-green-600 hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500 disabled:opacity-50"
+            >
+              {updateTwitterProfile ? (
+                <>
+                  <Loader className="animate-spin h-5 w-5 mr-2" />
+                  updating...
+                </>
+              ) : (
+               <>         <Twitter className='mr-2 h-4 w-4'/> <span className='capitalize '>Update profile</span>
+                          
+                </>
+              )}
+            </button>}
           </div>
         </form>
 
         {/* Social Accounts Section */}
         <div className="bg-gray-800 rounded-xl p-6">
-          <SocialAccountsManager />
+          <SocialAccountsManager handleFetchProfileInfo = {handleFetchProfileInfo} />
         </div>
       </div>
     </div>

@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { Calendar, MessageSquare, Users, TrendingUp, Twitter, Linkedin, Instagram, Link2 } from 'lucide-react';
+import { Calendar, MessageSquare, Users, TrendingUp, Twitter, Linkedin, Instagram, Link2} from 'lucide-react';
 import { useProfile } from '../hooks/useProfile';
 import { useScheduledPosts } from '../hooks/useScheduledPosts';
 import { useSocialAccounts } from '../hooks/useSocialAccounts';
@@ -10,6 +10,8 @@ import { loginWithInstagram } from '../lib/InstagramAuth';
 import LinkedInAuth from '../lib/LinkedInAuth';
 import { handleLogin } from '../lib/LinkedInAuth';
 import { generateAIContentSuggestion } from '../lib/openai';
+import { InstagramServices } from '../services/instagram';
+
 
 interface suggestion{
   type : string , 
@@ -23,16 +25,40 @@ export function Dashboard() {
   const { loadPosts , loading: postsLoading } = useScheduledPosts();
   const { accounts, loading: accountsLoading } = useSocialAccounts();
   const [posts, setPosts] = useState<ScheduledPost[]>([]);
-  const [suggestions ,  setSuggestions ] = useState<suggestion[]>([]) ; 
+  const [platform , setPlatform] = useState<string | null > (null) ; 
+  const [suggestions ,  setSuggestions ] = useState<suggestion[]>([]) ;
+  const [instaAccountId , setInstaAccountId] = useState<number>();
+  const [instaUserName , setInstaUserName] = useState<any>(); 
+  const [idConnectedWithInsta , setIdConnectedWithInsta] = useState<number>();
+  const[instaFollowers, setInstaFollowers] = useState<string>("");
+  const[instaEngagement, setInstaEngagement] = useState<string>("");
+
   useEffect(() => {
     ;(async () => {
       const newPosts = await loadPosts() ; 
       const response  = await  generateAIContentSuggestion() ; 
       console.log(response ) ; 
       setSuggestions(response?.tips) ; 
-      setPosts(newPosts) ; 
+      setPosts(newPosts) ;
+      fetchLinkedAccount()  
     })()
   } , [] ) ; 
+
+  useEffect(()=>{ 
+     if(idConnectedWithInsta){
+       getInstaAccountId(idConnectedWithInsta)
+     }
+  },[idConnectedWithInsta])
+
+  useEffect(()=>{
+      if(instaAccountId){
+  
+        getInstaInsights(instaAccountId,instaUserName)
+      
+      }
+    },[instaAccountId])
+
+  
 
 
   if (profileLoading || postsLoading || accountsLoading) {
@@ -42,6 +68,67 @@ export function Dashboard() {
       </div>
     );
   }
+  const getInstaAccountId = async (id:number) => {
+  
+      try {
+        const res = await InstagramServices.fetchInstaAccountID(id)
+        console.log("Response insta account id",res)
+        setInstaAccountId(res?.instagram_business_account?.id)
+            
+        } catch (error) {
+          console.error("Error fetching Instagram accounts", error);
+        }
+      }
+  
+  const getInstaInsights = async (instAccId:number,userName:string) => {
+  
+        try {
+          const res = await InstagramServices.insights(instAccId,userName)
+          console.log("Response insta insights",res) 
+          const followers:number = res?.business_discovery?.followers_count  ?? 0;
+          const totalLikes:number = res?.business_discovery?.media?.data.reduce((sum:number, post:any) => sum + (post?.like_count ?? 0), 0)?? 0;
+          const totalComments = res?.business_discovery?.media?.data.reduce((sum:any, post:any) => sum +  (post?.comments_count ?? 0), 0)?? 0; 
+          const engagement = followers > 0 ? ((totalLikes + totalComments) / followers) * 100 : 0;
+          
+          console.log("Engagement Rate:", engagement.toFixed(2) + "%");
+          setInstaFollowers(followers.toLocaleString())
+          setInstaEngagement(engagement.toFixed(2) + "%")
+          
+          } catch (error) {
+            console.error("Error fetching Instagram insights", error);
+          }
+        }
+
+
+     
+  
+  
+   
+  
+
+   const fetchLinkedAccount = async () =>{
+         const instaAccount = accounts.find((acc) => acc?.platform === "instagram");
+      
+  
+         if (!instaAccount || !instaAccount.access_token) {
+          console.error("Instagram account or token is missing");
+          return;
+         }
+         const instaToken: string  = instaAccount?.access_token; // Get the token
+         setInstaUserName(instaAccount?.username)
+        console.log('instatoken',instaToken);
+         try {
+              const res = await InstagramServices.fetchLinkedAccounts(instaToken)
+              console.log("Response insta fetch accounts",res?.data) 
+              const newId = res?.data[0]?.id
+              console.log("id = " , newId) ; 
+              setIdConnectedWithInsta(res?.data[0]?.id)
+              
+             
+         } catch (error) {
+              console.error("Error fetching linked accounts", error);
+         }
+    }
 
   const totalFollowers = accounts.reduce((sum, account) => sum + parseInt(account.username) || 0, 0);
   const upcomingPostsCount = posts.filter(post => new Date(post.scheduled_for) > new Date()).length;
@@ -102,21 +189,27 @@ export function Dashboard() {
               <Link2 className="h-4 w-4" />
             </button>
           </div>
+
+          <div className='flex flex-wrap gap-4 mt-4'>
+            <button onClick={() => {setPlatform("twitter")}} className={` px-4 py-2 rounded-xl ${platform == "twitter" ? " bg-blue-500 text-gray-200" : "bg-gray-200 text-blue-500"   } `}><Twitter/></button>
+            <button onClick={async () => {setPlatform("instagram") ; await fetchLinkedAccount() }} className={` px-4 py-2 rounded-xl ${platform == "instagram" ? "bg-purple-500 text-gray-200" : "bg-gray-200 text-purple-500"}`}><Instagram/></button>
+            <button onClick={() => {setPlatform("linkedin")}} className={`px-4 py-2 rounded-xl ${platform == "linkedin" ? " bg-blue-500 text-gray-200" : "bg-gray-200 text-blue-500"  }`}><Linkedin/></button>
+          </div>
         </div>
       )}
 
       {/* Stats Grid */}
-      <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
+      {platform == "twitter" && <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
         <StatCard
           icon={<Users className="w-6 h-6 text-purple-500" />}
           title="Total Followers"
-          value={totalFollowers.toLocaleString()}
+          value={"2"}
           trend="+23%"
         />
         <StatCard
           icon={<MessageSquare className="w-6 h-6 text-purple-500" />}
           title="Engagement Rate"
-          value="4.8%"
+          value="2.8%"
           trend="+1.2%"
         />
         <StatCard
@@ -131,7 +224,61 @@ export function Dashboard() {
           value="2.4%"
           trend="+0.6%"
         />
-      </div>
+      </div>}
+
+      {platform == "instagram" && <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
+        <StatCard
+          icon={<Users className="w-6 h-6 text-purple-500" />}
+          title="Total Followers"
+          value={instaFollowers.toString() }
+          trend="+23%"
+        />
+        <StatCard
+          icon={<MessageSquare className="w-6 h-6 text-purple-500" />}
+          title="Engagement Rate"
+          value="1.5%"
+          trend="+1.2%"
+        />
+        <StatCard
+          icon={<Calendar className="w-6 h-6 text-purple-500" />}
+          title="Scheduled Posts"
+          value={upcomingPostsCount.toString()}
+          trend="Next 7 days"
+        />
+        <StatCard
+          icon={<TrendingUp className="w-6 h-6 text-purple-500" />}
+          title="Growth Rate"
+          value="1.4%"
+          trend="+0.6%"
+        />
+      </div>}
+
+      {platform == "linkedin" && <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
+        <StatCard
+          icon={<Users className="w-6 h-6 text-purple-500" />}
+          title="Total Followers"
+          value={"0"}
+          trend="+23%"
+        />
+        <StatCard
+          icon={<MessageSquare className="w-6 h-6 text-purple-500" />}
+          title="Engagement Rate"
+          value="0.5%"
+          trend="+1.2%"
+        />
+        <StatCard
+          icon={<Calendar className="w-6 h-6 text-purple-500" />}
+          title="Scheduled Posts"
+          value={upcomingPostsCount.toString()}
+          trend="Next 7 days"
+        />
+        <StatCard
+          icon={<TrendingUp className="w-6 h-6 text-purple-500" />}
+          title="Growth Rate"
+          value="0.9%"
+          trend="+1.6%"
+        />
+      </div>}
 
       {/* Content Calendar Preview */}
       <div className="bg-gray-800 rounded-xl p-6 mb-8">

@@ -35,7 +35,7 @@ export function Analytics() {
       name: "Twitter",
       icon: <Twitter className="h-6 w-6 text-white" />,
       color: "bg-blue-600",
-      followers: "6",
+      followers: "2",
       engagement: "63.5%",
       growth: 0,
       posts: 2 ,
@@ -97,7 +97,7 @@ export function Analytics() {
   useEffect(() => {
 
     ;(async () => {
-      await getTwitterInsights()  ;
+      // await getTwitterInsights()  ;
     })() 
 
   } , [] ) ; 
@@ -221,7 +221,6 @@ useEffect(()=>{
             : platform
         )
       );
-     
       } catch (error) {
         console.error("Error fetching Instagram reach", error);
       }
@@ -239,9 +238,15 @@ useEffect(()=>{
       }
       else if(cardType == "Twitter") {
         metricCardData.engagementRate ='10.00%'
-        metricCardData.totalFollowers  = '6'
+        metricCardData.totalFollowers  = '2'
         metricCardData.totalPosts = 2
         metricCardData.reach = 100
+      }
+      else if(cardType == "Linkedin") {
+        metricCardData.engagementRate ='0.00%'
+        metricCardData.totalFollowers  = '2'
+        metricCardData.totalPosts = 0
+        metricCardData.reach = 0
       }
       setCardToggle(!cardToggle)
     }
@@ -275,7 +280,7 @@ useEffect(()=>{
       {/* Platform Overview */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
         {platforms.map(platform => (
-          <PlatformCard key={platform.name} {...platform} click={()=>setCardType(platform.name)} />
+          <PlatformCard cardType = {cardType} key={platform.name} {...platform} click={()=>setCardType(platform.name)} />
         ))}
       </div>
 
@@ -387,6 +392,7 @@ function PlatformIcon({ platform }: { platform: string }) {
 }
 
 interface PlatformCardProps {
+  cardType?:string , 
   name: string;
   icon: React.ReactNode;
   color: string;
@@ -398,9 +404,9 @@ interface PlatformCardProps {
 
 }
 
-function PlatformCard({ name, icon, color, followers, engagement, growth, posts ,click}: PlatformCardProps) {
+function PlatformCard({  cardType ,  name, icon, color, followers, engagement, growth, posts ,click}: PlatformCardProps) {
   return (
-    <div className="bg-gray-800 rounded-xl p-6" onClick={click}>
+    <div className={`bg-gray-800 rounded-xl p-6 ${cardType?.toLowerCase()  == name.toLowerCase() ? 'border-2 border-purple-500' : "" } `} onClick={click}>
       <div className="flex items-center justify-between mb-4">
         <div className={`p-3 rounded-lg ${color}`}>
           {icon}
@@ -430,6 +436,7 @@ function PlatformCard({ name, icon, color, followers, engagement, growth, posts 
 }
 
 interface MetricCardProps {
+
   icon: React.ReactNode;
   title: string;
   value: string;

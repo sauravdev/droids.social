@@ -4,8 +4,10 @@ import fetch from 'node-fetch' ;
 import { URLSearchParams  } from 'url';
 import { scheduledJobsMap } from "../index.js";
 import { loadScheduledJobs  ,updateScheduledPost } from '../test.js';
-; 
-
+import OAuth from 'oauth-1.0a'; 
+import crypto from 'node:crypto' ;
+import axios from 'axios' ;
+import qs from 'querystring'; 
 // const TWITTER_CLIENT_ID = 'Y2RKeWJ2T1hzQ3dxNnBuT3BCUVI6MTpjaQ';
 // const TWITTER_CLIENT_SECRET = 'MP0G4dsn7efJqahuJL2HsEm9L9eUBcHtCsLJLVHPF-t9qVMe9Q';
 // const REDIRECT_URI = 'http://localhost:5173/callback/twitter';
@@ -13,7 +15,6 @@ import { loadScheduledJobs  ,updateScheduledPost } from '../test.js';
 const TWITTER_CLIENT_ID = 'Y2RKeWJ2T1hzQ3dxNnBuT3BCUVI6MTpjaQ';
 const TWITTER_CLIENT_SECRET = 'kufZxX-Bz9f6uNyTqt4rGVytSoucxMkxEC_mjXywJdCaK7LNn6';
 const REDIRECT_URI = `http://localhost:5173/callback/twitter`;
-
 
 const twitterClient = new TwitterApi({
     appKey:"q3YtflSi3IPte1PjEpS4kwHql",
@@ -172,4 +173,42 @@ const schedulePostHandler = async  (req , res ) => {
     }
   }
 
-export {generateAccessToken , getUserInfo  ,postContent , postContentHandler ,schedulePostHandler  ,getInsights }  
+  const updateProfileInfo = async (req , res ) => {
+    const {name , bio , avatar } = req.body ; 
+    console.log("req body = " , req.body)  ;
+    const myHeaders = new Headers();
+myHeaders.append("Content-Type", "application/x-www-form-urlencoded");
+myHeaders.append("Cookie", "guest_id=v1%3A174047070539156476; guest_id_ads=v1%3A174047070539156476; guest_id_marketing=v1%3A174047070539156476; personalization_id=\"v1_ukYfe4WD/MYETqVKvPJHeA==\"; lang=en");
+
+const urlencoded = new URLSearchParams();
+urlencoded.append("name", "hemant s paliwal");
+urlencoded.append("description", "Hemant Paliwal is a passionate developer specializing in web and mobile applications. ");
+urlencoded.append("oauth_consumer_key", "q3YtflSi3IPte1PjEpS4kwHql");
+urlencoded.append("oauth_token", "1882376046340866048-VAnej1QhJB8viefa3BCH1qRM7utYpz");
+urlencoded.append("oauth_signature_method", "HMAC-SHA1");
+urlencoded.append("oauth_timestamp", "1740550183");
+urlencoded.append("oauth_nonce", "lsFqLSIPT3v");
+urlencoded.append("oauth_version", "1.0");
+urlencoded.append("oauth_signature", "qV/heGrKfs/T1p8djoGu/KXDZGU=");
+
+const requestOptions = {
+  method: "POST",
+  headers: myHeaders,
+  body: urlencoded,
+  redirect: "follow"
+};
+    try{
+      const response  = await fetch("https://api.x.com/1.1/account/update_profile.json", requestOptions) ; 
+      const data  = await response.json() ; 
+      console.log(data); 
+      return res.status(200).json(data )
+    }
+    catch(err) 
+    {
+      console.log(err) ; 
+      // return res.status(500).json({message : "Something went wrong"}) 
+    }
+    
+} 
+
+export {generateAccessToken , getUserInfo  ,postContent , postContentHandler ,schedulePostHandler  ,getInsights , updateProfileInfo }  

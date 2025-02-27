@@ -1,6 +1,7 @@
 import OpenAI from 'openai';
 import type { ContentStrategy } from './types';
-
+import { getCustomModels } from './api';
+import { PYTHON_SERVER_URI } from '../constants';
 // Initialize OpenAI client
 const openai = new OpenAI({
   apiKey: import.meta.env.VITE_OPENAI_API_KEY,
@@ -15,6 +16,7 @@ interface ProcessRequest {
   converted_source?: string[];
   content_types?: string[];
 }
+
 
 async function processContent(data: ProcessRequest): Promise<void> {
   try {
@@ -167,6 +169,8 @@ export async function generatePost(
     });
 
     const response = completion.choices[0].message.content;
+    console.log("response from handle generate " , response) ; 
+
     if (!response) throw new Error('Failed to generate post');
 
     setCache(cacheKey, response);
@@ -253,4 +257,45 @@ export async function generateImage(prompt: string) {
   });
 
   return response.data[0].url;
+}
+
+export async function generatePostFromCustomModel(prompt : string )
+{
+  try {
+    const customModels  = await getCustomModels() ;  
+    const model = customModels.find((model) => model.selected == true ) 
+    console.log("selected model found = " ,model )
+    if(model) 
+    {
+      const response = await openai.chat.completions.create({
+        model : model?.custom_model,
+        messages: [{ role: "user", content: prompt }]
+      });
+      console.log("Response:", response.choices[0].message.content);
+      return response.choices[0].message.content ; 
+    }
+    else{
+      const response = await fetch(`${PYTHON_SERVER_URI.BASEURL}/api/process`, {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json'
+            },
+            body: JSON.stringify(
+              {
+                "keyword": "artificial intelligence",
+                "source": ["arxiv"],
+                "converted_source": ["twitter"],
+                "content_types": ["text"]
+              }
+            )
+          });
+          const data = await response.json() ; 
+          console.log("response from the server post generation api " , data ) ; 
+      console.log("Response:", data.results[0].text[0]);
+      return data?.results[0]?.text[0];  
+    }
+    
+  } catch (error) {
+    console.error("Error using fine-tuned model:", error);
+  }
 }

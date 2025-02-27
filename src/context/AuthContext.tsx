@@ -25,6 +25,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [isFirstLogin, setIsFirstLogin] = useState(false);
   const [connectionError, setConnectionError] = useState<string | null>(null);
   const navigate = useNavigate();
+  
+
 
   useEffect(() => {
     let mounted = true;

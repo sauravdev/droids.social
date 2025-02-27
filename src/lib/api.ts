@@ -277,6 +277,50 @@ export async function saveContentPlan(plan: Omit<Tables['content_plans']['Insert
   return data;
 }
 
+export async function createCustomModel(custom_model : any ) {
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user) throw new Error('No user found');
+
+  const { data, error } = await supabase
+    .from('Custom_models')
+    .insert([{ ...custom_model, profileid: user.id }])
+    .select()
+    .single();
+
+  if (error) throw error;
+  return data;
+}
+
+export async function getCustomModels() {
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user) throw new Error('No user found');
+
+  const { data: plans, error } = await supabase
+    .from('Custom_models')
+    .select('*')
+    .eq('profileid', user.id)
+    .order('created_at', { ascending: false });
+  if (error) throw error;
+  return plans;
+}
+
+export async function updateCustomModel(id: string, updates: any ) {
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user) throw new Error('No user found');
+
+  const { data, error } = await supabase
+    .from('Custom_models')
+    .update(updates)
+    .eq('id', id)
+    .eq('profileid', user.id)
+    .select()
+    .single();
+
+  if (error) throw error;
+  return data;
+}
+
+
 export async function updateContentPlan(id: string, updates: Partial<Tables['content_plans']['Update']>) {
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) throw new Error('No user found');
