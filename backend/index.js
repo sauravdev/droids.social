@@ -9,6 +9,7 @@ import { instagramRouter } from './routes/instagram.route.js';
 import { openaiRouter } from './routes/oepnai.route.js';
 import axios from 'axios' ;
 import dotenv from 'dotenv' ;
+import { TwitterApi } from 'twitter-api-v2';
 dotenv.config() ; 
 const app = express();
 const port = 3000;
@@ -91,11 +92,6 @@ app.get("/fetch-image", async (req, res) => {
 // } catch (error) {
 //   console.error('Error processing content:', error);
 // }
-
-
-
-
-
 
 app.listen(port, async () => {
   if(fullName) {

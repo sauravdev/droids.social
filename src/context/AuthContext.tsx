@@ -3,6 +3,7 @@ import { Session } from '@supabase/supabase-js';
 import { useNavigate } from 'react-router-dom';
 import { supabase, checkSupabaseConnection } from '../lib/supabase';
 import { getProfile } from '../lib/api';
+import { useSocialAccounts } from '../hooks/useSocialAccounts';
 
 interface AuthContextType {
   session: Session | null;
@@ -24,7 +25,97 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [loading, setLoading] = useState(true);
   const [isFirstLogin, setIsFirstLogin] = useState(false);
   const [connectionError, setConnectionError] = useState<string | null>(null);
+  
   const navigate = useNavigate();
+
+  async function isThisMonthRecordPresentForInstagram(tableName: string): Promise<boolean> {
+    const now = new Date();
+    const todayDate = now.toISOString().split('T')[0];
+    const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1).toISOString().split('T')[0]; 
+    const endOfMonth = new Date(now.getFullYear(), now.getMonth() + 1, 0).toISOString().split('T')[0]; 
+    const { data, error } = await supabase
+        .from(tableName)
+        .select('date')
+        .gte('date', startOfMonth) 
+        .lte('date', endOfMonth) 
+        .eq("platform" , "instagram")
+        .limit(1);
+    if (error) {
+        console.error('Error fetching data:', error);
+        return false;
+    }
+    console.log("data from the is month record present (instagram) = " , data)  ;
+
+    if(data.length == 0 ) 
+    {
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) throw new Error('No authenticated user found');
+  if (error) throw error;
+    const { error: insertError } = await supabase.from(tableName).insert([
+      {
+          reach : 14,
+          engagement : 12.50,
+          post : 9,
+          followers : 4,
+          date: todayDate,
+          platform : "instagram" ,
+          profileid : user?.id , 
+      }
+  ]);
+
+  if (insertError) {
+      console.error('Error inserting record:', insertError);
+  } else {
+      console.log('New record inserted for this month.');
+  }
+    }
+    return data.length > 0;
+}
+
+
+async function isThisMonthRecordPresentForTwitter(tableName: string): Promise<boolean> {
+  const now = new Date();
+  const todayDate = now.toISOString().split('T')[0];
+  const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1).toISOString().split('T')[0]; 
+  const endOfMonth = new Date(now.getFullYear(), now.getMonth() + 1, 0).toISOString().split('T')[0]; 
+  const { data, error } = await supabase
+      .from(tableName)
+      .select('date')
+      .gte('date', startOfMonth) 
+      .lte('date', endOfMonth) 
+      .eq("platform" , "twitter")
+      .limit(1);
+  if (error) {
+      console.error('Error fetching data:', error);
+      return false;
+  }
+  console.log("data from the is month record present (twitter) = " , data)  ;
+
+  if(data.length == 0 ) 
+  {
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user) throw new Error('No authenticated user found');
+  const { error: insertError } = await supabase.from(tableName).insert([
+    {
+        reach : 100,
+        engagement : 63.5,
+        post : 5,
+        followers : 1,
+        date: todayDate,
+        platform : "instagram" ,
+        profileid : user?.id , 
+    }
+]);
+
+if (insertError) {
+    console.error('Error inserting record:', insertError);
+} else {
+    console.log('New record inserted for this month.');
+}
+  }
+  return data.length > 0;
+}
+
   
 
 
@@ -32,6 +123,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     let mounted = true;
 
     async function initialize() {
+     
       try {
         // Check Supabase connection first
         const isConnected = await checkSupabaseConnection();
@@ -76,6 +168,9 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     }
 
     initialize();
+    
+    isThisMonthRecordPresentForInstagram("account_analytics");
+    isThisMonthRecordPresentForTwitter("account_analytics") ;
 
     // Listen for auth changes
     const {

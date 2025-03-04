@@ -1,6 +1,6 @@
 import React, { useState , useEffect} from 'react';
 import {Twitter, Linkedin, Instagram , Sparkles, Loader, Save, Edit2, History, RefreshCw, X, Calendar  , HardDriveUpload} from 'lucide-react';
-import { generatePost } from '../lib/openai';
+import { generatePost, generatePostFromCustomModel, postGenerationApi } from '../lib/openai';
 import { useContentPlan } from '../hooks/useContentPlan';
 import { supabase } from '../lib/supabase';
 import { ScheduleModal } from '../components/ScheduleModal';
@@ -17,14 +17,12 @@ interface HistoryItem {
 }
 
 
-const formatOptions = ['text', 'image', 'video', 'carousel'];
+const formatOptions = ['text', 'image'];
 const sourceOptions = ['arxiv', 'youtube', 'twitter', 'linkedin', 'feedly'];
 
 export function AIGenerator() {
   const [topic, setTopic] = useState('');
-  const [platform, setPlatform] = useState<'twitter' | 'linkedin' | 'instagram'>('twitter');
-  const [tone, setTone] = useState('');
-  const [formats, setFormats] = useState<string[]>(['text']);
+  const [platform, setPlatform] = useState<'twitter' | 'linkedin' | 'instagram'>('twitter');  const [formats, setFormats] = useState<string[]>(['text']);
   const [sources, setSources] = useState<string[]>([]);
   const [generatedContent, setGeneratedContent] = useState('');
   const [loading, setLoading] = useState(false);
@@ -137,7 +135,9 @@ export function AIGenerator() {
     setLoading(true);
     setError(null); 
     try {
-      const content = await generatePost(topic, platform, tone);
+      
+      // const content = await generatePost(topic, platform, tone);
+      const content = await generatePostFromCustomModel(topic)
       setGeneratedContent(content);
       // Add to history
       const historyItem: HistoryItem = {
@@ -402,21 +402,7 @@ export function AIGenerator() {
                 </div>}
 
                 <div>
-                  <label htmlFor="tone" className="block text-sm font-medium text-gray-300 mb-1">
-                    Tone
-                  </label>
-                  <select
-                    id="tone"
-                    value={tone}
-                    onChange={(e) => setTone(e.target.value)}
-                    className="w-full bg-gray-700 border border-gray-600 rounded-md shadow-sm py-2 px-3 text-white focus:ring-purple-500 focus:border-purple-500 text-sm sm:text-base"
-                  >
-                    <option value="">Default</option>
-                    <option value="professional">Professional</option>
-                    <option value="casual">Casual</option>
-                    <option value="humorous">Humorous</option>
-                    <option value="educational">Educational</option>
-                  </select>
+                  
                 </div>
               </div>
 

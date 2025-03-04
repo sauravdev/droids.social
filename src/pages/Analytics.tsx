@@ -4,14 +4,7 @@ import { useSocialAccounts } from '../hooks/useSocialAccounts';
 import { InstagramServices } from '../services/instagram';
 import { getSocialMediaAccountInfo } from '../lib/api';
 import { BACKEND_APIPATH } from '../constants';
-// Time range options
-const timeRanges = [
-  { label: '1M', value: '1month' },
-  { label: '3M', value: '3months' },
-  { label: '6M', value: '6months' },
-  { label: '1Y', value: '1year' }
-];
-
+import { supabase } from '../lib/supabase';
 interface IMetricData{
     totalFollowers:string
     engagementRate:string
@@ -27,19 +20,21 @@ export function Analytics() {
   const [instaUserName , setInstaUserName] = useState<any>();
   const [period , setPeriod] = useState<string>('days_28'); 
   const [cardToggle,setCardToggle]= useState<boolean>(false);
-  const [cardType , setCardType] = useState<string>('');
-
+  const [cardType , setCardType] = useState<string>('Instagram');
+  const [twitterinsights , setTwitterinsights]  = useState<any>({}) ;
   const [twitterInsights  , setTwitterInsights ] = useState({}) ; 
+  const [timeRanges , setTimeRanges ] = useState<any>([] ) ;
   const [platforms , setPlatforms] = useState([
     {
       name: "Twitter",
       icon: <Twitter className="h-6 w-6 text-white" />,
       color: "bg-blue-600",
-      followers: "2",
-      engagement: "63.5%",
+      followers: `${twitterinsights?.followers || 1 } `,
+      engagement: `${twitterinsights?.engagement || 63.5}`,
       growth: 0,
-      posts: 2 ,
-      reach:'100.0%'
+      posts: `${twitterinsights?.post || 5 }` ,
+      reach:`${twitterInsights.reach || 100 }%`,
+      engagementChange : "0.00"
       
     },
     {
@@ -47,33 +42,37 @@ export function Analytics() {
       icon: <Linkedin className="h-6 w-6 text-white" />,
       color: "bg-blue-700",
       followers: "0",
-      engagement: "0.0%",
+      engagement: "0.0",
       growth: 0,
       posts: 0 ,
-      reach:'0.0%'
+      reach:'0.0%',
+      engagementChange :  "0.0"
     },
     {
       name: "Instagram",
       icon: <Instagram className="h-6 w-6 text-white" />,
       color: "bg-pink-600",
       followers: "0",
-      engagement: "0.0%",
+      engagement: "0.0",
       growth: 0,
       posts: 0 ,
-      reach:'0.0%' 
+      reach:'0.0%' ,
+      engagementChange :  "0.0",
+      
     }
   ])
   const [metricCardData , setMetricCardData] = useState<IMetricData>({
     totalFollowers:'0',
-    engagementRate:'0.00%',
+    engagementRate:'0.00',
     reach :0,
     totalPosts :0
-
   })
   const[instaFollowers, setInstaFollowers] = useState<string>();
   const[instaPost, setInstaPost] = useState<number>();
   const[instaEngagement, setInstaEngagement] = useState<string>();
   const[instaReach, setInstaReach] = useState<number>();
+  const [pastAnalytics, setPastAnalytics] = useState<any>(null); 
+  
 
   const getTwitterInsights = async () => {
 
@@ -88,21 +87,82 @@ export function Analytics() {
       body : JSON.stringify({id : userId }) 
     })
     const data = await response.json() ; 
-    console.log("twitter insights = " , data) ; 
+    
     return data ;
-
 
   }
 
   useEffect(() => {
+    ;(async () => {
+      const pastOneWeek = await fetchPastOneWeekData("account_analytics" , "instagram") ;
+      const past1Month = await fetchPastOneMonthData("account_analytics" , "instagram"); 
+      const past3Months  = await fetchPastThreeMonthsData("account_analytics" , "instagram") ;
+      const past6Months = await fetchPast6monthsData("account_analytics" , "instagram") ;
+      const pasth12Months = await fetchPastTwelveMonthsData("account_analytics" , "instagram") ;
+      const newTimeRange = [] ; 
+      if(pastOneWeek?.length > 0 ) 
+      {
+        newTimeRange.push({label : "1W" , value : "1week"} )
+      }
+      if(past1Month?.length > 0 ) 
+      {
+       
+        newTimeRange.push({ label: '1M', value: '1month' })
+      }
+      if(past3Months?.length > 0 ) 
+        {
+          newTimeRange.push({ label: '3M', value: '3months' })
+          
+        }
+
+        if(past6Months?.length > 0 ) 
+          {
+          
+            newTimeRange.push({ label: '6M', value: '6months' })
+          }
+        if(pasth12Months?.length > 0 ) 
+            {
+              
+              newTimeRange.push({ label: '1Y', value: '1year' })
+              
+            }
+
+        setTimeRanges(newTimeRange) ; 
+    })()
+
 
     ;(async () => {
-      // await getTwitterInsights()  ;
+      try{
+        const response = await getTwitterInsights()  ;
+        console.log("data  = "  , response) ; 
+        setTwitterinsights(response?.data) ;
+        const platformDetails=  {
+          name: "Twitter",
+          icon: <Twitter className="h-6 w-6 text-white" />,
+          color: "bg-blue-600",
+          followers: `${response?.data?.followers || 1 } `,
+          engagement: `${response?.data?.engagement || 63.5}`,
+          growth: 0,
+          posts: `${response?.data?.post || 5 }` ,
+          reach:`${response?.data?.reach || 100 }%`,
+          engagementChange : "0.00"
+          
+        }
+        setPlatforms((prevPlatforms) =>
+          prevPlatforms.map((platform) =>
+            platform.name === 'Twitter'
+              ? { ...platformDetails} 
+              : platform
+          )
+        ); 
+      }
+      catch(err) 
+      {
+        console.log(err) ; 
+      }
     })() 
 
   } , [] ) ; 
- 
-
   useEffect(()=>{
     if(instaAccountId){
 
@@ -125,6 +185,7 @@ useEffect(()=>{
 },[idConnectedWithInsta])
 
 useEffect(()=>{
+      setPastAnalytics(null); 
       showMetricData()
 },[cardType])
 
@@ -170,27 +231,27 @@ useEffect(()=>{
         const followers:number = res?.business_discovery?.followers_count  ?? 0;
         const totalLikes:number = res?.business_discovery?.media?.data.reduce((sum:number, post:any) => sum + (post?.like_count ?? 0), 0)?? 0;
         const totalComments = res?.business_discovery?.media?.data.reduce((sum:any, post:any) => sum +  (post?.comments_count ?? 0), 0)?? 0; 
-        const engagement = followers > 0 ? ((totalLikes + totalComments) / followers) * 100 : 0;
+        const engagement = followers > 0 ? ((totalLikes + totalComments) / followers) * 10   : 0;
         const posts = res?.business_discovery?.media_count ?? 0
         console.log("Engagement Rate:", engagement.toFixed(2) + "%");
         setInstaFollowers(followers.toLocaleString())
-        setInstaEngagement(engagement.toFixed(2) + "%")
+        setInstaEngagement(engagement.toFixed(2) )
         setInstaPost(posts)
-        
         setPlatforms((prevPlatforms) =>
           prevPlatforms.map((platform) =>
             platform.name === 'Instagram'
               ? { 
                   ...platform, 
-                  followers: followers.toLocaleString(), // Convert number to string with commas
-                  engagement: engagement.toFixed(2) + "%" ,
-                  posts:posts
+                  followers: followers.toLocaleString(), 
+                  engagement: engagement.toFixed(2) ,
+                  posts:posts,
+                  
                 }
               : platform
           )
         );
 
-        metricCardData.engagementRate = engagement.toFixed(2) + "%" || '0.00%'
+        metricCardData.engagementRate = engagement.toFixed(2) || '0.00%'
         metricCardData.totalFollowers  = followers.toLocaleString() || '0'
         metricCardData.totalPosts = posts  || 0
         
@@ -217,10 +278,11 @@ useEffect(()=>{
       setPlatforms((prevPlatforms) =>
         prevPlatforms.map((platform) =>
           platform.name === 'Instagram'
-            ? { ...platform, reach: reach} // Displaying the reach with a string and formatted with commas
+            ? { ...platform, reach: reach} 
             : platform
         )
       );
+      await fetchPastOneWeekData("account_analytics" , "instagram") 
       } catch (error) {
         console.error("Error fetching Instagram reach", error);
       }
@@ -237,20 +299,271 @@ useEffect(()=>{
           metricCardData.reach = instaReach || 0
       }
       else if(cardType == "Twitter") {
-        metricCardData.engagementRate ='10.00%'
-        metricCardData.totalFollowers  = '2'
-        metricCardData.totalPosts = 2
-        metricCardData.reach = 100
+        metricCardData.engagementRate =`${twitterinsights.engagement || 0 }`
+        metricCardData.totalFollowers  = `${twitterinsights?.followers || 0 }`
+        metricCardData.totalPosts = `${twitterinsights?.post || 0}`
+        metricCardData.reach = `${twitterinsights?.reach || 0 }`
       }
-      else if(cardType == "Linkedin") {
-        metricCardData.engagementRate ='0.00%'
-        metricCardData.totalFollowers  = '2'
+      else if(cardType == "LinkedIn") {
+        metricCardData.engagementRate ='0.00'
+        metricCardData.totalFollowers  = '0'
         metricCardData.totalPosts = 0
         metricCardData.reach = 0
       }
       setCardToggle(!cardToggle)
     }
 
+    async function fetchPastOneWeekData(tableName: string, platformname: string): Promise<any[]> {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) throw new Error('No authenticated user found');
+  
+      const now = new Date();
+      const startOfLastWeek = new Date();
+      startOfLastWeek.setDate(now.getDate() - 7);
+      startOfLastWeek.setHours(0, 0, 0, 0);
+      
+      const endOfLastWeek = new Date();
+      endOfLastWeek.setHours(23, 59, 59, 999) ;
+  
+      const { data, error } = await supabase
+          .from(tableName)
+          .select('*')
+          .eq("profileid", user?.id)
+          .eq("platform", platformname)
+          .gte('date', startOfLastWeek.toISOString().split('T')[0])
+          .lte('date', endOfLastWeek.toISOString().split('T')[0])
+          .limit(1) ; 
+  
+      if (data?.[0]) { 
+          setPastAnalytics(data?.[0]);
+          setPlatforms((prevPlatforms) =>
+              prevPlatforms.map((platform) =>
+                  platform.name.toLowerCase() === data?.[0]?.platform
+                      ? { ...platform, engagementChange: `${((Number(platform?.engagement) - data[0]?.engagement) / data[0]?.engagement) * 100}` } 
+                      : platform
+              )
+          );
+      }
+  
+      if (error) {
+          console.error('Error fetching last week’s data:', error);
+          return [];
+      }
+      
+      console.log("past one week data =", data);
+      return data;
+  }
+  
+
+    async function fetchPastOneMonthData(tableName: string , platformname : string ): Promise<any[]> {
+      const { data: { user } } = await supabase.auth.getUser();
+          if (!user) throw new Error('No authenticated user found');
+      const now = new Date();
+      const startOfLastMonth = new Date(now.getFullYear(), now.getMonth() - 1, 1).toISOString().split('T')[0]; 
+      const endOfLastMonth = new Date(now.getFullYear(), now.getMonth(), 0).toISOString().split('T')[0];
+      const { data, error } = await supabase
+          .from(tableName)
+          .select('*')
+          .eq("profileid" ,user?.id )
+          .eq("platform" ,platformname )
+          .gte('date', startOfLastMonth)
+          .lte('date', endOfLastMonth); 
+      if(data?.[0])
+            { 
+              setPastAnalytics(data?.[0]) ;
+              setPlatforms((prevPlatforms) =>
+                prevPlatforms.map((platform) =>
+                  platform.name.toLowerCase() === data?.[0]?.platform
+                    ? { ...platform, engagementChange :  `${(( Number ( platform?.engagement )  - data[0]?.engagement)/data[0]?.engagement) * 100}`} 
+                    : platform
+                )
+              );
+            }
+
+      if (error) {
+          console.error('Error fetching last month’s data:', error);
+          return [];
+      }
+      console.log("past one month data = " , data) ; 
+  
+      return data;
+  }
+  async function fetchPastThreeMonthsData(tableName: string , platformname : string ): Promise<any | null> {
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) throw new Error('No authenticated user found');
+
+    const now = new Date();
+    const startOfThreeMonthsAgo = new Date(now.getFullYear(), now.getMonth() - 3, 1).toISOString().split('T')[0]; 
+    const endOfLastMonth = new Date(now.getFullYear(), now.getMonth()-3 + 1 , 0).toISOString().split('T')[0]; 
+    const { data, error } = await supabase
+        .from(tableName)
+        .select('*')
+        .eq("profileid", user?.id)
+        .eq("platform", platformname)
+        .gte('date', startOfThreeMonthsAgo) 
+        .lte('date', endOfLastMonth)
+        .limit(1)
+        if(data?.[0])
+          { 
+            setPastAnalytics(data?.[0]) ;
+            setPlatforms((prevPlatforms) =>
+              prevPlatforms.map((platform) =>
+                platform.name.toLowerCase() === data?.[0]?.platform
+                  ? { ...platform, engagementChange :  `${(( Number ( platform?.engagement )  - data[0]?.engagement)/data[0]?.engagement) * 100}`} 
+                  : platform
+              )
+            );
+          }
+    if (error) {
+        console.error('Error fetching past three months’ data:', error);
+        return [];
+    }
+
+    console.log("Past three months data =", data);
+    return data;
+}
+
+async function fetchPast6monthsData(tableName: string , platformname : string): Promise<any[]> {
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user) throw new Error('No authenticated user found');
+
+  const now = new Date();
+  const startOfTwelveMonthsAgo = new Date(now.getFullYear(), now.getMonth() - 6, 1).toISOString().split('T')[0]; 
+  const endOfLastMonth = new Date(now.getFullYear(), now.getMonth()-6 + 1 , 0).toISOString().split('T')[0];
+
+  const { data, error } = await supabase
+      .from(tableName)
+      .select('*')
+      .eq("profileid", user?.id)
+      .eq("platform", platformname)
+      .gte('date', startOfTwelveMonthsAgo)
+      .lte('date', endOfLastMonth)
+      .limit(1)
+      if(data?.[0])
+        { 
+          setPastAnalytics(data?.[0]) ;
+          setPlatforms((prevPlatforms) =>
+            prevPlatforms.map((platform) =>
+              platform.name.toLowerCase() === data?.[0]?.platform
+                ? { ...platform, engagementChange :  `${(( Number ( platform?.engagement )  - data[0]?.engagement)/data[0]?.engagement) * 100}`} 
+                : platform
+            )
+          );
+        }
+  if (error) {
+      console.error('Error fetching past twelve months’ data:', error);
+      return [];
+  }
+
+  console.log("Past 6 months data =", data);
+  return data;
+}
+
+async function fetchPastTwelveMonthsData(tableName: string , platformname : string ): Promise<any[]> {
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user) throw new Error('No authenticated user found');
+
+  const now = new Date();
+  const startOfTwelveMonthsAgo = new Date(now.getFullYear(), now.getMonth() - 12, 1).toISOString().split('T')[0]; 
+  const endOfLastMonth = new Date(now.getFullYear(), now.getMonth()-12 + 1 , 0).toISOString().split('T')[0];
+
+  const { data, error } = await supabase
+      .from(tableName)
+      .select('*')
+      .eq("profileid", user?.id)
+      .eq("platform", platformname)
+      .gte('date', startOfTwelveMonthsAgo)
+      .lte('date', endOfLastMonth)
+      .limit(1) 
+      if(data?.[0])
+        { 
+          setPastAnalytics(data?.[0]) ;
+          setPlatforms((prevPlatforms) =>
+            prevPlatforms.map((platform) =>
+              platform.name.toLowerCase() === data?.[0]?.platform
+                ? { ...platform, engagementChange :  `${(( Number ( platform?.engagement )  - data[0]?.engagement)/data[0]?.engagement) * 100}`} 
+                : platform
+            )
+          );
+        }
+  if (error) {
+      console.error('Error fetching past twelve months’ data:', error);
+      return [];
+  }
+
+  console.log("Past twelve months data =", data);
+  return data;
+}
+
+  const handleTimeRangeValue  = async (value : any) => {
+    console.log("time range = " , value) ; 
+    setSelectedTimeRange(value)
+    if(cardType === "Instagram") 
+    {
+      setPastAnalytics(null);
+
+      if(value == "1week") 
+      {
+        console.log("past 1 week data") ; 
+        await fetchPastOneWeekData("account_analytics" , "instagram"); 
+      }
+      else if(value == "1month")
+      {
+        await fetchPastOneMonthData("account_analytics" , "instagram") ;
+      }
+      else if(value == "3months") 
+      {
+        await fetchPastThreeMonthsData("account_analytics" , "instagram") ;
+      }
+      else if(value == "6months") 
+      {
+        await fetchPast6monthsData("account_analytics" , "instagram") ;
+      }
+      else if(value == "1year")
+      {
+        await fetchPastTwelveMonthsData("account_analytics" , "instagram") ;
+      }
+
+    }
+
+    else if(cardType == "Twitter") 
+    {
+      setPastAnalytics(null) ;
+      if(value == "1week") 
+      {
+        await fetchPastOneWeekData("account_analytics" , "twitter") ; 
+      }
+      else if(value == "1month")
+        {
+          await fetchPastOneMonthData("account_analytics" , "twitter") ;
+        }
+        
+        else if(value == "3months") 
+        {
+          await fetchPastThreeMonthsData("account_analytics" , "twitter") ;
+        }
+        else if(value == "6months") 
+        {
+          await fetchPast6monthsData("account_analytics" , "twitter") ;
+        }
+        else if(value == "1year")
+        {
+          await fetchPastTwelveMonthsData("account_analytics" , "twitter") ;
+        }
+    }
+   
+  
+  }
+
+
+  const handleOnClickPlatformCard = async  (platform : any ) => {
+    console.log("platform name = "  , platform.name) ; 
+    setCardType(platform.name) ; setPastAnalytics(null) ;  
+    if(platform?.name) 
+    {
+      await fetchPastOneMonthData("account_analytics" , platform?.name?.toLowerCase() ) ;
+    }
+  }
     
   
   
@@ -261,10 +574,10 @@ useEffect(()=>{
         
         {/* Time Range Selector */}
         <div className="flex space-x-2">
-          {timeRanges.map(range => (
+          {timeRanges.map((range : any, index ) => (
             <button
-              key={range.value}
-              onClick={() => setSelectedTimeRange(range.value)}
+              key={index}
+              onClick={() =>{handleTimeRangeValue(range.value)}}
               className={`px-4 py-2 rounded-lg text-sm font-medium ${
                 selectedTimeRange === range.value
                   ? 'bg-purple-600 text-white'
@@ -280,7 +593,7 @@ useEffect(()=>{
       {/* Platform Overview */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
         {platforms.map(platform => (
-          <PlatformCard cardType = {cardType} key={platform.name} {...platform} click={()=>setCardType(platform.name)} />
+          <PlatformCard analytics = {pastAnalytics}   cardType = {cardType} key={platform.name} {...platform} click={()=>{handleOnClickPlatformCard(platform)}} />
         ))}
       </div>
 
@@ -290,7 +603,7 @@ useEffect(()=>{
           icon={<Users className="w-6 h-6 text-purple-500" />}
           title="Total Followers"
           value= {metricCardData.totalFollowers}
-          change="+23%"
+          change={`${pastAnalytics?.followers ? (((Number( metricCardData.totalFollowers) - pastAnalytics?.followers )/ pastAnalytics?.followers ) * 100).toFixed(2): 0  }`    }
           positive={true}
           timeRange={selectedTimeRange}
           
@@ -299,7 +612,7 @@ useEffect(()=>{
           icon={<MessageSquare className="w-6 h-6 text-purple-500" />}
           title="Engagement Rate"
           value= {metricCardData.engagementRate}
-          change="+1.2%"
+          change={`${pastAnalytics?.engagement ? (((Number( metricCardData.engagementRate )  - pastAnalytics?.engagement )/ pastAnalytics?.engagement ) * 100  ).toFixed(2): 0  }`   }
           positive={true}
           timeRange={selectedTimeRange}
         />
@@ -307,7 +620,7 @@ useEffect(()=>{
           icon={<TrendingUp className="w-6 h-6 text-purple-500" />}
           title="Reach"
           value= {metricCardData.reach.toString()}
-          change="+15%"
+          change={`${pastAnalytics?.reach ? (((metricCardData.reach - pastAnalytics?.reach) /pastAnalytics?.reach) * 100).toFixed(2) : 0  } `   }
           positive={true}
           timeRange={selectedTimeRange}
         />
@@ -315,7 +628,7 @@ useEffect(()=>{
           icon={<Calendar className="w-6 h-6 text-purple-500" />}
           title="Posts"
           value= {metricCardData.totalPosts.toString()}
-          change="+8"
+          change={`${pastAnalytics?.post ? (((metricCardData.totalPosts - pastAnalytics?.post) / pastAnalytics?.post) * 100 ).toFixed(2) : 0  }`   }
           positive={true}
           timeRange={selectedTimeRange}
         />
@@ -323,56 +636,6 @@ useEffect(()=>{
 
       {/* Historical Performance */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        {/* Top Performing Content */}
-        {/* <div className="bg-gray-800 rounded-xl p-6">
-          <h2 className="text-xl font-bold text-white mb-4">Top Performing Content</h2>
-          <div className="space-y-4">
-            {topContent.map((content, index) => (
-              <div key={index} className="bg-gray-700 p-4 rounded-lg">
-                <div className="flex items-center justify-between mb-2">
-                  <div className="flex items-center space-x-2">
-                    <PlatformIcon platform={content.platform} />
-                    <span className="text-white font-medium">{content.title}</span>
-                  </div>
-                  <span className="text-purple-400">{content.date}</span>
-                </div>
-                <p className="text-gray-300 text-sm mb-2">{content.excerpt}</p>
-                <div className="flex justify-between items-center text-sm">
-                  <div className="flex space-x-4">
-                    <span className="text-gray-400">Engagement: {content.engagement}</span>
-                    <span className="text-gray-400">Reach: {content.reach}</span>
-                  </div>
-                  <span className={`${content.growth >= 0 ? 'text-green-400' : 'text-red-400'} flex items-center`}>
-                    {content.growth >= 0 ? <ArrowUp className="h-4 w-4 mr-1" /> : <ArrowDown className="h-4 w-4 mr-1" />}
-                    {Math.abs(content.growth)}%
-                  </span>
-                </div>
-              </div>
-            ))}
-          </div>
-        </div> */}
-
-        {/* AI Insights */}
-        {/* <div className="bg-gray-800 rounded-xl p-6">
-          <h2 className="text-xl font-bold text-white mb-4">AI Insights</h2>
-          <div className="space-y-4">
-            {aiInsights.map((insight, index) => (
-              <div key={index} className="bg-gray-700 p-4 rounded-lg">
-                <div className="flex items-center space-x-2 mb-2">
-                  <div className={`w-2 h-2 rounded-full ${insight.type === 'positive' ? 'bg-green-500' : insight.type === 'negative' ? 'bg-red-500' : 'bg-yellow-500'}`} />
-                  <span className="text-white font-medium">{insight.title}</span>
-                </div>
-                <p className="text-gray-300 text-sm">{insight.description}</p>
-                {insight.recommendation && (
-                  <div className="mt-2 p-2 bg-gray-600 rounded">
-                    <p className="text-sm text-purple-300">Recommendation:</p>
-                    <p className="text-sm text-gray-300">{insight.recommendation}</p>
-                  </div>
-                )}
-              </div>
-            ))}
-          </div>
-        </div> */}
       </div>
     </div>
   );
@@ -398,22 +661,25 @@ interface PlatformCardProps {
   color: string;
   followers: string;
   engagement: string;
+  engagementChange : string ; 
   growth: number;
   posts: number;
+  analytics : any ; 
   click:()=>void;
 
 }
 
-function PlatformCard({  cardType ,  name, icon, color, followers, engagement, growth, posts ,click}: PlatformCardProps) {
+function PlatformCard({  cardType ,  name, icon, color, followers, engagement,engagementChange ,  growth, posts , analytics , click}: PlatformCardProps) {
+  
   return (
     <div className={`bg-gray-800 rounded-xl p-6 ${cardType?.toLowerCase()  == name.toLowerCase() ? 'border-2 border-purple-500' : "" } `} onClick={click}>
       <div className="flex items-center justify-between mb-4">
         <div className={`p-3 rounded-lg ${color}`}>
           {icon}
         </div>
-        <span className={`flex items-center ${growth >= 0 ? 'text-green-400' : 'text-red-400'}`}>
-          {growth >= 0 ? <ArrowUp className="h-4 w-4 mr-1" /> : <ArrowDown className="h-4 w-4 mr-1" />}
-          {Math.abs(growth)}%
+        <span className={`flex items-center ${Number ( engagementChange)  >= 0 ? 'text-green-400' : 'text-red-400'}`}>
+          {Number(engagementChange)  >= 0 ? <ArrowUp className="h-4 w-4 mr-1" /> : <ArrowDown className="h-4 w-4 mr-1" />}
+          {Math.abs(Number(engagementChange)).toFixed(2)}%
         </span>
       </div>
       <h3 className="text-lg font-semibold text-white mb-4">{name}</h3>
@@ -424,7 +690,7 @@ function PlatformCard({  cardType ,  name, icon, color, followers, engagement, g
         </div>
         <div className="flex justify-between">
           <span className="text-gray-400">Engagement</span>
-          <span className="text-white">{engagement}</span>
+          <span className="text-white">{engagement}%</span>
         </div>
         <div className="flex justify-between">
           <span className="text-gray-400">Posts</span>
@@ -451,105 +717,17 @@ function MetricCard({ icon, title, value, change, positive, timeRange  }: Metric
     <div className="bg-gray-800 rounded-xl p-6">
       <div className="flex items-center justify-between mb-4">
         <div className="p-2 bg-gray-700 rounded-lg">{icon}</div>
-        <span className={`flex items-center ${positive ? 'text-green-400' : 'text-red-400'}`}>
-          {positive ? <ArrowUp className="h-4 w-4 mr-1" /> : <ArrowDown className="h-4 w-4 mr-1" />}
-          {change}
+        <span className={`flex items-center ${Number(change) >=0  ? 'text-green-400' : 'text-red-400'}`}>
+          {Number(change)  >= 0  ? <ArrowUp className="h-4 w-4 mr-1" /> : <ArrowDown className="h-4 w-4 mr-1" />}
+          {change}%
         </span>
       </div>
       <h3 className="text-gray-400 text-sm mb-1">{title}</h3>
-      <p className="text-2xl font-bold text-white">{value}</p>
+      <p className="text-2xl font-bold text-white">{title.toLowerCase() === "engagement rate" ? `${value}%` : value}</p>
       <p className="text-sm text-gray-400 mt-2">
-        Last {timeRange === '1month' ? 'month' : timeRange === '3months' ? '3 months' : timeRange === '6months' ? '6 months' : 'year'}
+        Last {timeRange === '1week' ? 'week' : timeRange === '1month' ? 'month' : timeRange === '3months' ? '3 months' : timeRange === "6months" ? '6 months' : 'year' }
       </p>
     </div>
   );
 }
 
-
-
-// const platforms = [
-//   {
-//     name: "Twitter",
-//     icon: <Twitter className="h-6 w-6 text-white" />,
-//     color: "bg-blue-600",
-//     followers: "8,234",
-//     engagement: "3.2%",
-//     growth: 12.5,
-//     posts: 45
-//   },
-//   {
-//     name: "LinkedIn",
-//     icon: <Linkedin className="h-6 w-6 text-white" />,
-//     color: "bg-blue-700",
-//     followers: "3,456",
-//     engagement: "4.8%",
-//     growth: 8.3,
-//     posts: 32
-//   },
-//   {
-//     name: "Instagram",
-//     icon: <Instagram className="h-6 w-6 text-white" />,
-//     color: "bg-pink-600",
-//     followers: "12,789",
-//     engagement: "5.1%",
-//     growth: -2.1,
-//     posts: 51
-//   }
-// ];
-
-const topContent = [
-  // {
-  //   platform: "twitter",
-  //   title: "AI in Social Media Management",
-  //   excerpt: "Exploring how AI is revolutionizing social media management...",
-  //   date: "2 weeks ago",
-  //   engagement: "2.4K",
-  //   reach: "15.2K",
-  //   growth: 45
-  // },
-  // {
-  //   platform: "linkedin",
-  //   title: "Future of Digital Marketing",
-  //   excerpt: "Insights into the evolving landscape of digital marketing...",
-  //   date: "1 month ago",
-  //   engagement: "1.8K",
-  //   reach: "12.5K",
-  //   growth: 32
-  // },
-  // {
-  //   platform: "instagram",
-  //   title: "Behind the Scenes",
-  //   excerpt: "A day in the life of our development team...",
-  //   date: "3 weeks ago",
-  //   engagement: "3.2K",
-  //   reach: "18.7K",
-  //   growth: -5
-  // }
-];
-
-const aiInsights = [
-  // {
-  //   type: "positive",
-  //   title: "Growing Engagement",
-  //   description: "Your engagement rate has increased by 25% in the last month, primarily driven by video content on LinkedIn.",
-  //   recommendation: "Consider creating more video content, especially during peak hours (2-4 PM EST)."
-  // },
-  // {
-  //   type: "warning",
-  //   title: "Content Gap Detected",
-  //   description: "There's a noticeable drop in engagement during weekends.",
-  //   recommendation: "Try scheduling 2-3 posts for weekends to maintain consistent engagement."
-  // },
-  // {
-  //   type: "negative",
-  //   title: "Declining Instagram Reach",
-  //   description: "Your Instagram reach has decreased by 15% in the past two weeks.",
-  //   recommendation: "Experiment with more Reels and Stories, which have shown higher reach potential."
-  // },
-  // {
-  //   type: "positive",
-  //   title: "Hashtag Performance",
-  //   description: "The hashtag #TechInnovation has generated 45% more impressions than your other hashtags.",
-  //   recommendation: "Include this hashtag in relevant future posts to maximize reach."
-  // }
-];

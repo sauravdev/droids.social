@@ -11,7 +11,8 @@ import LinkedInAuth from '../lib/LinkedInAuth';
 import { handleLogin } from '../lib/LinkedInAuth';
 import { generateAIContentSuggestion } from '../lib/openai';
 import { InstagramServices } from '../services/instagram';
-
+import { getSocialMediaAccountInfo } from '../lib/api';
+import { BACKEND_APIPATH } from '../constants';
 
 interface suggestion{
   type : string , 
@@ -32,13 +33,30 @@ export function Dashboard() {
   const [idConnectedWithInsta , setIdConnectedWithInsta] = useState<number>();
   const[instaFollowers, setInstaFollowers] = useState<string>("");
   const[instaEngagement, setInstaEngagement] = useState<string>("");
+  const [twitterinsights  , setTwitterinsights ] = useState({}) ; 
+  const getTwitterInsights = async () => {
+  
+    const {access_token , userId } = await getSocialMediaAccountInfo("twitter") ;
+    console.log("user id =" , userId) ;
+    const response = await fetch(`${BACKEND_APIPATH.BASEURL}/twitter/insights` , {
+      method : 'POST' , 
+      headers: {
+        'Authorization': `Bearer ${access_token}`, 
+        "Content-Type" : "application/json" ,
+      } , 
+      body : JSON.stringify({id : userId }) 
+    })
+    const data = await response.json() ; 
+    
+    return data ;
 
+  }
   useEffect(() => {
     ;(async () => {
       const newPosts = await loadPosts() ; 
-      const response  = await  generateAIContentSuggestion() ; 
-      console.log(response ) ; 
-      setSuggestions(response?.tips) ; 
+      // const response  = await  generateAIContentSuggestion() ; 
+      // console.log("suggestions = " , response  ) ; 
+      // setSuggestions(response?.tips) ; 
       setPosts(newPosts) ;
       fetchLinkedAccount()  
     })()
@@ -58,6 +76,24 @@ export function Dashboard() {
       }
     },[instaAccountId])
 
+   useEffect(() => {
+  
+      ;(async () => {
+        try{
+          const response = await getTwitterInsights()  ;
+          console.log("data  = "  , response) ; 
+          setTwitterinsights(response?.data) ; 
+          // console.log("data = " , data) ; 
+        }
+        catch(err) 
+        {
+          console.log(err) ; 
+        }
+      })() 
+  
+    } , [platform] ) ; 
+   
+
   
 
 
@@ -68,6 +104,8 @@ export function Dashboard() {
       </div>
     );
   }
+
+ 
   const getInstaAccountId = async (id:number) => {
   
       try {
@@ -203,26 +241,23 @@ export function Dashboard() {
         <StatCard
           icon={<Users className="w-6 h-6 text-purple-500" />}
           title="Total Followers"
-          value={"2"}
-          trend="+23%"
+          value={twitterinsights?.followers || 0 }
         />
         <StatCard
           icon={<MessageSquare className="w-6 h-6 text-purple-500" />}
           title="Engagement Rate"
-          value="2.8%"
-          trend="+1.2%"
+          value={`${(twitterinsights?.engagement || 0  )}%` }
         />
         <StatCard
           icon={<Calendar className="w-6 h-6 text-purple-500" />}
           title="Scheduled Posts"
-          value={upcomingPostsCount.toString()}
+          value={posts.filter(post => post?.platform == "twitter" && new Date(post.scheduled_for) > new Date()).length.toString()}
           trend="Next 7 days"
         />
         <StatCard
           icon={<TrendingUp className="w-6 h-6 text-purple-500" />}
           title="Growth Rate"
           value="2.4%"
-          trend="+0.6%"
         />
       </div>}
 
@@ -231,25 +266,22 @@ export function Dashboard() {
           icon={<Users className="w-6 h-6 text-purple-500" />}
           title="Total Followers"
           value={instaFollowers.toString() }
-          trend="+23%"
         />
         <StatCard
           icon={<MessageSquare className="w-6 h-6 text-purple-500" />}
           title="Engagement Rate"
-          value="1.5%"
-          trend="+1.2%"
+          value="12.50%"
         />
         <StatCard
           icon={<Calendar className="w-6 h-6 text-purple-500" />}
           title="Scheduled Posts"
-          value={upcomingPostsCount.toString()}
+          value={posts.filter(post => post?.platform == "instagram" && new Date(post.scheduled_for) > new Date()).length.toString()}
           trend="Next 7 days"
         />
         <StatCard
           icon={<TrendingUp className="w-6 h-6 text-purple-500" />}
           title="Growth Rate"
           value="1.4%"
-          trend="+0.6%"
         />
       </div>}
 
@@ -258,25 +290,25 @@ export function Dashboard() {
           icon={<Users className="w-6 h-6 text-purple-500" />}
           title="Total Followers"
           value={"0"}
-          trend="+23%"
+          
         />
         <StatCard
           icon={<MessageSquare className="w-6 h-6 text-purple-500" />}
           title="Engagement Rate"
-          value="0.5%"
-          trend="+1.2%"
+          value="0.0%"
+          
         />
         <StatCard
           icon={<Calendar className="w-6 h-6 text-purple-500" />}
           title="Scheduled Posts"
-          value={upcomingPostsCount.toString()}
+          value={ posts.filter(post => post?.platform == "linkedin" && new Date(post.scheduled_for) > new Date()).length.toString() }
           trend="Next 7 days"
         />
         <StatCard
           icon={<TrendingUp className="w-6 h-6 text-purple-500" />}
           title="Growth Rate"
-          value="0.9%"
-          trend="+1.6%"
+          value="0.0%"
+        
         />
       </div>}
 

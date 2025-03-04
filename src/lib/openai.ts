@@ -40,6 +40,8 @@ async function processContent(data: ProcessRequest): Promise<void> {
 }
 
 
+const sample  = "in sarcastic mannar"
+
 // Cache for API responses
 const cache = new Map<string, { data: any; timestamp: number }>();
 const CACHE_DURATION = 1000 * 60 * 5; // 5 minutes
@@ -74,9 +76,7 @@ export async function generateContentStrategy(niche: string, goals: string[]): P
   const cacheKey = `strategy:${niche}:${goals.join(',')}`;
   const cached = checkCache<ContentStrategy>(cacheKey);
   if (cached) return cached;
-
   await rateLimit();
-
   try {
     const prompt = `Create a monthly social media content strategy for a ${niche} business with the following goals: ${goals.join(', ')}.
     
@@ -116,14 +116,17 @@ export async function generateContentStrategy(niche: string, goals: string[]): P
         }
       ],
       // model: "gpt-4-turbo-preview",
-      model  :"gpt-o3-mini",
+      model  :"gpt-4o-mini",
       response_format: { type: "json_object" }
     });
 
     const response = completion.choices[0].message.content;
     if (!response) throw new Error('Failed to generate content strategy');
+    // const response = await generatePostFromCustomModel(prompt) ;
 
     const strategy = JSON.parse(response);
+    // console.log("content strategy")
+    // const strategy = response
     setCache(cacheKey, strategy);
     return strategy;
   } catch (error: any) {
@@ -170,7 +173,7 @@ export async function generatePost(
 
     const response = completion.choices[0].message.content;
     console.log("response from handle generate " , response) ; 
-
+    // const data = await generatePostFromCustomModel(prompt) ;
     if (!response) throw new Error('Failed to generate post');
 
     setCache(cacheKey, response);
@@ -189,7 +192,7 @@ export async function generateProfileContent(name: string, niche: string) {
   4. A banner image description for DALL-E (max 100 characters)
 
   Format as JSON with these keys: shortBio, longBio, profileImagePrompt, bannerImagePrompt`;
-
+  // await postGenerationApi(prompt) ;
   const completion = await openai.chat.completions.create({
     messages: [
       {
@@ -206,9 +209,9 @@ export async function generateProfileContent(name: string, niche: string) {
   });
 
   const response = completion.choices[0].message.content;
-  if (!response) throw new Error('Failed to generate profile content');
-
-  return JSON.parse(response);
+  if (!response) throw new Error('Failed to generate profile content')
+  // const response = await generatePostFromCustomModel(prompt) ;
+  return JSON.parse(response) ;
 }
 
 
@@ -227,6 +230,8 @@ Ensure:
 - A mix of strategies related to engagement, posting consistency, algorithm hacks, audience interaction, and content optimization  
 - The response should be a valid JSON array.`;
 
+  // await postGenerationApi(prompt) ; 
+
   const completion = await openai.chat.completions.create({
     messages: [
       {
@@ -244,7 +249,6 @@ Ensure:
 
   const response = completion.choices[0].message.content;
   if (!response) throw new Error('Failed to generate profile content');
-
   return JSON.parse(response);
 }
 
@@ -269,9 +273,10 @@ export async function generatePostFromCustomModel(prompt : string )
     {
       const response = await openai.chat.completions.create({
         model : model?.custom_model,
-        messages: [{ role: "user", content: prompt }]
+        messages: [{ role: "user", content: prompt + sample }]
       });
       console.log("Response:", response.choices[0].message.content);
+      
       return response.choices[0].message.content ; 
     }
     else{
@@ -282,20 +287,41 @@ export async function generatePostFromCustomModel(prompt : string )
             },
             body: JSON.stringify(
               {
-                "keyword": "artificial intelligence",
+                "keyword": prompt,
                 "source": ["arxiv"],
-                "converted_source": ["twitter"],
+                "converted_source": ["instagram"],
                 "content_types": ["text"]
               }
             )
           });
           const data = await response.json() ; 
           console.log("response from the server post generation api " , data ) ; 
-      console.log("Response:", data.results[0].text[0]);
-      return data?.results[0]?.text[0];  
+        console.log("Response:", data.results[0].text[0]);
+        return data?.results[0]?.text[0] ;  
     }
     
   } catch (error) {
     console.error("Error using fine-tuned model:", error);
   }
+}
+
+export async function postGenerationApi(prompt:string) {
+  const response = await fetch(`${PYTHON_SERVER_URI.BASEURL}/api/process`, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json'
+    },
+    body: JSON.stringify(
+      {
+        "keyword": prompt,
+        "source": ["arxiv"],
+        "converted_source": ["instagram"],
+        "content_types": ["text"]
+      }
+    )
+  });
+  const data = await response.json() ; 
+  console.log("response from the server post generation api " , data ) ; 
+  console.log("Response:", data.results[0].text[0]);
+return data?.results[0]?.text[0] ;  
 }

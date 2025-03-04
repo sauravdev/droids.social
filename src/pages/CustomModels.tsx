@@ -56,13 +56,9 @@ export function CustomModels() {
   const [file , setFile] = useState<File | null>(null) ; 
   const [selectedCustomModel , setSelectedCustomModel] = useState<string > ("" ) ; 
   // const [selectedCustomModel , setSelectedCustomModel] = useState<string > ("" ) ; 
-
   const {createCustomModels, loadCustomModels  , updateCustomModels  } = useCustomModel() ; 
-
   const [trainingSessions , setTrainingSession] = useState<TrainingStatus[]>([
   ]);
-
-
   const [models , setModels] = useState<CustomModel[]>([
   ]);
 
@@ -77,7 +73,7 @@ export function CustomModels() {
         setSelectedCustomModel(custommodel.custom_model) ; 
       }
     })()
-  }  , [trainingSessions] )  
+  }  , [trainingSessions ] )  
   const handleTest = async () => {
     if (!selectedModel || !selectedCustomModel || !testInput) return;
     setTesting(true);
@@ -151,7 +147,7 @@ export function CustomModels() {
   }, 300);
   const formData = new FormData();
   formData.append("file", file);
-  formData.append("model" , selectedItem) 
+  formData.append("customModel" , selectedItem) 
   const createdModel = await createCustomModels({
     model_name : modelName , 
     base_model: selectedItem  , 
@@ -191,6 +187,19 @@ export function CustomModels() {
         setLoading(false);
       }, 1000);
   }
+  }
+  const handleChangeToDefaultModel = async () => {
+
+    const data = await loadCustomModels() ;
+    const custommodel = data.find((model) => model.selected == true) ;
+    if(custommodel) 
+    {
+      console.log("found custom model now shutting it down") 
+      await updateCustomModels(custommodel?.id , {selected : false})
+      setSelectedModel(null ) ;
+      setSelectedCustomModel("") ; 
+    }
+    
   }
   return (
     <div className="space-y-8">
@@ -322,9 +331,10 @@ export function CustomModels() {
 
       {/* Available Models */}
       <div className="bg-gray-800 rounded-xl p-6">
-        <h2 className="text-xl font-bold text-white mb-4">Available Models</h2>
+        <h2 className="text-xl font-bold text-white mb-4">Available Custom Models</h2>
         <div className="space-y-4">
-          {models.map(model => (
+        <div><button onClick= {handleChangeToDefaultModel} className='bg-purple-600 hover:bg-purple-700 text-white rounded-lg px-4 py-2'>Use Default Model</button></div>
+          {models.map(model => ( 
             model?.status == "completed" && <div 
               key={model.id}
               className={`bg-gray-700 rounded-lg p-4 cursor-pointer transition-colors ${
@@ -335,7 +345,7 @@ export function CustomModels() {
               <div className="flex items-center justify-between">
                 <div>
                   <h2 className="text-white font-semibold">{model.model_name}</h2>
-                  <h3 className="text-white font-medium">{model.custom_model}</h3>
+                  <h3 className="text-white font-medium">{model.custom_model  + " " + new Date(model.created_at).getUTCMilliseconds()}</h3>
                   <p className="text-gray-400 text-sm">Base: {model.base_model}</p>
                   <p className="text-gray-400 text-sm">Status: {model.status}</p>
                 </div>
@@ -380,14 +390,19 @@ export function CustomModels() {
                 )}
               </button>
             </div>
+            
             {testResult && (
               <div className="bg-gray-900 rounded-lg p-4 mt-4">
                 <h4 className="text-sm font-medium text-gray-400 mb-2">Response:</h4>
                 <p className="text-white">{testResult}</p>
               </div>
+              
             )}
           </div>
+          
         )}
+
+        
       </div>
     </div>
   );

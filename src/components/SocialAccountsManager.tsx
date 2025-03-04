@@ -11,6 +11,8 @@ interface PlatformConfig {
   color: string;
 }
 interface SocialAccountsManagerProps {
+  selectedPlatform : string 
+  setSelectedPlatform : any   ,
   handleFetchProfileInfo : any 
 }
 
@@ -32,12 +34,12 @@ const platforms: Record<string, PlatformConfig> = {
   }
 };
 
-export function SocialAccountsManager({handleFetchProfileInfo} : SocialAccountsManagerProps) {
+export function SocialAccountsManager({selectedPlatform , setSelectedPlatform , handleFetchProfileInfo} : SocialAccountsManagerProps) {
   const { accounts, loading, error, unlinkAccount } = useSocialAccounts();
   const [connecting, setConnecting] = useState<string | null>(null);
   const [disconnecting, setDisconnecting] = useState<string | null>(null);
   const [updateError, setUpdateError] = useState<string | null>(null);
-  const [selectedPlatform , setSelectedPlatform] = useState<string>("") ; 
+  
 
   const handleConnect = async (platform: string) => {
     setConnecting(platform);

@@ -16,7 +16,8 @@ export function ProfileSettings() {
   const { isFirstLogin } = useAuth();
   const { profile, loading: profileLoading, error: profileError, updateProfile } = useProfile();
   const { settings, loading: settingsLoading, error: settingsError, updateSettings } = useProfileSettings();
-  
+  const [showPopup , setShowPopup] = useState(false) ;
+  const [selectedPlatform , setSelectedPlatform] = useState<string>("") ; 
   const [fullName, setFullName] = useState(profile?.full_name || '');
   const [bio, setBio] = useState( settings?.bio || '');
   const [niche, setNiche] = useState('');
@@ -99,6 +100,7 @@ export function ProfileSettings() {
       const newtimestamp = new Date().toISOString().replace(/[-:.TZ]/g, "");
       const bannarFilename = `uploads/Dalle-avatar-${newtimestamp}.png`;
       const publicBannarUrl = await uploadToSupabase(bannarImgBlob, bannarFilename);
+      
       if(publicBannarUrl) 
       {
         console.log("public url after uploading to supabase = " , publicBannarUrl) ; 
@@ -164,10 +166,13 @@ export function ProfileSettings() {
           headers : {
             "Content-Type": "application/json",
           } ,
-          body  : JSON.stringify({name : fullName , bio : content?.longBio , avatar : publicAvatarTwitterUrl   })
+          body  : JSON.stringify({name : fullName , bio : content?.longBio?.slice(0,50) , avatar : publicAvatarTwitterUrl   })
         })
         const data = await response.json() ; 
         console.log("response = "  , data  ) ;  
+        setShowPopup(true);
+        setTimeout(() => setShowPopup(false), 3000);
+     
       }
       catch(error : any ) 
       {
@@ -249,6 +254,11 @@ export function ProfileSettings() {
    
   return (
     <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
+      {showPopup && (
+        <div className="absolute top-10 right-5 p-3 bg-green-500 text-white rounded-lg shadow-lg">
+          ✅ Twitter Profile Updated Successfully!
+        </div>
+      )}
       <div className="mb-8">
         <h1 className="text-3xl font-bold text-white">
           {isFirstLogin ? 'Complete Your Profile' : 'Profile Settings'}
@@ -412,8 +422,7 @@ export function ProfileSettings() {
                 'Save Changes'
               )}
             </button>
-
-            {!generating && bio !== "" &&   <button
+            {selectedPlatform == "twitter" && !generating && bio !== "" &&   <button
               onClick={() => {handleTwitterProfileUpdate() }}
               type="submit"
               disabled={updateTwitterProfile}
@@ -435,7 +444,7 @@ export function ProfileSettings() {
 
         {/* Social Accounts Section */}
         <div className="bg-gray-800 rounded-xl p-6">
-          <SocialAccountsManager handleFetchProfileInfo = {handleFetchProfileInfo} />
+          <SocialAccountsManager selectedPlatform = {selectedPlatform}  setSelectedPlatform = {setSelectedPlatform} handleFetchProfileInfo = {handleFetchProfileInfo} />
         </div>
       </div>
     </div>

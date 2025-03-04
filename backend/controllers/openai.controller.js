@@ -22,11 +22,11 @@ async function uploadDataset(jsonlPath) {
     throw error
   }
 }
-async function fineTuneModel(fileId , model ) {
+async function fineTuneModel(fileId , customModel ) {
   try {
     const response = await openai.fineTuning.jobs.create({
       training_file: fileId,
-      model: "gpt-3.5-turbo",
+      model: customModel,
     });
     if (!response || !response.id) {
         throw new Error("File upload failed: No file ID returned.");
@@ -57,8 +57,8 @@ async function useFineTunedModel(model) {
 
 
 const fintuningModelHandler = async (req , res ) => {
-    const {model} = req.body ; 
-    if(!model) 
+    const {customModel} = req.body ; 
+    if(!customModel) 
     {
         return res.status(400).json({message : "Invalid body"}) ;
 
@@ -78,7 +78,7 @@ const fintuningModelHandler = async (req , res ) => {
         const jsonlData = jsonData.map((obj) => JSON.stringify(obj)).join("\n");
     fs.writeFileSync(jsonlPath, jsonlData, "utf8");
     const {id} = await uploadDataset(jsonlPath);
-    const {model} = await fineTuneModel(id  );
+    const {model} = await fineTuneModel(id  , customModel );
     return res.status(201).json({model : model})
 
     }

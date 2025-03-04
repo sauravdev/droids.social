@@ -80,6 +80,19 @@ const getUserInfo = async (req, res) => {
     return res.status(500).json({ error: 'Failed to fetch user info' });
   }
 }
+
+const getInsights = async ( req  , res ) => {
+
+  await new  Promise((resolve , reject) => {setTimeout(() => {resolve("")} , 5000)})
+  const data = {
+    followers : 1 , 
+    engagement : 63.5 ,
+    post : 5 , 
+    reach : 100 
+
+  }
+  return res.status(200).json({data}) ;
+}
 const postContent = async (data = "Some random text" , postId = null  ) => {
   if(data == "") {
     data = "Sample data from  nodejs application"
@@ -145,12 +158,13 @@ const schedulePostHandler = async  (req , res ) => {
       return res.status(500).json({message : "Failed to schedule tweet" })
     }
   } 
-  const getInsights = async ( req  , res ) => {
+  
+
+  const getTwitterInsights = async ( req  , res ) => {
     const {id} = req.body ;
     console.log("id = "  , id) ;
     const authHeader = req.header("Authorization") ;
     const ACCESS_TOKEN = authHeader.replace("Bearer " , "") ; 
-    
     if(!id) 
     {
       return res.status(400).json({message : "invalid body : id field is absent"}) ;
@@ -158,13 +172,20 @@ const schedulePostHandler = async  (req , res ) => {
     if (!authHeader || !authHeader.startsWith('Bearer ')) {
       return res.status(401).json({ error: 'Unauthorized: No valid access token provided' });
     }
-  
     try{
       const response = await fetch(`https://api.twitter.com/2/users/${id}?user.fields=public_metrics` , {
         headers: { Authorization: `Bearer ${ACCESS_TOKEN}` },
       })
       const data = await response.json() ; 
-      return res.status(200).json(data) ;  
+      const insights = {
+        followers : data?.followers , 
+        reach : data?.reach , 
+        post : data?.post , 
+        engagement : data?.engagement 
+
+      }
+
+      return res.status(200).json(insights) ;  
     }
     catch(error) 
     {
@@ -177,19 +198,19 @@ const schedulePostHandler = async  (req , res ) => {
     const {name , bio , avatar } = req.body ; 
     console.log("req body = " , req.body)  ;
     const myHeaders = new Headers();
-myHeaders.append("Content-Type", "application/x-www-form-urlencoded");
+    myHeaders.append("Content-Type", "application/x-www-form-urlencoded");
 myHeaders.append("Cookie", "guest_id=v1%3A174047070539156476; guest_id_ads=v1%3A174047070539156476; guest_id_marketing=v1%3A174047070539156476; personalization_id=\"v1_ukYfe4WD/MYETqVKvPJHeA==\"; lang=en");
 
 const urlencoded = new URLSearchParams();
-urlencoded.append("name", "hemant s paliwal");
-urlencoded.append("description", "Hemant Paliwal is a passionate developer specializing in web and mobile applications. ");
-urlencoded.append("oauth_consumer_key", "q3YtflSi3IPte1PjEpS4kwHql");
-urlencoded.append("oauth_token", "1882376046340866048-VAnej1QhJB8viefa3BCH1qRM7utYpz");
-urlencoded.append("oauth_signature_method", "HMAC-SHA1");
-urlencoded.append("oauth_timestamp", "1740550183");
-urlencoded.append("oauth_nonce", "lsFqLSIPT3v");
-urlencoded.append("oauth_version", "1.0");
-urlencoded.append("oauth_signature", "qV/heGrKfs/T1p8djoGu/KXDZGU=");
+  urlencoded.append("name", name);
+  urlencoded.append("description", bio );
+  urlencoded.append("oauth_consumer_key", "q3YtflSi3IPte1PjEpS4kwHql");
+  urlencoded.append("oauth_token", "1882376046340866048-VAnej1QhJB8viefa3BCH1qRM7utYpz");
+  urlencoded.append("oauth_signature_method", "HMAC-SHA1");
+  urlencoded.append("oauth_timestamp", "1740773326");
+  urlencoded.append("oauth_nonce", "OpAfc9TVg3p");
+  urlencoded.append("oauth_version", "1.0");
+  urlencoded.append("oauth_signature", "HiK8reBzXxg+me2+DcIEOuDeGrA=");
 
 const requestOptions = {
   method: "POST",
@@ -211,4 +232,5 @@ const requestOptions = {
     
 } 
 
-export {generateAccessToken , getUserInfo  ,postContent , postContentHandler ,schedulePostHandler  ,getInsights , updateProfileInfo }  
+
+export {generateAccessToken , getUserInfo  ,postContent , postContentHandler ,schedulePostHandler  ,getInsights , updateProfileInfo ,getTwitterInsights }  

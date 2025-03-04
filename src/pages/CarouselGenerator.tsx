@@ -77,8 +77,8 @@ export function CarouselGenerator() {
   const [postingOnInsta , setPostingOnInsta ] = useState<boolean>(false);
   const [postingOnLinkedin  , setPostingOnLinkedIn] = useState<boolean>(false) ; 
   const [showScheduleModal , setShowScheduleModal] = useState<boolean>(false) ; 
-
   const [schedulingInstagramCarousel , setSchedulingInstagramCarousel ] = useState<boolean>(false) ; 
+  const [generatedCaption , setGeneratedCaption] = useState<string>(""); 
 
   
 
@@ -166,8 +166,9 @@ export function CarouselGenerator() {
         console.log(err) ; 
         slideContents = [] 
         console.log("error parsing json") 
+        setGenerating(false) ;
+        return ; 
       }
-      // Ensure we have all required slides
       while (slideContents.length < 3) {
         slideContents.push({
           header: `Slide ${slideContents.length + 1}`,
@@ -193,7 +194,8 @@ export function CarouselGenerator() {
         })
       );
       console.log(newSlides) 
-
+      const caption = await generatePost(topic   , platform) ;
+      setGeneratedCaption(caption) ;
       setSlides(newSlides);
       setCurrentSlide(0);
     } catch (err: any) {
@@ -239,7 +241,7 @@ export function CarouselGenerator() {
   
     for (let i = 1; i <= pdf.numPages; i++) {
       const page = await pdf.getPage(i);
-      const viewport = page.getViewport({ scale: 2 });
+      const viewport = page.getViewport({ scale: 2});
       const canvas = document.createElement('canvas');
       const context = canvas.getContext('2d');
       canvas.width = viewport.width;
@@ -265,8 +267,8 @@ export function CarouselGenerator() {
     }
     console.log("public images url = " , imageUrls) ;
     console.log("image urls = " , imageUrls) ; 
-    const caption = await generatePost(topic   , "instagram") ;
-    return {imageUrls ,caption } 
+   
+    return {imageUrls  } 
     
   };
 
@@ -439,14 +441,14 @@ export function CarouselGenerator() {
       const pdfBlob = pdf.output('blob');
       console.log("pdf blob" , pdfBlob) 
       const pdfUrl = URL.createObjectURL(pdfBlob);
-      const {imageUrls , caption }  = await convertPDFToImages(pdfUrl);
+      const {imageUrls }  = await convertPDFToImages(pdfUrl);
       const accountInfo = await getSocialMediaAccountInfo("instagram") ; 
       const {access_token , userId } = accountInfo  ;  
       if(!postId) 
         {
           const post = {
             platform: platform ,
-            content : caption ,
+            content : generatedCaption ,
             media_urls : [] , 
             scheduled_for  :date , 
             status : "pending" , 
@@ -793,12 +795,15 @@ export function CarouselGenerator() {
                 outline: 'none',
                 textAlign: 'center',
     }}
-    className="bg-transparent text-xl"
+    className="bg-transparent text-2xl tracking-wide font-medium text-white"
     onChange={(e) => updateSlide(slide.id, { content:e.target.value })} // Updates state on change
 >
     {slide.content}
 </div>
         </div>
+
+
+        
 
         {/* Footer */}
         <div className="w-full flex justify-between items-center text-sm opacity-75">
@@ -809,6 +814,12 @@ export function CarouselGenerator() {
     ))}
   </div>
 
+
+      {generatedCaption && <div className='flex flex-col gap-4 my-4 '>
+        <h2 className='capitalize text-2xl text-white '>Caption For <span>{platform}</span></h2>
+        <div className='text-xl text-white px-4 py-4 w-full border-2 border-purple-500 rounded-lg ' contentEditable ={true}>{generatedCaption}</div>
+        
+        </div>}
           {/* Slide Editor  */}
           <div className="mt-6 space-y-4">
             <div>

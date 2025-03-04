@@ -94,7 +94,7 @@ const getUserInfo = async (req, res) => {
 
 const uploadContent =async (ACCESS_TOKEN , IG_USER_ID , generatedContent  = "This is a sample caption posted from my nodejs application" , postId = null ) => {
 
-  // const imageUrl = "https://res.cloudinary.com/dbnivp7nr/image/upload/v1731472487/bsuvfszuay9rp8odnbrd.jpg";
+  const imageUrl = "https://zkzdqldpzvjeftxbzgvh.supabase.co/storage/v1/object/public/profile-images/uploads/Dalle-slide-20250228155509783-1.png";
   const caption = generatedContent
   try{
 
@@ -246,7 +246,7 @@ async function publishCarousel(imageUrls , ACCESS_TOKEN , IG_USER_ID , caption ,
     }
     return publishResponse.data.id;
   } catch (error) {
-    console.error("Error publishing carousel:", error || error.response?.data || error.message);
+    console.error("Error publishing carousel:", error.message || error.response?.data || error.message);
     throw new Error("Failed to publish carousel");
   }
 }

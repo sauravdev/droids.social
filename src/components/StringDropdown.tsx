@@ -4,7 +4,7 @@ interface DropDownProps {
   setSelectedItem : (arg0 : string) => void 
 }
 const StringDropdown = ({selectedItem , setSelectedItem} : DropDownProps ) => {
-  const options = ["gpt-4o-mini" , "gpt-3.5-turbo" , "gpt-4o"];
+  const options = ["gpt-4o-2024-08-06" , "gpt-3.5-turbo" , "gpt-4o-mini-2024-07-18" , "gpt-4-0613" , "gpt-3.5-turbo-1106" , "gpt-3.5-turbo-0613"];
   
   
   const [isOpen, setIsOpen] = useState(false);
