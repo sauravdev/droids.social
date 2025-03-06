@@ -1,8 +1,23 @@
 import OpenAI from 'openai';
 import type { ContentStrategy } from './types';
 import { getCustomModels } from './api';
+// import { encode } from 'tiktoken';
 import { PYTHON_SERVER_URI } from '../constants';
 // Initialize OpenAI client
+
+
+// const countTokens = (text: string, model: string = "gpt-4o-mini") => {
+//   try {
+//     const encoding = encode(text, model);
+//     return encoding.length;
+//   } catch (error) {
+//     console.error("Error encoding tokens:", error);
+//     return 0;
+//   }
+// };
+
+
+
 const openai = new OpenAI({
   apiKey: import.meta.env.VITE_OPENAI_API_KEY,
   dangerouslyAllowBrowser: true // Note: In production, API calls should be made through a backend
@@ -170,9 +185,11 @@ export async function generatePost(
       model  :"gpt-4o-mini",
       // model: "gpt-4-turbo-preview"
     });
-
+    // console.log("tokens in prompt = " , countTokens(prompt)) ; 
     const response = completion.choices[0].message.content;
     console.log("response from handle generate " , response) ; 
+    // console.log("tokens in response = " , countTokens(response) ) ; 
+
     // const data = await generatePostFromCustomModel(prompt) ;
     if (!response) throw new Error('Failed to generate post');
 
@@ -216,19 +233,28 @@ export async function generateProfileContent(name: string, niche: string) {
 
 
 
-export async function generateAIContentSuggestion() {
-const prompt = `Generate a JSON array of social media growth tips to help increase reach and followers. Each item in the array should follow this structure:
+export async function generateAIContentSuggestion(instaFollowers : string , instaReach : string , twitterFollowers : string , twitterReach : string ) {
+const prompt = `Generate a JSON object containing social media growth tips tailored to my current Instagram and Twitter analytics. The object should have a key named "tips" with an array of at least 5 unique growth strategies. Each item in the array should follow this structure:
+
 {
   "type": "Category of the tip (e.g., Engagement, Hashtags, Content Strategy, Posting Time, Algorithm Optimization, etc.)",
   "title": "A short and catchy title summarizing the tip",
-  "description": "A detailed explanation, including actionable advice on how to use this strategy effectively"
+  "description": "A detailed explanation, including actionable advice on how to use this strategy effectively, with direct reference to my analytics data."
 }
 
-Ensure:
-- Return a object having key as tips and value as array
-- At least 5 unique social media growth tips  
-- A mix of strategies related to engagement, posting consistency, algorithm hacks, audience interaction, and content optimization  
-- The response should be a valid JSON array.`;
+My current analytics data:
+- **Instagram Reach:** ${instaReach || 0}
+- **Instagram Followers:** ${instaFollowers || 0}
+- **Twitter Reach:** ${twitterReach || 0}
+- **Twitter Followers:** ${twitterFollowers || 0}
+
+### Requirements:
+- Each tip must integrate my provided analytics data into the advice. For example:
+  - If my Instagram reach is low, suggest strategies to improve it.
+  - If my Twitter followers are growing slowly, provide tactics to increase engagement.
+- Include a mix of strategies such as engagement techniques, posting frequency, algorithm insights, audience interaction, and content optimization.
+- Ensure the response is a valid JSON object, formatted properly for direct use in my application.
+`;
 
   // await postGenerationApi(prompt) ; 
 
@@ -275,6 +301,7 @@ export async function generatePostFromCustomModel(prompt : string )
         model : model?.custom_model,
         messages: [{ role: "user", content: prompt + sample }]
       });
+
       console.log("Response:", response.choices[0].message.content);
       
       return response.choices[0].message.content ; 
@@ -295,6 +322,7 @@ export async function generatePostFromCustomModel(prompt : string )
             )
           });
           const data = await response.json() ; 
+        
           console.log("response from the server post generation api " , data ) ; 
         console.log("Response:", data.results[0].text[0]);
         return data?.results[0]?.text[0] ;  

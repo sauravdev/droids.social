@@ -22,8 +22,7 @@ export function Footer() {
             <h3 className="text-white font-semibold mb-4">Product</h3>
             <ul className="space-y-2">
               <li><a href="#" className="text-gray-400 hover:text-white">Features</a></li>
-              <li><a href="#" className="text-gray-400 hover:text-white">Pricing</a></li>
-              <li><a href="#" className="text-gray-400 hover:text-white">API</a></li>
+              <li><a href="/#pricing" className="text-gray-400 hover:text-white">Pricing</a></li>
             </ul>
           </div>
 
@@ -31,9 +30,9 @@ export function Footer() {
           <div>
             <h3 className="text-white font-semibold mb-4">Company</h3>
             <ul className="space-y-2">
-              <li><a href="#" className="text-gray-400 hover:text-white">About</a></li>
+              <li><a href="#about" className="text-gray-400 hover:text-white">About</a></li>
               <li><a href="#" className="text-gray-400 hover:text-white">Blog</a></li>
-              <li><a href="#" className="text-gray-400 hover:text-white">Careers</a></li>
+              <li><a href="#contact" className="text-gray-400 hover:text-white">Careers</a></li>
             </ul>
           </div>
 

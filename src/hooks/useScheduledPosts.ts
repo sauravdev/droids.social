@@ -10,13 +10,11 @@ export function useScheduledPosts() {
     loadPosts();
   }, []);
   useEffect(() => {
-    console.log("posts = " , posts) ; 
   } ,[posts] ) ; 
 
   async function loadPosts() : ScheduledPost  {
     try {
       const data = await getScheduledPosts();
-      console.log("scheduled posts = " , data) ;
       return data 
     } catch (err: any) {
       setError(err.message);

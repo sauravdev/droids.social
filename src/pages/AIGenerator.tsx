@@ -1,6 +1,6 @@
 import React, { useState , useEffect} from 'react';
 import {Twitter, Linkedin, Instagram , Sparkles, Loader, Save, Edit2, History, RefreshCw, X, Calendar  , HardDriveUpload} from 'lucide-react';
-import { generatePost, generatePostFromCustomModel, postGenerationApi } from '../lib/openai';
+import { generateImage, generatePost, generatePostFromCustomModel, postGenerationApi } from '../lib/openai';
 import { useContentPlan } from '../hooks/useContentPlan';
 import { supabase } from '../lib/supabase';
 import { ScheduleModal } from '../components/ScheduleModal';
@@ -22,7 +22,9 @@ const sourceOptions = ['arxiv', 'youtube', 'twitter', 'linkedin', 'feedly'];
 
 export function AIGenerator() {
   const [topic, setTopic] = useState('');
-  const [platform, setPlatform] = useState<'twitter' | 'linkedin' | 'instagram'>('twitter');  const [formats, setFormats] = useState<string[]>(['text']);
+  const [platforms, setPlatforms] = useState<any>(['twitter' , "instagram" , "linkedin"]);  const [formats, setFormats] = useState<string[]>(['text']);
+  const [selectedPlatforms , setSelectedPlatforms ] = useState<any>(["instagram"]) ; 
+  const [platform , setPlatform ] = useState<string>("instagram")
   const [sources, setSources] = useState<string[]>([]);
   const [generatedContent, setGeneratedContent] = useState('');
   const [loading, setLoading] = useState(false);
@@ -31,14 +33,12 @@ export function AIGenerator() {
   const [showScheduleModal, setShowScheduleModal] = useState(false);
   const [history, setHistory] = useState<HistoryItem[]>([]);
   const [posting , setPosting  ] = useState(false ); 
+  const [generatedImage , setGeneratedImage ] = useState("") ;
+
   const { createPlan } = useContentPlan();
   const {accounts} = useSocialAccounts() ; 
 
   const {createPost} = useScheduledPosts() ; 
-
-
-
-
   async function handlePostTweet() {
     setPosting(true) ;
 
@@ -51,10 +51,28 @@ export function AIGenerator() {
     setPosting(false) ;
   }
   const handlePostInstagram = async () => {
+    setPosting(true)  ;
+    if(!generatedImage) 
+      {
+        setError("Please Provide Image For Uploading On Instagram") ; 
+        return ; 
+      }
+    if(!generatedContent) 
+    {
+      setError("Please Provide Caption For Uploading On Instagram ") ; 
+    }
+
+  
     try{
       const accountInfo = await getSocialMediaAccountInfo("instagram") ; 
       const {access_token , userId  } = accountInfo  ;
 
+      if(!userId || !access_token ) 
+      {
+        setError("Something went wrong while fetching user information") ;
+        return ; 
+      }
+      
       const response = await fetch(`${BACKEND_APIPATH.BASEURL}/upload/post/instagram`,
         {
           method: 'POST',
@@ -62,7 +80,7 @@ export function AIGenerator() {
             'Authorization': `Bearer ${access_token}`,
             'Content-Type': 'application/json',
           },
-          body: JSON.stringify({IG_USER_ID : userId ,  caption: generatedContent   }),
+          body: JSON.stringify({IG_USER_ID : userId ,  caption: generatedContent  , imageUrl : generatedImage  }),
         }
       );
       const data = await response.json() ; 
@@ -72,14 +90,25 @@ export function AIGenerator() {
     {
       console.log(err) ; 
     }
+    finally{
+      setPosting(false) ;
+    }
   }
 
   const handlePostLinkedin = async () => {
-    
-
+    setPosting(true)  ;
+    if(!generatedContent) 
+      {
+        setError("Please Provide Caption For Uploading On Instagram ") ; 
+      }
     try{
       const accountInfo = await getSocialMediaAccountInfo("linkedin") ; 
       const {access_token , userId  } = accountInfo  ;
+      if(!userId || !access_token ) 
+        {
+          setError("Something went wrong while fetching user information") ;
+          return ; 
+        }
       const response = await fetch(`${BACKEND_APIPATH.BASEURL}/upload/post/linkedin` ,
         {
           method: 'POST',
@@ -98,6 +127,9 @@ export function AIGenerator() {
     {
       console.log(err)  ;
     }
+    finally{
+      setPosting(false) ;
+    }
   }
 
   
@@ -107,6 +139,7 @@ export function AIGenerator() {
     {value : "instagram" , method : handlePostInstagram , icon : <Instagram/>},
     {value : "linkedin" , method : handlePostLinkedin , icon : <Linkedin/>},
   ]
+ 
 
   const handleFormatToggle = (format: string) => {
     setFormats(prev => 
@@ -116,8 +149,56 @@ export function AIGenerator() {
     );
   };
 
+async function uploadToSupabase(imageData: File | Blob, fileName: string): Promise<string | null> {
+      try{
+        const { data, error } = await supabase.storage
+        .from('profile-images')  
+        .upload(fileName, imageData, {
+          cacheControl: '3600', 
+          upsert: true , 
+          contentType: imageData.type || 'image/png',
+        });
+    
+      if (error) {
+        console.error('Error uploading to Supabase:', error);
+        return null;
+      }
+      const { data: urlData } = supabase.storage
+        .from('profile-images')
+        .getPublicUrl(fileName);
+    
+      return urlData?.publicUrl ?? null;
+      }
+      catch(err) 
+      {
+        console.log("error  = " , err ) 
+      } 
+  } 
 
+  const handleImageGeneration =  async () => {
 
+    try{
+      const imageURI = await generateImage(topic) ;
+      const response = await fetch(`${BACKEND_APIPATH.BASEURL}/fetch-image?url=${encodeURIComponent(imageURI)}`)
+      const imageBlob = await response.blob(); 
+      const fileName = `uploads/generations-${Date.now()}.png`;
+      const { data, error } = await supabase.storage
+      .from("profile-images")
+      .upload(fileName, imageBlob, { contentType: "image/png" });
+    if (error) throw error;
+    // Get the public URL of the uploaded image
+     const { data: urlData } = supabase.storage
+           .from('profile-images')
+           .getPublicUrl(fileName);
+    setGeneratedImage(urlData?.publicUrl ) ;
+    }
+    catch(error : any ) 
+    {
+      console.log("Something went wrong while handling the image " , error  ) ; 
+      setError(error?.message) ; 
+    }
+
+  }
 
   const handleSourceToggle = (source: string) => {
     setSources(prev => 
@@ -134,6 +215,14 @@ export function AIGenerator() {
     }
     setLoading(true);
     setError(null); 
+
+    if (formats.find((format) => format === "image")) 
+    {
+      await handleImageGeneration() ;
+    }
+    else{
+      setGeneratedImage("") ;
+    }
     try {
       
       // const content = await generatePost(topic, platform, tone);
@@ -154,7 +243,7 @@ export function AIGenerator() {
     }
   };
 
-  const handleSave = async () => {
+  const handleSave = async (platform : string ) => {
     if (!generatedContent) {
       setError('Please generate content first');
       return;
@@ -176,10 +265,6 @@ export function AIGenerator() {
         status: 'pending',
         scheduled_for: null
       });
-
-      // Clear form after successful save
-      setTopic('');
-      setGeneratedContent('');
       
     } catch (err: any) {
       setError(err.message);
@@ -187,16 +272,12 @@ export function AIGenerator() {
       setSaving(false);
     }
   };
-
-  
-  
-  
-
-  
-
   const handleScheduleTweet = async (date: string , postId : null | string = null ) => {
-    
-
+    if(!generatedContent) 
+    {
+      setError("Please generate content first") ; 
+      return  ; 
+    }
     try {
       // protected route 
       const { data: { user } } = await supabase.auth.getUser();
@@ -204,7 +285,7 @@ export function AIGenerator() {
 
       console.log(date.toString() ); 
       const post = {
-        platform: platform ,
+        platform: "twitter" ,
         content : generatedContent ,
         media_urls : [] , 
         scheduled_for  :date , 
@@ -217,37 +298,48 @@ export function AIGenerator() {
         const scheduledResponse = await fetch(`${BACKEND_APIPATH.BASEURL}/schedule/post/api` , {method : "POST"   , headers: {
           'Content-Type': 'application/json',
         } , body : JSON.stringify({data : generatedContent , date  : date.toString() , jobId  :createdPost?.id })})
-        console.log("scheduled response from API  =  "  , scheduledResponse.json() ) ;
+        console.log("scheduled response from API  =  "  , await scheduledResponse.json() ) ;
       }
       else{
         const scheduledResponse = await fetch(`${BACKEND_APIPATH.BASEURL}/schedule/post/api` , {method : "POST"   , headers: {
           'Content-Type': 'application/json',
         } , body : JSON.stringify({data : generatedContent , date  : date.toString() , jobId  :postId})})
-        console.log("scheduled response from API  =  "  , scheduledResponse.json() ) ;
+        console.log("scheduled response from API  =  "  , await scheduledResponse.json() ) ;
       }
-
-      
-      
-      // scheduled post using create post 
-      setShowScheduleModal(false);
-      setTopic('');
-      setGeneratedContent('');
-      
     } catch (err: any) {
       setError(err.message);
     }
-   
+    finally{
+      setShowScheduleModal(false);
+      setTopic('');
+      setGeneratedContent('');
+    }
   };
   const handleScheduleInstaPost = async (date :string , postId : null | string = null ) => {
+    if(!generatedImage)
+    {
+      setError("Please Provide Image For Uploading On Instagram") ;
+      return ;
+    }
+    if(!generatedContent) 
+    {
+      setError("Please generate content first") ; 
+      return ; 
+    }
     try{
       const accountInfo = await getSocialMediaAccountInfo("instagram") ; 
       const {access_token , userId } = accountInfo  ;    
+      if(!access_token || !userId) 
+      {
+        setError("Something went wrong while fetching user information") ;
+        return ; 
+      } 
       if(!postId) 
       {
         const post = {
-          platform: platform ,
+          platform: "instagram" ,
           content : generatedContent ,
-          media_urls : [] , 
+          media_urls : [generatedImage] , 
           scheduled_for  :date , 
           status : "pending" , 
         }
@@ -259,8 +351,8 @@ export function AIGenerator() {
             'Authorization': `Bearer ${access_token}`, 
             "Content-Type" : "application/json" ,
           } , 
-          body : JSON.stringify({ IG_USER_ID  : userId , date : date ,  caption : generatedContent , jobId : createdPost?.id })
-  
+          body : JSON.stringify({ IG_USER_ID  : userId , date : date ,  caption : generatedContent , imageUrl : generatedImage  ,  jobId : createdPost?.id })
+
         })
         const data = await response.json() 
         console.log("scheduled insta post api " , data ) ;
@@ -278,27 +370,22 @@ export function AIGenerator() {
         const data = await response.json() 
         console.log("scheduled insta post api " , data ) ;
       }
-
-      
       setShowScheduleModal(false); 
       // create scheduled post 
-      
     }
     catch(err)  
     {
       console.log(err);
     }
-
   }
   const handleScheduleLinkedinPost = async (date : string ,  postId : null | string = null) => {
   try{
     const accountInfo = await getSocialMediaAccountInfo("linkedin") ; 
     const {access_token , userId  } = accountInfo  ;
-
    if(!postId) 
    {
     const post = {
-      platform: platform ,
+      platform: "linkedin" ,
       content : generatedContent ,
       media_urls : [] , 
       scheduled_for  :date , 
@@ -315,9 +402,8 @@ export function AIGenerator() {
         body: JSON.stringify({ id :userId,  text: generatedContent  , date  , jobId : createdPost?.id }),
       }
     );
-    const data = response.json() ; 
-    setShowScheduleModal(false); 
-    return data ;
+    const data = await response.json() ; 
+    console.log("data = " , data )  ;
    }
    else{
     const response = await fetch(`${BACKEND_APIPATH.BASEURL}/schedule/post/linkedin`,
@@ -330,17 +416,18 @@ export function AIGenerator() {
         body: JSON.stringify({ id :userId,  text: generatedContent  , date  , jobId : postId }),
       }
     );
-
-    const data = response.json() ; 
-    setShowScheduleModal(false); 
-    return data ;
+    const data = await response.json() ; 
+    console.log("data = " , data )  ;
    }
    
   }
-
   catch(err) 
   {
     console.log(err) ;
+  }
+  finally{
+    setShowScheduleModal(false); 
+  
   }
 }
 
@@ -353,7 +440,33 @@ export function AIGenerator() {
     setHistory(prev => prev.filter(item => item.id !== id));
   };
 
-  // Rest of the component JSX remains the same...
+  const handleMultiPlatformPost = async () => {
+    setPosting(true)  ;
+    console.log("selected platforms  = " , selectedPlatforms  ) ; 
+    const apiCalls = selectedPlatforms.map((selectedPlatform : string ) => selectedPlatform == "twitter" ? handlePostTweet : selectedPlatform == "instagram" ? handlePostInstagram : handlePostLinkedin )
+    console.log("api calls = " , apiCalls) ; 
+    try {
+      if(selectedPlatforms?.find((selectedPlatform : string  ) => selectedPlatform == "instagram") ) 
+      {
+        await handlePostInstagram() ; 
+      }
+      if(selectedPlatforms?.find((selectedPlatform : string  ) => selectedPlatform == "linkedin"))
+      {
+        await handlePostLinkedin() ; 
+      }
+      // if(selectedPlatforms?.find((selectedPlatform : string  ) => selectedPlatform == "twitter"))
+      // {
+      //   await handlePostTweet()  ;
+      // }
+    } catch (error) {
+      console.error("Error:", error);
+      setError("Something went wrong") ; 
+    }
+    finally{
+      setPosting(false) ; 
+    }
+    
+  }
   return (
     <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
       <h1 className="text-2xl sm:text-3xl font-bold text-white mb-4 sm:mb-8">AI Content Generator</h1>
@@ -383,22 +496,36 @@ export function AIGenerator() {
                 />
               </div>
 
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 w-full ">
                {accounts.length > 0 && <div>
                  
                   <label htmlFor="platform" className="block text-sm font-medium text-gray-300 mb-1">
                     Platform
                   </label>
-                  <select
-                    id="platform"
-                    value={platform}
-                    onChange={(e) => setPlatform(e.target.value as 'twitter' | 'linkedin' | 'instagram')}
-                    className="w-full bg-gray-700 border border-gray-600 rounded-md shadow-sm py-2 px-3 text-white focus:ring-purple-500 focus:border-purple-500 text-sm sm:text-base"
-                  >
-                    {accounts.find((account) => account?.platform == "twitter" ) && <option value="twitter">Twitter</option>}
-                    {accounts.find((account) => account?.platform == "linkedin" ) &&  <option value="linkedin">LinkedIn</option>}
-                    {accounts.find((account) => account?.platform == "instagram" ) && <option value="instagram">Instagram</option>}
-                  </select>
+                  <div className='flex  gap-2 w-full '>
+  
+                    {
+                      platforms.map((platform : string  , index  ) => {
+                        return accounts.find((account) => account?.platform == platform ) && <button className={`${(selectedPlatforms.some((selectedPlatform : string  ) => selectedPlatform === platform )? 'bg-purple-600 text-white'
+                          : 'bg-gray-700 text-gray-300 hover:bg-gray-600'  )} px-3 py-1 rounded-full text-xs sm:text-sm `} onClick={() => {
+                            if(selectedPlatforms.some((selectedPlatform : string  ) => selectedPlatform == platform ))
+                            {
+                              const newSelectedPlatforms = selectedPlatforms.filter((selectedPlatform : string  ) => selectedPlatform !== platform )
+                              setSelectedPlatforms(newSelectedPlatforms) ; 
+                            }
+                            else{
+                              setSelectedPlatforms((prev) => {
+                                return [
+                                  ...prev , 
+                                  platform
+                                ]
+                              })
+
+                            }
+                          }} key = {index} >{platform} </button>
+                      })
+                    }
+                  </div>
                 </div>}
 
                 <div>
@@ -470,17 +597,12 @@ export function AIGenerator() {
 
               {generatedContent && (
                 <div className="space-y-4">
+                  {generatedImage != "" && <div className='w-full'><img  className='w-full object-cover rounded-xl' src = {generatedImage} /> </div>}
                   <div>
                     <label className="block text-sm font-medium text-gray-300 mb-1">
                       Generated Content
                     </label>
                     <Editor data = {generatedContent} />
-                    {/* <textarea
-                      value={generatedContent}
-                      onChange={(e) => setGeneratedContent(e.target.value)}
-                      rows={4}
-                      className="w-full bg-gray-700 border border-gray-600 rounded-md shadow-sm py-2 px-3 text-white focus:ring-purple-500 focus:border-purple-500 text-sm sm:text-base"
-                    /> */}
                   </div>
 
                   <div className="flex flex-col sm:flex-row gap-2 sm:space-x-2">
@@ -491,8 +613,13 @@ export function AIGenerator() {
                       <RefreshCw className="h-4 w-4 sm:h-5 sm:w-5" />
                       <span>Regenerate</span>
                     </button>
-                    <button
-                      onClick={handleSave}
+                    {<button
+                      onClick={() => {selectedPlatforms.map((selectedPlatform  : string ) => {
+                        handleSave(selectedPlatform) 
+                      }) ; 
+                      setTopic('');
+                      setGeneratedContent('');
+                    }}
                       disabled={saving}
                       className="flex-1 bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-md flex items-center justify-center space-x-2 disabled:opacity-50 text-sm sm:text-base"
                     >
@@ -507,12 +634,10 @@ export function AIGenerator() {
                           <span>Save</span>
                         </>
                       )}
-                    </button>
-
-                    {/* handle validations before posting  1) button display  */}
+                    </button>}
                    {
-                    postButtons.map((postButton) => {
-                      return  platform === postButton?.value && <button
+                    selectedPlatforms?.length == 1 && postButtons.map((postButton) => {
+                      return  selectedPlatforms.find((selectedPlatform : string ) => selectedPlatform === postButton?.value )  && <button
                       onClick={postButton?.method}
                       disabled={posting}
                       className="flex-1 bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-md flex items-center justify-center space-x-2 disabled:opacity-50 text-sm sm:text-base"
@@ -533,14 +658,30 @@ export function AIGenerator() {
                     })
                    }
 
-                    <button
+                   {
+                    selectedPlatforms?.length > 1 && 
+                    <div className='flex-1'><button disabled={posting} onClick={handleMultiPlatformPost} className='flex-1 bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-md flex items-center justify-center space-x-2 disabled:opacity-50 text-sm sm:text-base w-full '>
+
+                        {posting ? (
+                        <>
+                          <Loader className="h-4 w-4 sm:h-5 sm:w-5 animate-spin" />
+                          <span>posting...</span>
+                        </>
+                      ) : (
+                        <>
+                          <span>Post</span>
+                        </>
+                      )}
+                      </button></div>
+                   }
+                   { selectedPlatforms?.length == 1 && <button
                     
                       onClick={() => setShowScheduleModal(true)}
                       className="flex-1 bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-md flex items-center justify-center space-x-2 text-sm sm:text-base"
                     >
                       <Calendar className="h-4 w-4 sm:h-5 sm:w-5" />
                       <span>Schedule</span>
-                    </button>
+                    </button>}
                   </div>
                 </div>
               )}
@@ -589,6 +730,8 @@ export function AIGenerator() {
             )}
           </div>
         </div>
+
+        
       </div>
 
       {/* Schedule Modal */}
@@ -606,7 +749,7 @@ export function AIGenerator() {
             created_at: new Date().toISOString(),
             updated_at: new Date().toISOString()
           }}
-          onSchedule={platform == "twitter" ? handleScheduleTweet : platform == "instagram" ? handleScheduleInstaPost : handleScheduleLinkedinPost}
+          onSchedule={selectedPlatforms[0] == "twitter" ? handleScheduleTweet : selectedPlatforms[0] == "instagram" ? handleScheduleInstaPost : handleScheduleLinkedinPost}
           onClose={() => setShowScheduleModal(false)}
         />
       )}

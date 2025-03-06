@@ -92,16 +92,20 @@ const getUserInfo = async (req, res) => {
 }
 
 
-const uploadContent =async (ACCESS_TOKEN , IG_USER_ID , generatedContent  = "This is a sample caption posted from my nodejs application" , postId = null ) => {
+const uploadContent =async (ACCESS_TOKEN , IG_USER_ID , generatedContent  = "This is a sample caption posted from my nodejs application"  , imageUrl , postId = null    ) => {
 
-  const imageUrl = "https://zkzdqldpzvjeftxbzgvh.supabase.co/storage/v1/object/public/profile-images/uploads/Dalle-slide-20250228155509783-1.png";
+  // const imageUrl = "https://zkzdqldpzvjeftxbzgvh.supabase.co/storage/v1/object/public/profile-images/uploads/Dalle-slide-20250228155509783-1.png";
+  if(postId) 
+    {
+        await updateScheduledPost(postId , {status : 'published'})
+    }
   const caption = generatedContent
   try{
 
     let response = await fetch(`https://graph.instagram.com/v19.0/${IG_USER_ID}/media`, {
       method: "POST",
       body: new URLSearchParams({
-        image_url: imageUrl,
+        image_url: imageUrl || "https://zkzdqldpzvjeftxbzgvh.supabase.co/storage/v1/object/public/profile-images/uploads/Dalle-slide-20250228155509783-1.png" ,
         caption: caption,
         access_token: ACCESS_TOKEN,
       }),
@@ -119,10 +123,7 @@ const uploadContent =async (ACCESS_TOKEN , IG_USER_ID , generatedContent  = "Thi
     });
 
     console.log(await response2.json() ) ;
-    if(postId) 
-    {
-        await updateScheduledPost(postId , {status : 'published'})
-    }
+  
     return true ; 
    
   }
@@ -134,8 +135,12 @@ const uploadContent =async (ACCESS_TOKEN , IG_USER_ID , generatedContent  = "Thi
 }
 
 const uploadContentHandler = async (req  , res ) => {
-    const {IG_USER_ID , caption , postId } = req.body ; 
+    const {IG_USER_ID , caption , postId , imageUrl } = req.body ; 
     const authHeader = req.header("Authorization") ; 
+    if(!imageUrl) 
+    {
+      return res.status(400).json({error  :"Invalid body : No imageUrl provided"}) ;
+    }
     if(!IG_USER_ID){
       return res.status(400).json({ error: "Invalid body : Missing IG_USER_ID"}) ;
     }
@@ -144,14 +149,18 @@ const uploadContentHandler = async (req  , res ) => {
   }
     const ACCESS_TOKEN = authHeader.replace('Bearer ', '')
     console.log("Access token recieved in header" , ACCESS_TOKEN) ; 
-    if ( await uploadContent(ACCESS_TOKEN , IG_USER_ID , caption , postId) ) 
+    if ( await uploadContent(ACCESS_TOKEN , IG_USER_ID , caption ,   imageUrl   ,postId  ) ) 
        {return res.status(201).json({message  :"Content posted successfully"})}
     else { return res.status(500).json({message : "Something went wrong"}) } 
   } 
 
 const scheduleContentHandler = async (req , res ) => {
-  const { IG_USER_ID , date  , caption , jobId  } = req.body ;
+  const { IG_USER_ID , date  , caption  ,   imageUrl ,  jobId  } = req.body ;
   console.log(req.body);
+  if(!imageUrl ) 
+  {
+    return res.status(400).json({message  :"Invalid body  : Image Url is missing"})
+  }
   if(!jobId) 
   {
     return res.status(400).json({ error: "Invalid body : Missing jobId"}) ;
@@ -178,12 +187,12 @@ const scheduleContentHandler = async (req , res ) => {
         job.cancel()  ; 
         console.log("cancelling already scheduled job and scheduling a new one" )
         scheduledJobsMap.delete(jobId) 
-        const newJob = schedule.scheduleJob(date ,  () => { uploadContent(ACCESS_TOKEN , IG_USER_ID ,  caption , jobId )}  ) ;
+        const newJob = schedule.scheduleJob(date ,  () => { uploadContent(ACCESS_TOKEN , IG_USER_ID ,  caption ,  imageUrl  , jobId )}  ) ;
         scheduledJobsMap.set(jobId , newJob) ; 
        }
        else{
         console.log("scheduling new job")
-        const job =schedule.scheduleJob(date ,  () => { uploadContent(ACCESS_TOKEN , IG_USER_ID ,  caption , jobId )}  ) ;
+        const job =schedule.scheduleJob(date ,  () => { uploadContent(ACCESS_TOKEN , IG_USER_ID ,  caption ,    imageUrl   , jobId )}  ) ;
         console.log("job = " , job) ;
         scheduledJobsMap.set(jobId , job) ; 
        }
@@ -198,6 +207,10 @@ const scheduleContentHandler = async (req , res ) => {
 }
 async function publishCarousel(imageUrls , ACCESS_TOKEN , IG_USER_ID , caption , postId = null ) {
   console.log(imageUrls)
+  if(postId) 
+    {
+      await updateScheduledPost(postId , {status : 'published'})
+    }
   try {
     const mediaContainerIds = [];
     for (const imageUrl of imageUrls) {
@@ -240,21 +253,21 @@ async function publishCarousel(imageUrls , ACCESS_TOKEN , IG_USER_ID , caption ,
     );
 
     console.log("Carousel published successfully! Post ID:", publishResponse.data.id);
-    if(postId) 
-    {
-      await updateScheduledPost(postId , {status : 'published'})
-    }
+ 
     return publishResponse.data.id;
   } catch (error) {
     console.error("Error publishing carousel:", error.message || error.response?.data || error.message);
-    throw new Error("Failed to publish carousel");
   }
 }
 
 const publishInstagramCarousel = async (req, res) => {
   const {imageUrls  , userId , caption }  = req.body;
+  console.log("caption = " , caption ) ; 
   const authHeader = req.header("Authorization") ;
-  
+  if(!caption ) 
+  {
+    return res.status(400).json({error : "Please provide caption"})
+  }
   if(!userId) 
     {
         return res.status(400).json({ error: "Invalid body : Missing IG_USER_ID"})
@@ -281,6 +294,7 @@ const publishInstagramCarousel = async (req, res) => {
 }
 const scheduleInstagramCarousel = async (req  , res ) => {
   const {imageUrls  , userId , date  ,  caption , jobId}  = req.body;
+  console.log("body  = ", req.body );
   const authHeader = req.header("Authorization") ;
   if (!authHeader || !authHeader.startsWith('Bearer ')) {
     return res.status(401).json({ error: 'Unauthorized: No valid access token provided' });

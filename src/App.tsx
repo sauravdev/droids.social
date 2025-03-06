@@ -35,7 +35,8 @@ export default function App() {
   return (
     <Routes>
       {/* Public routes */}
-      <Route path="/" element={!session ? <LandingPage /> : <Navigate to="/dashboard" replace />} />
+      {/* !session ? <LandingPage /> : <Navigate to="/dashboard" */}
+      <Route path="/" element={  !session ? <LandingPage /> : <Navigate to="/dashboard"/> } />
       <Route path="/login" element={!session ? <Login /> : <Navigate to="/dashboard" replace />} />
       <Route path="/signup" element={!session ? <SignUp /> : <Navigate to="/dashboard" replace />} />
 
@@ -45,7 +46,7 @@ export default function App() {
       <Route path="/generator" element={session ? <Layout><AIGenerator /></Layout> : <Navigate to="/login" replace />} />
       <Route path="/carousel" element={session ? <Layout><CarouselGenerator /></Layout> : <Navigate to="/login" replace />} />
       <Route path="/calendar" element={session ? <Layout><Calendar /></Layout> : <Navigate to="/login" replace />} />
-      <Route path="/engage" element={session ? <Layout><Engage /></Layout> : <Navigate to="/login" replace />} />
+      {/* <Route path="/engage" element={session ? <Layout><Engage /></Layout> : <Navigate to="/login" replace />} /> */}
       <Route path="/analytics" element={session ? <Layout><Analytics /></Layout> : <Navigate to="/login" replace />} />
       <Route path="/models" element={session ? <Layout><CustomModels /></Layout> : <Navigate to="/login" replace />} />
       <Route path="/settings" element={session ? <Layout><ProfileSettings /></Layout> : <Navigate to="/login" replace />} />

@@ -1,7 +1,7 @@
 import React from 'react';
 import { Link } from 'react-router-dom';
 import { Bot, Rocket, Calendar, MessageSquare, BarChart3, Zap, Target, Sparkles, Check } from 'lucide-react';
-
+import { HashLink } from 'react-router-hash-link';
 export function LandingPage() {
   return (
     <div className="min-h-screen bg-gray-900">
@@ -17,9 +17,9 @@ export function LandingPage() {
               <a href="#how-it-works" className="text-gray-300 hover:text-white text-sm font-medium">
                 How it Works
               </a>
-              <a href="#pricing" className="text-gray-300 hover:text-white text-sm font-medium">
+              <HashLink smooth to="/#pricing" className="text-gray-300 hover:text-white text-sm font-medium">
                 Pricing
-              </a>
+              </HashLink>
               <a href="#testimonials" className="text-gray-300 hover:text-white text-sm font-medium">
                 Testimonials
               </a>

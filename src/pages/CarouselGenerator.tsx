@@ -1,5 +1,4 @@
 import React, { useState } from 'react';
-
 import {Twitter, Linkedin, Instagram  , FileText, Download, Loader, Image as ImageIcon, Edit2, Plus, Trash2, ArrowLeft, ArrowRight, Upload, Sparkles } from 'lucide-react';
 import { generatePost } from '../lib/openai';
 import { generateImage } from '../lib/openai';
@@ -14,6 +13,7 @@ import { getSocialMediaAccountInfo } from '../lib/api';
 import { ScheduleModal } from '../components/ScheduleModal';
 import { useScheduledPosts } from '../hooks/useScheduledPosts';
 import { BACKEND_APIPATH } from '../constants';
+import Editor from '../components/Editor';
 interface CarouselSlide {
   id: string;
   header: string;
@@ -27,6 +27,7 @@ interface CarouselSlide {
   emoji: string;
   icon: string;
   image: string;
+  isCustomImage?: boolean;
 }
 
 const defaultSlideStyle = {
@@ -189,7 +190,9 @@ export function CarouselGenerator() {
             icon: icons[index % icons.length],
             image: image, 
             ...defaultSlideStyle,
-            ...themes[index % themes.length]
+            ...themes[index % themes.length], 
+
+            isCustomImage : false
           };
         })
       );
@@ -319,23 +322,6 @@ export function CarouselGenerator() {
       downloadLink.textContent = 'Download PDF';
       document.body.appendChild(downloadLink);
       downloadLink.click();
-      // const accountInfo = await getSocialMediaAccountInfo("linkedin") ; 
-      // const {access_token , userId  } = accountInfo  ;
-      // const formData = new FormData();
-      // formData.append('pdf', pdfBlob, 'generated.pdf');
-      // formData.append('caption', 'This is my new PDF publication on LinkedIn!');
-      // formData.append('id', userId);
-     
-    //   await fetch('http://localhost:3000/upload/carousel/linkedin', {
-    //     method: 'POST',
-    //     headers: {
-    //       'Authorization': `Bearer ${access_token}`,
-    //     },
-    //     body: formData,
-    // })
-    //     .then(response => response.json())
-    //     .then(data => console.log('Success:', data))
-    //     .catch(error => console.error('Error:', error));
     } catch (err : any ) {
       setError('Error exporting to PDF: ' + (err?.message || 'Unknown error'));
     } finally {
@@ -376,7 +362,7 @@ export function CarouselGenerator() {
       const pdfBlob = pdf.output('blob');
       console.log("pdf blob" , pdfBlob) 
       const pdfUrl = URL.createObjectURL(pdfBlob);
-      const {imageUrls , caption }  = await convertPDFToImages(pdfUrl);
+      const {imageUrls  }  = await convertPDFToImages(pdfUrl);
       try{
         const accountInfo = await getSocialMediaAccountInfo("instagram") ; 
         const {access_token , userId  } = accountInfo  ;
@@ -386,7 +372,7 @@ export function CarouselGenerator() {
             'Authorization': `Bearer ${access_token}`,
             "Content-Type": "application/json",
           },
-          body : JSON.stringify({imageUrls , userId , caption})
+          body : JSON.stringify({imageUrls , userId , caption : generatedCaption})
         })
         const data = await response.json() ; 
         console.log("response from insta carousel api = " ,data ) ; 
@@ -449,7 +435,7 @@ export function CarouselGenerator() {
           const post = {
             platform: platform ,
             content : generatedCaption ,
-            media_urls : [] , 
+            media_urls : imageUrls, 
             scheduled_for  :date , 
             status : "pending" , 
           }
@@ -461,7 +447,7 @@ export function CarouselGenerator() {
               'Authorization': `Bearer ${access_token}`, 
               "Content-Type" : "application/json" ,
             } , 
-            body : JSON.stringify({ imageUrls , userId , date : date ,  caption, jobId : createdPost?.id })
+            body : JSON.stringify({ imageUrls , userId , date : date ,  caption : generatedCaption, jobId : createdPost?.id })
           })
           const data = await response.json() 
           console.log("scheduled insta post api " , data ) ;
@@ -480,34 +466,14 @@ export function CarouselGenerator() {
   }
 
   const handleScheduleCarouselOnLinkedin = (date  :string   ,  postId : null | string = null) => {
-
+    
   }
 
   const handleLinkedinExport = async () => {
     setPostingOnLinkedIn(true) ; 
-    // exportToPDF() 
-    const caption = await generatePost(topic   , "linkedin")
-    try{
-      const accountInfo = await getSocialMediaAccountInfo("linkedin") ; 
-      const {access_token , userId  } = accountInfo  ;
-      const response = await fetch(`${BACKEND_APIPATH.BASEURL}/upload/multi/images` ,{
-        method: "POST",
-        headers: {
-          'Authorization': `Bearer ${access_token}`,
-          "Content-Type": "application/json",
-        },
-        body : JSON.stringify({  caption , id : userId })
-      })
-      const data = await response.json() ; 
-      console.log("response from insta carousel api = " ,data ) ; 
-    }
-    catch(err : any ) 
-    {
-      console.log("Something went wrong while publishing carousel " , err || err?.message  )
-    }
+    exportToPDF() 
     setPostingOnLinkedIn(false) ;
   }
-
   return (
     <div className="space-y-8">
       <h1 className="text-3xl font-bold text-white mb-8">Carousel Generator</h1>
@@ -731,8 +697,6 @@ export function CarouselGenerator() {
       {slides.length > 0 && (
         <div  className="bg-gray-800 rounded-xl p-6">
           <h2 className="text-xl font-bold text-white mb-4">Preview & Edit</h2>
-          
-          {/* Slides Container - Displays All Slides */}
   <div className="flex flex-col gap-4 w-full">
     {slides.map((slide, index) => (
       <div
@@ -750,20 +714,59 @@ export function CarouselGenerator() {
           paddingBottom: '20px'
         }}
       >
-        {/* Brand Logo */}
         {brandLogo && (
           <img src={brandLogo} alt="Brand logo" className="h-16 object-contain mb-4" />
         )}
 
-        {/* Slide Image */}
-        {slide.image && (
+        <input 
+            type="file" 
+            accept="image/*"
+            onChange={(e : any ) => {
+              const file = e.target.files[0];
+              if (file) {
+                const reader = new FileReader();
+                reader.onloadend = () => {
+                  // Update the slide with the custom uploaded image
+                  updateSlide(slide.id, { 
+                    image: reader.result as string,
+                    isCustomImage: true 
+                  });
+                };
+                reader.readAsDataURL(file);
+              }
+            }}
+            className="hidden "
+            id={`custom-image-upload-${slide.id}`}
+          />
+
+
+      {slide.image ? (
+        <label 
+          htmlFor={`custom-image-upload-${slide.id}`}
+          className="block cursor-pointer w-full"
+        >
           <img
             className="rounded-sm w-full h-auto max-h-[500px] object-cover mx-auto"
             src={slide?.image}
-            alt="alternate text"
+            alt="Slide image"
           />
-        )}
+          {!slide.isCustomImage && (
+            <div className="absolute top-2 right-2 bg-black/50 text-white px-2 py-1 rounded text-xs">
+              AI Generated
+            </div>
+          )}
+        </label>
+      ) : (
+        <label 
+          htmlFor={`custom-image-upload-${slide.id}`}
+          className="cursor-pointer bg-blue-500 hover:bg-blue-600 text-white px-4 py-2 rounded-md flex items-center justify-center h-[500px]"
+        >
+          Upload Image
+        </label>
+      )}
 
+
+      
         {/* Slide Content */}
         <div className=" flex flex-col items-center justify-center space-y-2 w-full gap-2 my-10 px-20">
           <h2
@@ -771,12 +774,11 @@ export function CarouselGenerator() {
             className="text-center font-bold flex items-center space-x-2 w-full"
           >
             <span>{slide.emoji}</span>
-            <input
-              className="text-center bg-transparent border-none outline-none w-full"
-              type="text"
-              value={slide.header}
-              onChange={(e) => updateSlide(slide.id, { header: e.target.value })}
-            />
+            <div
+             contentEditable="true"
+              className="text-center bg-transparent  outline-none w-full"
+              onChange={(e : any ) => updateSlide(slide.id, { header: e.target.value })}
+            >{slide.header}</div>
           </h2>
 
           <div
@@ -817,8 +819,7 @@ export function CarouselGenerator() {
 
       {generatedCaption && <div className='flex flex-col gap-4 my-4 '>
         <h2 className='capitalize text-2xl text-white '>Caption For <span>{platform}</span></h2>
-        <div className='text-xl text-white px-4 py-4 w-full border-2 border-purple-500 rounded-lg ' contentEditable ={true}>{generatedCaption}</div>
-        
+        <Editor data = {generatedCaption}/>
         </div>}
           {/* Slide Editor  */}
           <div className="mt-6 space-y-4">

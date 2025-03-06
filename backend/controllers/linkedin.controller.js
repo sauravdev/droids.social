@@ -52,28 +52,27 @@ const getUserInfo = async (req  , res ) => {
 }
 
 
-const uploadContent = async (accessToken , id ,postId = null , text = "Certainly! SocialBee offers various valuable properties such as user-friendly in management."  ) => {
+const uploadContent = async (accessToken , id ,postId = null , text  ) => {
   
   try{
-    const response = await fetch("https://api.linkedin.com/v2/rest/posts", {
+    const response = await fetch("https://api.linkedin.com/rest/posts", {
       method: "POST",
       headers: {
-          'LinkedIn-Version': 202401,
-          'X-Restli-Protocol-Version': "2.0.0" ,
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${accessToken}`
+        'Authorization': `Bearer ${accessToken}`,
+        'LinkedIn-Version': 202502,
+        'X-Restli-Protocol-Version': '2.0.0',
+        'Content-Type': 'application/json'
       },
       body: JSON.stringify({
-      "author": `urn:li:person:${id}`,
-      "commentary": `${text}`,
-      "visibility": "PUBLIC",
-      "distribution": {
-        "feedDistribution": "MAIN_FEED",
-        "targetEntities": [],
-        "thirdPartyDistributionChannels": []
-      },
-      "lifecycleState": "PUBLISHED",
-      "isReshareDisabledByAuthor": false
+        "author": `urn:li:person:${id}`,
+        "commentary":  text || "this is a sample post" ,
+        "visibility": "PUBLIC",
+        "lifecycleState": "PUBLISHED",
+        "distribution": {
+          "feedDistribution": "MAIN_FEED",
+          "targetEntities": [],
+          "thirdPartyDistributionChannels": []
+        }
       }),
       
     } )
@@ -81,7 +80,7 @@ const uploadContent = async (accessToken , id ,postId = null , text = "Certainly
     {
       await updateScheduledPost(postId , {status : 'published'})
     }
-    console.log("linkedin scheduled post published successfully")
+    console.log("linkedin  post published successfully"  ) ; 
   }
   catch(err) 
   {
@@ -92,21 +91,20 @@ const uploadContent = async (accessToken , id ,postId = null , text = "Certainly
 
 const uploadContentHandler = async (req , res ) => {
   const { id   , text  , postId  } = req.body ; 
-  console.log(req.body) ;
   const authHeader = req.header("Authorization")
+  console.log(req.body) ;
+  if(!text || !id) 
+  {
+    return res.status(400).json({message  : "Invalid body "})
+  }
   if (!authHeader || !authHeader.startsWith('Bearer ')) {
     return res.status(401).json({ error: 'Unauthorized: No valid access token provided' });
   }
-
   // add validation for text
-  if(!id) 
-  {
-    return res.status(400).json({message : "invalid body"})
-  }
   const accessToken = authHeader.replace("Bearer " , "") ; 
   console.log("accessToken" , accessToken) ;
   try{
-      await  uploadContent(accessToken , id , postId    )
+      await  uploadContent(accessToken , id , postId  , text    )
       return res.status(201).json({message : `post uploaded successfully`})
   }
   catch(err) 
@@ -118,7 +116,7 @@ const uploadContentHandler = async (req , res ) => {
 
 const scheduleContentHandler = async (req  , res ) => {
   const {id   ,text  , date , jobId } = req.body ; 
-  const authHeader = req.header("Authorization")
+  const authHeader = req.header("Authorization") ;
   if(!jobId) 
     {
       return res.status(400).json({ error: "Invalid body : Missing jobId"}) ;
@@ -138,16 +136,16 @@ const scheduleContentHandler = async (req  , res ) => {
         job.cancel()  ; 
         console.log("cancelling already scheduled job and scheduling a new one" )
         scheduledJobsMap.delete(jobId) 
-        const newJob = schedule.scheduleJob(date ,  () => { uploadContent(accessToken , id  , jobId )}  ) ;
+        const newJob = schedule.scheduleJob(date ,  () => { uploadContent(accessToken , id  , jobId , text  )}  ) ;
         scheduledJobsMap.set(jobId , newJob) ; 
        }
        else{
         console.log("scheduling new job") ;
-        const job = schedule.scheduleJob(date ,  () => { uploadContent(accessToken , id  , jobId )}  ) ;
+        const job = schedule.scheduleJob(date ,  () => { uploadContent(accessToken , id  , jobId , text  )}  ) ;
         console.log("job = " , job) ;
         scheduledJobsMap.set(jobId , job) ; 
        }
-      return res.status(201).json({message:"Scheduled Instagam post for " , date })
+      return res.status(201).json({message:"Scheduled linkedin post for " , date })
     }
   }
   catch(err) 
@@ -165,7 +163,7 @@ const postLinkedinCarousel = async (req, res) => {
   console.log("caption = " , caption ) ; 
   console.log("id = " , id ) ; 
   const authHeader = req.header("Authorization")
-  if(!id) 
+  if(!id || !caption ) 
     {
       return res.status(400).json({message : "invalid body"})
     }

@@ -14,7 +14,8 @@ interface Post {
   platform: string;
   scheduled_for: string;
   status?  :string ,
-  type: 'scheduled' | 'planned';
+  type: 'scheduled' | 'planned'  ,
+  media_urls : any ;
 }
 
 interface PostModalProps {
@@ -74,17 +75,33 @@ function PostModal({refreshCalendar , setRefreshCalendar  ,  post, onClose}: Pos
       {
         const accountInfo = await getSocialMediaAccountInfo("instagram") ; 
         const {access_token , userId } = accountInfo  ; 
-        const response  = await fetch(`${BACKEND_APIPATH.BASEURL}/schedule/post/instagram` , {
-          method : "POST" ,
-          headers: {
-            'Authorization': `Bearer ${access_token}`, 
-            "Content-Type" : "application/json" ,
-          } , 
-          body : JSON.stringify({ IG_USER_ID  : userId , date : scheduledFor ,  caption : post?.content , jobId : post?.id})
-  
-        })
-        const data = await response.json() 
-        console.log("scheduled insta post api " , data ) ;   
+        if(post?.media_urls?.length == 1 ) 
+        {
+          const response  = await fetch(`${BACKEND_APIPATH.BASEURL}/schedule/post/instagram` , {
+            method : "POST" ,
+            headers: {
+              'Authorization': `Bearer ${access_token}`, 
+              "Content-Type" : "application/json" ,
+            } , 
+            body : JSON.stringify({ IG_USER_ID  : userId , date : scheduledFor ,imageUrl : post?.media_urls?.[0] ,  caption : post?.content   , jobId : post?.id})
+    
+          })
+          const data = await response.json() 
+          console.log("scheduled insta post api " , data ) ;  
+        } 
+        else if(post?.media_urls?.length > 1 ) {
+          const response  = await fetch(`${BACKEND_APIPATH.BASEURL}/schedule/carousel/instagram` , {
+            method : "POST" ,
+            headers: {
+              'Authorization': `Bearer ${access_token}`, 
+              "Content-Type" : "application/json" ,
+            } , 
+            body : JSON.stringify({ userId  : userId , date : scheduledFor ,imageUrls : post?.media_urls ,  caption : post?.content   , jobId : post?.id})
+    
+          })
+          const data = await response.json() 
+          console.log("scheduled insta post api " , data ) ;  
+        }
 
       }
       else if (post?.platform == "linkedin") 
@@ -98,7 +115,7 @@ function PostModal({refreshCalendar , setRefreshCalendar  ,  post, onClose}: Pos
               'Authorization': `Bearer ${access_token}`,
               'Content-Type': 'application/json',
             },
-            body: JSON.stringify({ id :userId,  text: post?.content  , date : scheduledFor  , jobId : post?.id }),
+            body: JSON.stringify({ id :userId,  text: post?.content  , date : scheduledFor  ,  jobId : post?.id }),
           }
         );
     
@@ -164,7 +181,7 @@ function PostModal({refreshCalendar , setRefreshCalendar  ,  post, onClose}: Pos
                     'Authorization': `Bearer ${access_token}`,
                     'Content-Type': 'application/json',
                   },
-                  body: JSON.stringify({IG_USER_ID : userId ,  caption: post?.content , postId : post?.id }),
+                  body: JSON.stringify({IG_USER_ID : userId ,  caption: post?.content , imageUrl : post?.media_urls?.[0] , postId : post?.id }),
                 }
               );
               const data = await response.json() ; 

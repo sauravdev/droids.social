@@ -18,7 +18,7 @@ export function Layout({ children }: LayoutProps) {
     { to: "/generator", icon: <Sparkles />, label: "AI Generator" },
     { to: "/carousel", icon: <Image />, label: "Carousel Generator" },
     { to: "/calendar", icon: <Calendar />, label: "Content Calendar" },
-    { to: "/engage", icon: <MessageSquare />, label: "Engagement" },
+    // { to: "/engage", icon: <MessageSquare />, label: "Engagement" },
     { to: "/analytics", icon: <BarChart3 />, label: "Analytics" },
     { to: "/models", icon: <Brain />, label: "Custom Models" },
     { to: "/settings", icon: <UserCircle />, label: "Profile Settings" }

@@ -113,37 +113,6 @@ export function SocialAccountsManager({selectedPlatform , setSelectedPlatform , 
                   )}
                 </div>
               </div>
-
-              <button
-                onClick={() => isConnected ? handleDisconnect(platform) : handleConnect(platform)}
-                disabled={isLoading}
-                className={`flex items-center space-x-2 px-3 py-1 rounded-md text-sm ${
-                  isConnected
-                    ? 'bg-red-600 hover:bg-red-700 text-white'
-                    : 'bg-purple-600 hover:bg-purple-700 text-white'
-                } disabled:opacity-50`}
-              >
-                {isLoading ? (
-                  <>
-                    <Loader className="h-4 w-4 animate-spin" />
-                    <span>{isConnected ? 'Disconnecting...' : 'Connecting...'}</span>
-                  </>
-                ) : (
-                  <>
-                    {isConnected ? (
-                      <>
-                        <Unlink className="h-4 w-4" />
-                        <span>Disconnect</span>
-                      </>
-                    ) : (
-                      <>
-                        <Link2 className="h-4 w-4" />
-                        <span>Connect</span>
-                      </>
-                    )}
-                  </>
-                )}
-              </button>
             </div>
           );
         })}
