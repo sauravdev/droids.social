@@ -4,12 +4,13 @@ import schedule from 'node-schedule' ;
 import fetch from 'node-fetch' ;
 import { URLSearchParams  } from 'url';
 import { scheduledJobsMap } from "../index.js";
+import dotenv from 'dotenv' ;
 import { loadScheduledJobs , updateScheduledPost } from '../test.js';
 import axios from 'axios' ;
-
-const INSTAGRAM_APP_ID = "1074024207741727"; 
-const INSTAGRAM_APP_SECRET = "d23b1129f266b193ae8ade404851eae6";
-const INSTAGRAM_REDIRECT_URI =  "https://5a42-125-63-73-50.ngrok-free.app/auth/instagram";
+dotenv.config() 
+const INSTAGRAM_APP_ID = process.env.INSTAGRAM_APP_ID; 
+const INSTAGRAM_APP_SECRET = process.env.INSTAGRAM_APP_SECRET;
+const INSTAGRAM_REDIRECT_URI =  process.env.INSTAGRAM_REDIRECT_URI;
 
 const generateAccessToken = async (req, res) => {
   const { code } = req.body;

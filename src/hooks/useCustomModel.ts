@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { getCustomModels , createCustomModel , updateCustomModel } from '../lib/api';
+import { getCustomModels , createCustomModel , updateCustomModel, deleteCustomModel } from '../lib/api';
 
 
 export function useCustomModel()  {
@@ -61,10 +61,23 @@ export function useCustomModel()  {
           }
         }
 
+        async function deleteModel(id : string ) 
+        {
+          try{
+            await deleteCustomModel(id) ; 
+          }
+          catch(err : any) 
+          {
+            setError(err?.message) ; 
+          }
+        }
+
     return {
         loadCustomModels ,
         updateCustomModels , 
         createCustomModels  ,
+        deleteModel, 
+        
 
     }
 

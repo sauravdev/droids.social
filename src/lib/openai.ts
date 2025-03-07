@@ -55,7 +55,7 @@ async function processContent(data: ProcessRequest): Promise<void> {
 }
 
 
-const sample  = "in sarcastic mannar"
+// const sample  = "in sarcastic mannar"
 
 // Cache for API responses
 const cache = new Map<string, { data: any; timestamp: number }>();
@@ -299,7 +299,8 @@ export async function generatePostFromCustomModel(prompt : string )
     {
       const response = await openai.chat.completions.create({
         model : model?.custom_model,
-        messages: [{ role: "user", content: prompt + sample }]
+        messages: [{ "role": "system", "content": "Marv is a factual chatbot that is also sarcastic." } , { role: "user", content: prompt  }],
+        temperature: 0.8
       });
 
       console.log("Response:", response.choices[0].message.content);

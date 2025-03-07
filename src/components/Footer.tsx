@@ -1,6 +1,6 @@
 import React from 'react';
 import { Bot, Github, Twitter } from 'lucide-react';
-
+import { Link } from 'react-router-dom';
 export function Footer() {
   return (
     <footer className="bg-gray-800 border-t border-gray-700">
@@ -20,30 +20,30 @@ export function Footer() {
           {/* Product */}
           <div>
             <h3 className="text-white font-semibold mb-4">Product</h3>
-            <ul className="space-y-2">
-              <li><a href="#" className="text-gray-400 hover:text-white">Features</a></li>
-              <li><a href="/#pricing" className="text-gray-400 hover:text-white">Pricing</a></li>
+            <ul className="space-y-2 flex flex-col gap-1">
+              <Link to = "/howitworks"> <li className="text-gray-400 hover:text-white">How it Works</li> </Link>
+              <Link to = "/pricing"><li className="text-gray-400 hover:text-white">Pricing</li></Link>
             </ul>
           </div>
 
           {/* Company */}
           <div>
             <h3 className="text-white font-semibold mb-4">Company</h3>
-            <ul className="space-y-2">
-              <li><a href="#about" className="text-gray-400 hover:text-white">About</a></li>
-              <li><a href="#" className="text-gray-400 hover:text-white">Blog</a></li>
-              <li><a href="#contact" className="text-gray-400 hover:text-white">Careers</a></li>
+            <ul className="space-y-2 flex flex-col gap-1 ">
+              <Link to = "/about"><li  className="text-gray-400 hover:text-white">About </li></Link>
+              <Link to = "/testimonials" >  <li className="text-gray-400 hover:text-white">Testimonials</li></Link>
+              <Link to = "/contact"><li  className="text-gray-400 hover:text-white">Contact</li></Link>
             </ul>
           </div>
 
           {/* Legal */}
-          <div>
+          {/* <div>
             <h3 className="text-white font-semibold mb-4">Legal</h3>
             <ul className="space-y-2">
               <li><a href="#" className="text-gray-400 hover:text-white">Privacy</a></li>
               <li><a href="#" className="text-gray-400 hover:text-white">Terms</a></li>
             </ul>
-          </div>
+          </div> */}
         </div>
 
         <div className="mt-8 pt-8 border-t border-gray-700 flex flex-col md:flex-row justify-between items-center">

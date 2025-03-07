@@ -320,6 +320,20 @@ export async function updateCustomModel(id: string, updates: any ) {
   return data;
 }
 
+export async function deleteCustomModel(id: string) {
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user) throw new Error('No user found');
+
+  const { error } = await supabase
+    .from('Custom_models')
+    .delete()
+    .eq('id', id)
+    .eq('profileid', user.id);
+  if (error) throw error;
+  
+}
+
+
 
 export async function updateContentPlan(id: string, updates: Partial<Tables['content_plans']['Update']>) {
   const { data: { user } } = await supabase.auth.getUser();

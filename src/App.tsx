@@ -19,6 +19,11 @@ import { LinkedInCallback } from './pages/Settings/LinkedInCallback';
 import { useAuth } from './context/AuthContext';
 import {InstagramAuth} from './lib/InstagramAuth';
 import {LinkedInAuth} from './lib/LinkedInAuth';
+import { Pricing } from './pages/Pricing';
+import { About } from './pages/About';
+import { Contact } from './pages/Contact';
+import { Testimonials } from './pages/Testimonials';
+import { HowItWorks } from './pages/HowItWorks';
 
 export default function App() {
   const { session, loading } = useAuth();
@@ -39,7 +44,6 @@ export default function App() {
       <Route path="/" element={  !session ? <LandingPage /> : <Navigate to="/dashboard"/> } />
       <Route path="/login" element={!session ? <Login /> : <Navigate to="/dashboard" replace />} />
       <Route path="/signup" element={!session ? <SignUp /> : <Navigate to="/dashboard" replace />} />
-
       {/* Protected routes */}
       <Route path="/dashboard" element={session ? <Layout><Dashboard /></Layout> : <Navigate to="/login" replace />} />
       <Route path="/strategy" element={session ? <Layout><ContentStrategy /></Layout> : <Navigate to="/login" replace />} />
@@ -53,11 +57,14 @@ export default function App() {
       <Route path="/callback/twitter" element={session ? <TwitterCallback /> : <Navigate to="/login" replace />} />
       <Route path="/settings/callback/linkedin" element={session ? <LinkedInCallback /> : <Navigate to="/login" replace />} />
       <Route path="/oauth/twitter" element={session ? <OauthTwitterCallback /> : <Navigate to="/login" replace />} />
-       {/* oauth instagram  */}
       <Route path="/auth/instagram/" element={<InstagramAuth />} />
-    {/* linked in route  update this route for handling callback  */}
-    <Route path="/linkedin/callback/auth/linkedIn" element={<LinkedInAuth />} /> 
+      <Route path="/linkedin/callback/auth/linkedIn" element={<LinkedInAuth />} /> 
 
+      <Route path="/pricing" element={session ? <Layout><Pricing /></Layout> : <Navigate to="/login" replace />} />
+      <Route path="/about" element={session ? <Layout><About /></Layout> : <Navigate to="/login" replace />} />
+      <Route path="/contact" element={session ? <Layout><Contact /></Layout> : <Navigate to="/login" replace />} />
+      <Route path="/testimonials" element={session ? <Layout><Testimonials /></Layout> : <Navigate to="/login" replace />} />
+      <Route path="/howitworks" element={session ? <Layout><HowItWorks /></Layout> : <Navigate to="/login" replace />} />
     </Routes>
   );
 }

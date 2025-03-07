@@ -1,6 +1,7 @@
 import fs from 'fs' ;
 import OpenAI from 'openai';
 import dotenv from 'dotenv' ;
+import axios from 'axios' ; 
 dotenv.config() 
 const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY});
 
@@ -56,37 +57,97 @@ async function useFineTunedModel(model) {
 
 
 
-const fintuningModelHandler = async (req , res ) => {
-    const {customModel} = req.body ; 
-    if(!customModel) 
-    {
-        return res.status(400).json({message : "Invalid body"}) ;
+// const fintuningModelHandler = async (req , res ) => {
+//     const {customModel} = req.body ; 
+//     if(!customModel) 
+//     {
+//         return res.status(400).json({message : "Invalid body"}) ;
 
-    }
-    if (!req.file) {
-        return res.status(400).json({ message: "No file uploaded or invalid file type" });
+//     }
+//     if (!req.file) {
+//         return res.status(400).json({ message: "No file uploaded or invalid file type" });
     
-    }
-    const filePath = req.file.path;
-    const jsonlPath = filePath.replace(".json", ".jsonl");
-    try {  
-        const rawData = fs.readFileSync(filePath, "utf8");
-        let jsonData = JSON.parse(rawData);
-        if (!Array.isArray(jsonData)) {
-          jsonData = [jsonData]; 
-        }
-        const jsonlData = jsonData.map((obj) => JSON.stringify(obj)).join("\n");
-    fs.writeFileSync(jsonlPath, jsonlData, "utf8");
-    const {id} = await uploadDataset(jsonlPath);
-    const {model} = await fineTuneModel(id  , customModel );
-    return res.status(201).json({model : model})
+//     }
+//     const filePath = req.file.path;
+//     const jsonlPath = filePath.replace(".json", ".jsonl");
+//     try {  
+//         const rawData = fs.readFileSync(filePath, "utf8");
+//         let jsonData = JSON.parse(rawData);
+//         if (!Array.isArray(jsonData)) {
+//           jsonData = [jsonData]; 
+//         }
+//     const jsonlData = jsonData.map((obj) => JSON.stringify(obj)).join("\n");
+//     fs.writeFileSync(jsonlPath, jsonlData, "utf8");
+//     const {id} = await uploadDataset(jsonlPath);
+//     const {model} = await fineTuneModel(id  , customModel );
+//     return res.status(201).json({model : model})
 
+//     }
+//     catch(err)
+//     {
+//         console.log("Something went wrong " , err?.message || err) ; 
+//         return res.status(500).json({message : `Something went wrong while tuning the model ${err?.message}`})
+//     }
+// }
+
+
+
+const checkFineTuningStatus = async (fineTuneId) => {
+  try {
+      const job = await openai.fineTuning.jobs.retrieve(fineTuneId);
+      console.log("job = " ,job ) ; 
+      console.log("Fine-tuning status:", job.status);
+      return job;  // "pending", "running", "succeeded", "failed"
+  } catch (error) {
+      console.error("Error checking fine-tuning status:", error.message);
+      return "failed";
+  }
+};
+
+
+
+const fintuningModelHandler = async (req , res ) => {
+  const {customModel} = req.body ; 
+  if(!customModel) 
+  {
+      return res.status(400).json({message : "Invalid body"}) ;
+
+  }
+  if (!req.file) {
+      return res.status(400).json({ message: "No file uploaded or invalid file type" });
+  
+  }
+  const filePath = req.file.path;
+  const jsonlPath = filePath.replace(".json", ".jsonl");
+  try {  
+      const rawData = fs.readFileSync(filePath, "utf8");
+      let jsonData = JSON.parse(rawData);
+      if (!Array.isArray(jsonData)) {
+        jsonData = [jsonData]; 
+      }
+  const jsonlData = jsonData.map((obj) => JSON.stringify(obj)).join("\n");
+  fs.writeFileSync(jsonlPath, jsonlData, "utf8");
+  const {id} = await uploadDataset(jsonlPath);
+  const {model ,id  : jobId ,  jobStatus } = await fineTuneModel(id  , customModel );
+
+  while (true) {
+    const job  = await checkFineTuningStatus(jobId);
+    if (job.status === "succeeded") {
+        return res.status(201).json({ model : job?.fine_tuned_model });
+    } else if (job.status === "failed") {
+        return res.status(500).json({ message: `Fine-tuning job failed` });
     }
-    catch(err)
-    {
-        console.log("Something went wrong " , err?.message || err) ; 
-        return res.status(500).json({message : `Something went wrong while tuning the model ${err?.message}`})
+    else{
+      console.log("job status = " , job.status ) ; 
     }
+    await new Promise((resolve) => setTimeout(resolve, 5000));
+}
+  }
+  catch(err)
+  {
+      console.log("Something went wrong " , err?.message || err) ; 
+      return res.status(500).json({message : `Something went wrong while tuning the model ${err?.message}`})
+  }
 }
 
 export {fintuningModelHandler} ; 

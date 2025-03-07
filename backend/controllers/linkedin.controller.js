@@ -1,13 +1,17 @@
 // import {scheudleJobMap} from ''
 import { scheduledJobsMap } from "../index.js";
 import { loadScheduledJobs , updateScheduledPost } from "../test.js";
-import { PDFDocument } from 'pdf-lib';
-const linkedInClientId = '77zwm3li56ua2a';
-const linkedInClientSecret = 'WPL_AP1.FTEeZCfxW20evekT.BoujnA==';
-const redirectUri = 'http://127.0.0.1:5173/linkedin/callback/auth/linkedIn';
 import schedule from 'node-schedule' ; 
+import dotenv from 'dotenv' ;
 import axios from 'axios'
 import fs from 'fs' ; 
+dotenv.config() 
+const linkedInClientId = process.env.linkedInClientId;
+const linkedInClientSecret = process.env.linkedInClientSecret;
+const linkedInRedirectURI = process.env.linkedInRedirectURI;
+
+
+
 const generateAccessToken = async (req , res ) => {
   const { code } = req.body;
   try {
@@ -20,7 +24,7 @@ const generateAccessToken = async (req , res ) => {
         client_id: linkedInClientId,
         client_secret: linkedInClientSecret,
         grant_type: "authorization_code",
-        redirect_uri: redirectUri,
+        redirect_uri: linkedInRedirectURI,
         code: code,
       }),
     });

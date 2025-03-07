@@ -5,6 +5,7 @@ import { useCustomModel } from '../hooks/useCustomModel';
 import { generatePostFromCustomModel } from '../lib/openai';
 import { useAuth } from '../context/AuthContext';
 import { BACKEND_APIPATH } from '../constants';
+import { deleteCustomModel } from '../lib/api';
 interface TrainingStatus {
   id: string;
   name: string;
@@ -172,11 +173,10 @@ export function CustomModels() {
     })
     setProgress(100);
     
-  } catch (error) {
+  } catch (error : any ) {
     console.error("Error uploading file:", error);
-    await updateCustomModels(createdModel?.id , { 
-      status : "failed"
-    })
+    setError(error?.message) ; 
+    await deleteCustomModel(createdModel?.id) ;
   }
   finally{
     setTraining(false) ; 
@@ -255,8 +255,7 @@ export function CustomModels() {
 
       
       />
-      <button disabled = {training} className={`${training ? 'text-gray-400' : 'text-white' }`}><Plus onClick={handleModelTraining} className='h-8 w-8'
-      /></button>
+      <button onClick={handleModelTraining} disabled = {training} className={`${training ? 'text-white' : 'text-white ' } bg-purple-500 capitalize px-4 py-2 rounded-xl`}>Train</button>
       
      </div>
 

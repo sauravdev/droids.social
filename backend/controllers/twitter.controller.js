@@ -2,26 +2,25 @@ import { TwitterApi } from 'twitter-api-v2';
 import schedule from 'node-schedule' ; 
 import fetch from 'node-fetch' ;
 import { URLSearchParams  } from 'url';
+import dotenv from 'dotenv' ;
 import { scheduledJobsMap } from "../index.js";
 import { loadScheduledJobs  ,updateScheduledPost } from '../test.js';
-import OAuth from 'oauth-1.0a'; 
-import crypto from 'node:crypto' ;
-import axios from 'axios' ;
-import qs from 'querystring'; 
 // const TWITTER_CLIENT_ID = 'Y2RKeWJ2T1hzQ3dxNnBuT3BCUVI6MTpjaQ';
 // const TWITTER_CLIENT_SECRET = 'MP0G4dsn7efJqahuJL2HsEm9L9eUBcHtCsLJLVHPF-t9qVMe9Q';
 // const REDIRECT_URI = 'http://localhost:5173/callback/twitter';
-
-const TWITTER_CLIENT_ID = 'Y2RKeWJ2T1hzQ3dxNnBuT3BCUVI6MTpjaQ';
-const TWITTER_CLIENT_SECRET = 'kufZxX-Bz9f6uNyTqt4rGVytSoucxMkxEC_mjXywJdCaK7LNn6';
-const REDIRECT_URI = `http://localhost:5173/callback/twitter`;
+dotenv.config() 
+const TWITTER_CLIENT_ID = process.env.TWITTER_CLIENT_ID;
+const TWITTER_CLIENT_SECRET = process.env.TWITTER_CLIENT_SECRET;
+const TWITTER_REDIRECT_URI = process.env.TWITTER_REDIRECT_URI;
 
 const twitterClient = new TwitterApi({
-    appKey:"q3YtflSi3IPte1PjEpS4kwHql",
-    appSecret: "xhnluIVG29rPXxb00nzwOp5jwsWFnWcyrd7PHtIERsroywbO7z",
-    accessToken: "1882376046340866048-VAnej1QhJB8viefa3BCH1qRM7utYpz",
-    accessSecret: "g0ESFoZLyyZTJ1r03ip6Cb7Uy2tNkbZ8ranoGa4edtiF7",
+    appKey:process.env.Twitter_APP_KEY,
+    appSecret: process.env.Twitter_APP_SECRET,
+    accessToken: process.env.Twitter_ACCESSS_TOKEN,
+    accessSecret: process.env.Twitter_APP_SECRET,
   });
+
+
 const generateAccessToken = async (req, res) => {
   const { code, code_verifier } = req.body;
   console.log("code =   " + code);
@@ -39,7 +38,7 @@ const generateAccessToken = async (req, res) => {
       body: new URLSearchParams({
         grant_type: 'authorization_code',
         code,
-        redirect_uri: REDIRECT_URI,
+        redirect_uri: TWITTER_REDIRECT_URI,
         code_verifier,
       }),
     });
