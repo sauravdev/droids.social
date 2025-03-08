@@ -54,11 +54,11 @@ export function Analytics() {
       name: "Twitter",
       icon: <Twitter className="h-6 w-6 text-white" />,
       color: "bg-blue-600",
-      followers: `${twitterinsights?.followers || 1 } `,
-      engagement: `${twitterinsights?.engagement || 63.5}`,
+      followers: `${twitterinsights?.followers || 0 } `,
+      engagement: `${twitterinsights?.engagement || 0}`,
       growth: 0,
-      posts: `${twitterinsights?.post || 5 }` ,
-      reach:`${twitterInsights.reach || 100 }%`,
+      posts: `${twitterinsights?.post || 0 }` ,
+      reach:`${twitterInsights.reach || 0 }%`,
       engagementChange : "0.00"
       
     },

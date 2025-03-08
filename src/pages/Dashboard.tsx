@@ -11,7 +11,7 @@ import LinkedInAuth from '../lib/LinkedInAuth';
 import { handleLogin } from '../lib/LinkedInAuth';
 import { generateAIContentSuggestion } from '../lib/openai';
 import { InstagramServices } from '../services/instagram';
-import { getSocialMediaAccountInfo } from '../lib/api';
+import { getSocialAccounts, getSocialMediaAccountInfo } from '../lib/api';
 import { BACKEND_APIPATH } from '../constants';
 import { supabase } from '../lib/supabase';
 import { parse, parseISO } from 'date-fns';
@@ -26,35 +26,36 @@ interface suggestion{
 export function Dashboard() {
   const { profile, loading: profileLoading } = useProfile();
   const { loadPosts , loading: postsLoading } = useScheduledPosts();
-  const { accounts, loading: accountsLoading  , unlinkAccount} = useSocialAccounts();
+  const {  loading: accountsLoading  , unlinkAccount} = useSocialAccounts();
+  const [accounts , setAccounts ] = useState<any>([]) ; 
   const [posts, setPosts] = useState<ScheduledPost[]>([]);
   const [platform , setPlatform] = useState<string | null > (null) ; 
   const [suggestions ,  setSuggestions ] = useState<suggestion[]>([]) ;
-  // const [instaAccountId , setInstaAccountId] = useState<number>();
-  // const [instaUserName , setInstaUserName] = useState<any>(); 
-  // const [idConnectedWithInsta , setIdConnectedWithInsta] = useState<number>();
-  // const[instaFollowers, setInstaFollowers] = useState<string>("");
-  // const[instaEngagement, setInstaEngagement] = useState<string>("");
-  // const [twitterinsights  , setTwitterinsights ] = useState({}) ; 
+  const [instaAccountId , setInstaAccountId] = useState<number>();
+  const [instaUserName , setInstaUserName] = useState<any>(); 
+  const [idConnectedWithInsta , setIdConnectedWithInsta] = useState<number>();
+  const[instaFollowers, setInstaFollowers] = useState<string>("");
+  const[instaEngagement, setInstaEngagement] = useState<string>("");
+  const [twitterinsights  , setTwitterinsights ] = useState({}) ; 
   const [disconnecting, setDisconnecting] = useState<string | null>(null);
   const [updateError, setUpdateError] = useState<string | null>(null);
-  // const getTwitterInsights = async () => {
+  const getTwitterInsights = async () => {
   
-  //   const {access_token , userId } = await getSocialMediaAccountInfo("twitter") ;
-  //   console.log("user id =" , userId) ;
-  //   const response = await fetch(`${BACKEND_APIPATH.BASEURL}/twitter/insights` , {
-  //     method : 'POST' , 
-  //     headers: {
-  //       'Authorization': `Bearer ${access_token}`, 
-  //       "Content-Type" : "application/json" ,
-  //     } , 
-  //     body : JSON.stringify({id : userId }) 
-  //   })
-  //   const data = await response.json() ; 
+    const {access_token , userId } = await getSocialMediaAccountInfo("twitter") ;
+    console.log("user id =" , userId) ;
+    const response = await fetch(`${BACKEND_APIPATH.BASEURL}/twitter/insights` , {
+      method : 'POST' , 
+      headers: {
+        'Authorization': `Bearer ${access_token}`, 
+        "Content-Type" : "application/json" ,
+      } , 
+      body : JSON.stringify({id : userId }) 
+    })
+    const data = await response.json() ; 
     
-  //   return data ;
+    return data ;
 
-  // }
+  }
 
   async function fetchPastOneWeekData(tableName: string, platformname: string): Promise<any[]> {
         const { data: { user } } = await supabase.auth.getUser();
@@ -102,40 +103,54 @@ export function Dashboard() {
       // console.log("suggestions = " , response  ) ; 
       // setSuggestions(response?.tips) ; 
       setPosts(newPosts) ;
-      // fetchLinkedAccount()  
+      try{
+        await fetchLinkedAccount()  
+      }
+      catch(err : any ) 
+      {
+        console.log("Something went wrong while fetching accounts"); 
+      }
     })()
+
+    ;(async () => {
+      const accountsData = await getSocialAccounts() ; 
+      console.log("my social media accounts = " , accountsData) ; 
+      setAccounts(accountsData)  ; 
+    })()
+
+    
   } , [] ) ; 
 
-  // useEffect(()=>{ 
-  //    if(idConnectedWithInsta){
-  //      getInstaAccountId(idConnectedWithInsta)
-  //    }
-  // },[idConnectedWithInsta])
+  useEffect(()=>{ 
+     if(idConnectedWithInsta){
+       getInstaAccountId(idConnectedWithInsta)
+     }
+  },[idConnectedWithInsta])
 
-  // useEffect(()=>{
-  //     if(instaAccountId){
+  useEffect(()=>{
+      if(instaAccountId){
   
-  //       getInstaInsights(instaAccountId,instaUserName)
+        getInstaInsights(instaAccountId,instaUserName)
       
-  //     }
-  //   },[instaAccountId])
+      }
+    },[instaAccountId])
 
-  //  useEffect(() => {
+   useEffect(() => {
   
-  //     ;(async () => {
-  //       try{
-  //         const response = await getTwitterInsights()  ;
-  //         console.log("data  = "  , response) ; 
-  //         setTwitterinsights(response?.data) ; 
-  //         // console.log("data = " , data) ; 
-  //       }
-  //       catch(err) 
-  //       {
-  //         console.log(err) ; 
-  //       }
-  //     })() 
+      ;(async () => {
+        try{
+          const response = await getTwitterInsights()  ;
+          console.log("data  = "  , response) ; 
+          setTwitterinsights(response?.data) ; 
+          // console.log("data = " , data) ; 
+        }
+        catch(err) 
+        {
+          console.log(err) ; 
+        }
+      })() 
   
-  //   } , [platform] ) ; 
+    } , [platform] ) ; 
    
 
   
@@ -150,81 +165,122 @@ export function Dashboard() {
   }
 
  
-  // const getInstaAccountId = async (id:number) => {
+  const getInstaAccountId = async (id:number) => {
   
-  //     try {
-  //       const res = await InstagramServices.fetchInstaAccountID(id)
-  //       console.log("Response insta account id",res)
-  //       setInstaAccountId(res?.instagram_business_account?.id)
+      try {
+        const res = await InstagramServices.fetchInstaAccountID(id)
+        console.log("Response insta account id",res)
+        setInstaAccountId(res?.instagram_business_account?.id)
             
-  //       } catch (error) {
-  //         console.error("Error fetching Instagram accounts", error);
-  //       }
-  //     }
+        } catch (error) {
+          console.error("Error fetching Instagram accounts", error);
+        }
+      }
   
-  // const getInstaInsights = async (instAccId:number,userName:string) => {
+  const getInstaInsights = async (instAccId:number,userName:string) => {
   
-  //       try {
-  //         const res = await InstagramServices.insights(instAccId,userName)
-  //         console.log("Response insta insights",res) 
-  //         const followers:number = res?.business_discovery?.followers_count  ?? 0;
-  //         const totalLikes:number = res?.business_discovery?.media?.data.reduce((sum:number, post:any) => sum + (post?.like_count ?? 0), 0)?? 0;
-  //         const totalComments = res?.business_discovery?.media?.data.reduce((sum:any, post:any) => sum +  (post?.comments_count ?? 0), 0)?? 0; 
-  //         const engagement = followers > 0 ? ((totalLikes + totalComments) / followers) * 100 : 0;
+        try {
+          const res = await InstagramServices.insights(instAccId,userName)
+          console.log("Response insta insights",res) 
+          const followers:number = res?.business_discovery?.followers_count  ?? 0;
+          const totalLikes:number = res?.business_discovery?.media?.data.reduce((sum:number, post:any) => sum + (post?.like_count ?? 0), 0)?? 0;
+          const totalComments = res?.business_discovery?.media?.data.reduce((sum:any, post:any) => sum +  (post?.comments_count ?? 0), 0)?? 0; 
+          const engagement = followers > 0 ? ((totalLikes + totalComments) / followers) * 10 : 0;
           
-  //         console.log("Engagement Rate:", engagement.toFixed(2) + "%");
-  //         setInstaFollowers(followers.toLocaleString())
-  //         setInstaEngagement(engagement.toFixed(2) + "%")
+          console.log("Engagement Rate:", engagement.toFixed(2) + "%");
+          setInstaFollowers(followers.toLocaleString())
+          setInstaEngagement(engagement.toFixed(2) + "%")
           
-  //         } catch (error) {
-  //           console.error("Error fetching Instagram insights", error);
-  //         }
-  //       }
-
-
+          } catch (error) {
+            console.error("Error fetching Instagram insights", error);
+          }
+        }
      
   
   
    
   
 
-  //  const fetchLinkedAccount = async () =>{
-  //        const instaAccount = accounts.find((acc) => acc?.platform === "instagram");
+   const fetchLinkedAccount = async () =>{
+         const instaAccount = accounts.find((acc) => acc?.platform === "instagram");
       
   
-  //        if (!instaAccount || !instaAccount.access_token) {
-  //         console.error("Instagram account or token is missing");
-  //         return;
-  //        }
-  //        const instaToken: string  = instaAccount?.access_token; // Get the token
-  //        setInstaUserName(instaAccount?.username)
-  //       console.log('instatoken',instaToken);
-  //        try {
-  //             const res = await InstagramServices.fetchLinkedAccounts(instaToken)
-  //             console.log("Response insta fetch accounts",res?.data) 
-  //             const newId = res?.data[0]?.id
-  //             console.log("id = " , newId) ; 
-  //             setIdConnectedWithInsta(res?.data[0]?.id)
+         if (!instaAccount || !instaAccount.access_token) {
+          console.error("Instagram account or token is missing");
+          return;
+         }
+         const instaToken: string  = instaAccount?.access_token; // Get the token
+         setInstaUserName(instaAccount?.username)
+        console.log('instatoken',instaToken);
+         try {
+              const res = await InstagramServices.fetchLinkedAccounts(instaToken)
+              console.log("Response insta fetch accounts",res?.data) 
+              const newId = res?.data[0]?.id
+              console.log("id = " , newId) ; 
+              setIdConnectedWithInsta(res?.data[0]?.id)
               
              
-  //        } catch (error) {
-  //             console.error("Error fetching linked accounts", error);
-  //        }
-  //   }
+         } catch (error) {
+              console.error("Error fetching linked accounts", error);
+         }
+    }
 
-  // const totalFollowers = accounts.reduce((sum, account) => sum + parseInt(account.username) || 0, 0);
+  const totalFollowers = accounts.reduce((sum, account) => sum + parseInt(account.username) || 0, 0);
   const upcomingPostsCount = posts.filter(post => new Date(post.scheduled_for) > new Date()).length;
+  const handleTwitterConnect =  async () => {
+    try{
+      await initializeTwitterAuth();
+    const newAccounts = await getSocialAccounts()  ; 
+    setAccounts(newAccounts) ;
+    }
+    catch(err : any ) 
+    {
+      console.log("Something went wrong" , err?.message) ; 
+    }
+
+  }
+  const handleInstaConnect =  async () => {
+    
+    try{
+      loginWithInstagram() ; 
+      const newAccounts = await getSocialAccounts()  ; 
+      setAccounts(newAccounts) ;
+    }
+    catch(err : any ) 
+    {
+      console.log("Something went wrong" , err?.message) ; 
+    }
+
+    
+
+
+  }
+  const handleLinkedInConnect = async () => {
+    try{
+      handleLogin() ; 
+      const newAccounts = await getSocialAccounts()  ; 
+      setAccounts(newAccounts) ;
+    }
+    catch(err : any ) 
+    {
+      console.log("Something went wrong" , err?.message) ; 
+    }
+
+  }
 
   const handleConnect = async (platform: string) => {
     switch (platform) {
       case 'twitter':
-        await initializeTwitterAuth();
+        await handleTwitterConnect() ; 
+        
         break;
       case 'linkedin':
-        handleLogin() 
+        await handleLinkedInConnect() ; 
+        
         break;
       case 'instagram':
-          loginWithInstagram() ; 
+        await handleInstaConnect() ; 
+          
           break;
       default:
         console.log('Platform not implemented:', platform);
@@ -236,6 +292,8 @@ export function Dashboard() {
     setUpdateError(null);
     try {
       await unlinkAccount(platform);
+      const newAccounts = accounts.filter((account) => account?.platform !== platform  ) 
+      setAccounts(newAccounts) ; 
     } catch (err: any) {
       setUpdateError(err.message);
     } finally {
@@ -290,16 +348,16 @@ export function Dashboard() {
             </button>
           </div>
 
-          {/* <div className='flex flex-wrap gap-4 mt-4'>
-            <button onClick={() => {setPlatform("twitter")}} className={` px-4 py-2 rounded-xl ${platform == "twitter" ? " bg-blue-500 text-gray-200" : "bg-gray-200 text-blue-500"   } `}><Twitter/></button>
-            <button onClick={async () => {setPlatform("instagram") ; await fetchLinkedAccount() }} className={` px-4 py-2 rounded-xl ${platform == "instagram" ? "bg-purple-500 text-gray-200" : "bg-gray-200 text-purple-500"}`}><Instagram/></button>
-            <button onClick={() => {setPlatform("linkedin")}} className={`px-4 py-2 rounded-xl ${platform == "linkedin" ? " bg-blue-500 text-gray-200" : "bg-gray-200 text-blue-500"  }`}><Linkedin/></button>
-          </div> */}
+          <div className='flex flex-wrap gap-4 mt-4'>
+           {accounts?.length >= 1 && accounts.find((account) => account?.platform === "twitter") &&  <button onClick={() => {setPlatform("twitter")}} className={` px-4 py-2 rounded-xl ${platform == "twitter" ? " bg-blue-500 text-gray-200" : "bg-gray-200 text-blue-500"   } `}><Twitter/></button>}
+            {accounts?.length >= 1 && accounts.find((account) => account?.platform == "instagram") && <button onClick={async () => {setPlatform("instagram") ; await fetchLinkedAccount() }} className={` px-4 py-2 rounded-xl ${platform == "instagram" ? "bg-purple-500 text-gray-200" : "bg-gray-200 text-purple-500"}`}><Instagram/></button> }
+            {accounts?.length >=1 && accounts.find((account) => account?.platform == "linkedin") && <button onClick={() => {setPlatform("linkedin")}} className={`px-4 py-2 rounded-xl ${platform == "linkedin" ? " bg-blue-500 text-gray-200" : "bg-gray-200 text-blue-500"  }`}><Linkedin/></button>}
+          </div>
         </div>
       )}
 
       {/* Stats Grid */}
-      {/* {platform == "twitter" && <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
+      {platform == "twitter" && <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
         <StatCard
           icon={<Users className="w-6 h-6 text-purple-500" />}
           title="Total Followers"
@@ -332,7 +390,7 @@ export function Dashboard() {
         <StatCard
           icon={<MessageSquare className="w-6 h-6 text-purple-500" />}
           title="Engagement Rate"
-          value="12.50%"
+          value={instaEngagement}
         />
         <StatCard
           icon={<Calendar className="w-6 h-6 text-purple-500" />}
@@ -372,7 +430,7 @@ export function Dashboard() {
           value="0.0%"
         
         />
-      </div>} */}
+      </div>}
 
       {/* Content Calendar Preview */}
       <div className="bg-gray-800 rounded-xl p-6 mb-8">
@@ -438,16 +496,3 @@ function StatCard({ icon, title, value, trend }: StatCardProps) {
     </div>
   );
 }
-
-// const suggestions = [
-//   {
-//     type: "high",
-//     title: "Engagement Opportunity",
-//     description: "A trending hashtag #TechTips is gaining traction. Consider creating a thread sharing your expertise."
-//   },
-//   {
-//     type: "medium",
-//     title: "Content Gap",
-//     description: "Your audience engages well with tutorial content. Consider posting more how-to guides this week."
-//   }
-// ];
