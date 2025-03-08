@@ -13,7 +13,7 @@ interface IMetricData{
 }
 
 export function Analytics() {
-  const [selectedTimeRange, setSelectedTimeRange] = useState('1month');
+  const [selectedTimeRange, setSelectedTimeRange] = useState('1week');
   const { accounts, loading: accountsLoading } = useSocialAccounts();
   const [idConnectedWithInsta , setIdConnectedWithInsta] = useState<number>();
   const [instaAccountId , setInstaAccountId] = useState<number>();
@@ -24,19 +24,21 @@ export function Analytics() {
   const [twitterinsights , setTwitterinsights]  = useState<any>({}) ;
   const [twitterInsights  , setTwitterInsights ] = useState({}) ; 
   const [timeRanges , setTimeRanges ] = useState<any>([] ) ;
+  const [loader , setLoader] = useState(false) ; 
   const [platforms , setPlatforms] = useState([
     {
-      name: "Twitter",
-      icon: <Twitter className="h-6 w-6 text-white" />,
-      color: "bg-blue-600",
-      followers: `${twitterinsights?.followers || 1 } `,
-      engagement: `${twitterinsights?.engagement || 63.5}`,
+      name: "Instagram",
+      icon: <Instagram className="h-6 w-6 text-white" />,
+      color: "bg-pink-600",
+      followers: "0",
+      engagement: "0.0",
       growth: 0,
-      posts: `${twitterinsights?.post || 5 }` ,
-      reach:`${twitterInsights.reach || 100 }%`,
-      engagementChange : "0.00"
+      posts: 0 ,
+      reach:'0.0%' ,
+      engagementChange :  "0.0",
       
-    },
+    }, 
+    
     {
       name: "LinkedIn",
       icon: <Linkedin className="h-6 w-6 text-white" />,
@@ -49,17 +51,17 @@ export function Analytics() {
       engagementChange :  "0.0"
     },
     {
-      name: "Instagram",
-      icon: <Instagram className="h-6 w-6 text-white" />,
-      color: "bg-pink-600",
-      followers: "0",
-      engagement: "0.0",
+      name: "Twitter",
+      icon: <Twitter className="h-6 w-6 text-white" />,
+      color: "bg-blue-600",
+      followers: `${twitterinsights?.followers || 1 } `,
+      engagement: `${twitterinsights?.engagement || 63.5}`,
       growth: 0,
-      posts: 0 ,
-      reach:'0.0%' ,
-      engagementChange :  "0.0",
+      posts: `${twitterinsights?.post || 5 }` ,
+      reach:`${twitterInsights.reach || 100 }%`,
+      engagementChange : "0.00"
       
-    }
+    },
   ])
   const [metricCardData , setMetricCardData] = useState<IMetricData>({
     totalFollowers:'0',
@@ -128,6 +130,7 @@ export function Analytics() {
             }
 
         setTimeRanges(newTimeRange) ; 
+        setLoader(true) ; 
     })()
 
 
@@ -161,6 +164,8 @@ export function Analytics() {
         console.log(err) ; 
       }
     })() 
+
+   
 
   } , [] ) ; 
   useEffect(()=>{
@@ -561,8 +566,16 @@ async function fetchPastTwelveMonthsData(tableName: string , platformname : stri
     setCardType(platform.name) ; setPastAnalytics(null) ;  
     if(platform?.name) 
     {
-      await fetchPastOneMonthData("account_analytics" , platform?.name?.toLowerCase() ) ;
+      await fetchPastOneWeekData("account_analytics" , platform?.name?.toLowerCase() ) ;
     }
+  }
+
+  if (!loader) {
+    return (
+      <div className="flex items-center justify-center min-h-screen">
+        <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-purple-500"></div>
+      </div>
+    );
   }
     
   

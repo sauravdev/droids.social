@@ -215,13 +215,12 @@ async function uploadToSupabase(imageData: File | Blob, fileName: string): Promi
     }
     setLoading(true);
     setError(null); 
+    setGeneratedImage("") ; 
+    setGeneratedContent("") ; 
 
     if (formats.find((format) => format === "image")) 
     {
       await handleImageGeneration() ;
-    }
-    else{
-      setGeneratedImage("") ;
     }
     try {
       
@@ -597,7 +596,7 @@ async function uploadToSupabase(imageData: File | Blob, fileName: string): Promi
 
               {generatedContent && (
                 <div className="space-y-4">
-                  {generatedImage != "" && <div className='w-full'><img  className='w-full object-cover rounded-xl' src = {generatedImage} /> </div>}
+                  {generatedImage !== "" && <div className='w-full'><img  className='w-full object-cover rounded-xl' src = {generatedImage} /> </div>}
                   <div>
                     <label className="block text-sm font-medium text-gray-300 mb-1">
                       Generated Content
@@ -619,6 +618,7 @@ async function uploadToSupabase(imageData: File | Blob, fileName: string): Promi
                       }) ; 
                       setTopic('');
                       setGeneratedContent('');
+                      setGeneratedImage("") ; 
                     }}
                       disabled={saving}
                       className="flex-1 bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-md flex items-center justify-center space-x-2 disabled:opacity-50 text-sm sm:text-base"
