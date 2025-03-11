@@ -32,6 +32,7 @@ export function ProfileSettings() {
   const [publicAvatarTwitterUrl , setPublicAvatarTwitterUrl] = useState<string | null > (null) ; 
   const [publicBannarTwitterUrl  , setPublicBannarTwitterUrl] = useState<string | null> (null) ; 
   const [content , setContent ] = useState<any>({}) ;
+  const {setRefreshHeader} = useAuth() ; 
 
   useEffect(() => {
     setFullName(profile?.full_name) ; 
@@ -65,6 +66,11 @@ export function ProfileSettings() {
   
 
   const handleGenerateProfile = async () => {
+    if((profile?.tokens - 10 ) < 0 ) 
+      {
+      setError("You do not have enough tokens for profile content generation ..") ; 
+       return ; 
+    } 
     if (!fullName || !niche) {
       setError('Please provide your name and niche before generating profile content');
       return;
@@ -119,6 +125,11 @@ export function ProfileSettings() {
         })
       ]);
       setBio(newContent.longBio);
+      if((profile?.tokens - 10 ) >= 0 ) 
+        {
+          await updateProfile({tokens : profile?.tokens - 10 })
+          setRefreshHeader((prev) => !prev) ; 
+        } 
     } catch (err: any) {
       setError(err.message);
     } finally {
@@ -448,5 +459,6 @@ export function ProfileSettings() {
         </div>
       </div>
     </div>
+    
   );
 }

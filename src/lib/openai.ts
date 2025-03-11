@@ -33,26 +33,26 @@ interface ProcessRequest {
 }
 
 
-async function processContent(data: ProcessRequest): Promise<void> {
-  try {
-    const response = await fetch('http://64.227.142.60:5009/api/process', {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json'
-      },
-      body: JSON.stringify({data : "cricket"})
-    });
+// async function processContent(data: ProcessRequest): Promise<void> {
+//   try {
+//     const response = await fetch('http://64.227.142.60:5009/api/process', {
+//       method: 'POST',
+//       headers: {
+//         'Content-Type': 'application/json'
+//       },
+//       body: JSON.stringify({data : "cricket"})
+//     });
 
-    if (!response.ok) {
-      throw new Error(`HTTP error! status: ${response.status}`);
-    }
+//     if (!response.ok) {
+//       throw new Error(`HTTP error! status: ${response.status}`);
+//     }
     
-    const result = await response.json();
-    console.log('API response:', result);
-  } catch (error) {
-    console.error('Error processing content:', error);
-  }
-}
+//     const result = await response.json();
+//     console.log('API response:', result);
+//   } catch (error) {
+//     console.error('Error processing content:', error);
+//   }
+// }
 
 
 // const sample  = "in sarcastic mannar"

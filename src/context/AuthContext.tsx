@@ -10,13 +10,22 @@ interface AuthContextType {
   loading: boolean;
   isFirstLogin: boolean;
   connectionError: string | null;
+  refreshHeader: boolean ,
+  setRefreshHeader: React.Dispatch<React.SetStateAction<boolean>> 
+  paymentStatus : boolean , 
+  setPaymentStatus: React.Dispatch<React.SetStateAction<boolean>> 
+
 }
 
 const AuthContext = createContext<AuthContextType>({
   session: null,
   loading: true,
   isFirstLogin: false,
-  connectionError: null
+  connectionError: null,
+  refreshHeader : false , 
+  setRefreshHeader : () => {} ,
+  paymentStatus : false, 
+  setPaymentStatus : () => {} 
 });
 
 export function AuthProvider({ children }: { children: React.ReactNode }) {
@@ -25,6 +34,9 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [loading, setLoading] = useState(true);
   const [isFirstLogin, setIsFirstLogin] = useState(false);
   const [connectionError, setConnectionError] = useState<string | null>(null);
+  const [refreshHeader , setRefreshHeader ] = useState<boolean>(false) ; 
+  const [paymentStatus , setPaymentStatus ] = useState<boolean>(false) ; 
+
   
   const navigate = useNavigate();
 
@@ -191,7 +203,7 @@ if (insertError) {
   }, [navigate]);
 
   return (
-    <AuthContext.Provider value={{ session, loading, isFirstLogin, connectionError }}>
+    <AuthContext.Provider value={{ session, loading, isFirstLogin, connectionError , refreshHeader , setRefreshHeader  , paymentStatus , setPaymentStatus }}>
       {connectionError ? (
         <div className="min-h-screen bg-gray-900 flex items-center justify-center p-4">
           <div className="bg-red-900 text-white px-6 py-4 rounded-lg max-w-md text-center">

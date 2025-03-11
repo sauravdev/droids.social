@@ -10,6 +10,8 @@ import { Loader, Plus, X, Calendar } from 'lucide-react';
 import {useScheduledPosts} from '../hooks/useScheduledPosts'
 import { getSocialMediaAccountInfo } from '../lib/api';
 import { BACKEND_APIPATH } from '../constants';
+import { useProfile } from '../hooks/useProfile';
+import { useAuth } from '../context/AuthContext';
 interface ContentPlanCardProps {
   plan: ContentPlan;
   onSave: (planId: string, updates: Partial<ContentPlan>) => Promise<void>;
@@ -39,6 +41,9 @@ export function ContentStrategy() {
   const [error, setError] = useState<string | null>(null);
   const [selectedPlan, setSelectedPlan] = useState<ContentPlan | null>(null);
   const [showScheduleModal, setShowScheduleModal] = useState(false);
+  const {profile , updateProfile } = useProfile() ; 
+  const {setRefreshHeader }  = useAuth() ; 
+
   const {createPost} = useScheduledPosts() ; 
 
   const handleAddGoal = (e: React.FormEvent) => {
@@ -54,6 +59,11 @@ export function ContentStrategy() {
   };
 
   const handleGenerateStrategy = async () => {
+    if((profile?.tokens - 10 ) < 0 ) 
+      {
+      setError("You do not have enough tokens for strategy generation ..") ; 
+       return ; 
+      } 
     if (!niche || goals.length === 0) {
       setError('Please provide a niche and at least one goal');
       return;
@@ -96,6 +106,12 @@ export function ContentStrategy() {
       // Reset form
       setNiche('');
       setGoals([]);
+      if((profile?.tokens - 10 ) >= 0 ) 
+        {
+          await updateProfile({tokens : profile?.tokens - 10 })
+          setRefreshHeader((prev) => !prev) ; 
+        } 
+
     } catch (err: any) {
       setError(err.message);
     } finally {

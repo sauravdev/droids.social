@@ -34,7 +34,8 @@ export function SignUp() {
               id: data.user.id,
               email,
               full_name: fullName,
-              avatar_url: ''
+              avatar_url: '',
+              tokens : 100
             },
           ]);
 

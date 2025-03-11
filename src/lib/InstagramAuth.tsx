@@ -2,11 +2,11 @@ import React, { useEffect, useState } from "react";
 import { useSearchParams } from "react-router-dom";
 import { supabase } from './supabase';
 import { useNavigate } from "react-router-dom";
-import { BACKEND_APIPATH } from "../constants";
+import { BACKEND_APIPATH, REDIRECT_URIS } from "../constants";
 const loginWithInstagram = () => {
   localStorage.removeItem("code");
   localStorage.removeItem("instagram_access_token") ;
-  const authUrl = `https://www.instagram.com/oauth/authorize?enable_fb_login=0&force_authentication=1&client_id=1074024207741727&redirect_uri=https://5a42-125-63-73-50.ngrok-free.app/auth/instagram&response_type=code&scope=instagram_business_basic%2Cinstagram_business_manage_messages%2Cinstagram_business_manage_comments%2Cinstagram_business_content_publish%2Cinstagram_business_manage_insights`;
+  const authUrl = `https://www.instagram.com/oauth/authorize?enable_fb_login=0&force_authentication=1&client_id=1074024207741727&redirect_uri=${REDIRECT_URIS.INSTAGRAM}&response_type=code&scope=instagram_business_basic%2Cinstagram_business_manage_messages%2Cinstagram_business_manage_comments%2Cinstagram_business_content_publish%2Cinstagram_business_manage_insights`;
   window.location.href = authUrl;
 };
 const InstagramAuth: React.FC = () => {

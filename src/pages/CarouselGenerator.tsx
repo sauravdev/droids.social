@@ -14,6 +14,7 @@ import { ScheduleModal } from '../components/ScheduleModal';
 import { useScheduledPosts } from '../hooks/useScheduledPosts';
 import { BACKEND_APIPATH } from '../constants';
 import Editor from '../components/Editor';
+import { useAuth } from '../context/AuthContext';
 interface CarouselSlide {
   id: string;
   header: string;
@@ -64,7 +65,7 @@ const themes = [
 ];
 
 export function CarouselGenerator() {
-  const { profile } = useProfile();
+  const { profile , updateProfile  } = useProfile();
   const {createPost} = useScheduledPosts() ; 
   const [topic, setTopic] = useState('');
   const [platform, setPlatform] = useState<'linkedin' | 'instagram'>('linkedin');
@@ -80,6 +81,8 @@ export function CarouselGenerator() {
   const [showScheduleModal , setShowScheduleModal] = useState<boolean>(false) ; 
   const [schedulingInstagramCarousel , setSchedulingInstagramCarousel ] = useState<boolean>(false) ; 
   const [generatedCaption , setGeneratedCaption] = useState<string>(""); 
+  const {setRefreshHeader} = useAuth() ; 
+
 
   
 
@@ -103,6 +106,11 @@ export function CarouselGenerator() {
   };
 
   const generateCarousel = async () => {
+    if((profile?.tokens - 10 ) < 0 ) 
+      {
+      setError("You do not have enough tokens for carousel generation ..") ; 
+       return ; 
+      } 
     if (!topic) {
       setError('Please enter a topic');
       return;
@@ -201,6 +209,11 @@ export function CarouselGenerator() {
       setGeneratedCaption(caption) ;
       setSlides(newSlides);
       setCurrentSlide(0);
+      if((profile?.tokens - 10 ) >= 0 ) 
+      {
+          await updateProfile({tokens : profile?.tokens - 10 })
+          setRefreshHeader((prev) => !prev) ; 
+      } 
     } catch (err: any) {
       setError(err.message || 'Failed to generate carousel content');
     } finally {

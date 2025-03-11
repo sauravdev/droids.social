@@ -15,6 +15,8 @@ import { getSocialAccounts, getSocialMediaAccountInfo } from '../lib/api';
 import { BACKEND_APIPATH } from '../constants';
 import { supabase } from '../lib/supabase';
 import { parse, parseISO } from 'date-fns';
+import { useAuth } from '../context/AuthContext';
+import PaymentSuccessPopup from '../components/PaymentSuccessPopup';
 
 interface suggestion{
   type : string , 
@@ -39,6 +41,10 @@ export function Dashboard() {
   const [twitterinsights  , setTwitterinsights ] = useState({}) ; 
   const [disconnecting, setDisconnecting] = useState<string | null>(null);
   const [updateError, setUpdateError] = useState<string | null>(null);
+
+  const {paymentStatus } = useAuth() ;
+ 
+
   const getTwitterInsights = async () => {
   
     const {access_token , userId } = await getSocialMediaAccountInfo("twitter") ;
@@ -110,6 +116,7 @@ export function Dashboard() {
       {
         console.log("Something went wrong while fetching accounts"); 
       }
+
     })()
 
     ;(async () => {
@@ -324,9 +331,10 @@ export function Dashboard() {
               <span>{accounts.find((account) => account?.platform == "twitter") ? 'Disconnect Twitter' : 'Connect Twitter'}</span>
               <Link2 className="h-4 w-4" />
             </button>}
+
             <button
             
-              onClick={() => accounts.find((account) => account?.platform == "twitter") ?  handleDisconnect("linkedin") : handleConnect('linkedin') }
+              onClick={() => accounts.find((account) => account?.platform == "linkedin") ?  handleDisconnect("linkedin") : handleConnect('linkedin') }
               className={`flex items-center space-x-2 px-4 py-2 rounded-lg ${accounts.find((account) => account?.platform == "linkedin")
                 ? 'bg-red-600 hover:bg-red-700 text-white'
                 : 'bg-purple-600 hover:bg-purple-700 text-white'}`}
@@ -335,8 +343,9 @@ export function Dashboard() {
               <span>{accounts.find((account) => account?.platform == 'linkedin') ? "Disconnect LinkedIn" : "Connect LinkedIn"}</span>
               <Link2 className="h-4 w-4" />
             </button>
+
             <button
-            onClick={() => accounts.find((account) => account?.platform == "instagram") ?  handleDisconnect("linkedin") : handleConnect("instagram")}
+            onClick={() => accounts.find((account) => account?.platform == "instagram") ?  handleDisconnect("instagram") : handleConnect("instagram")}
             
               className={`flex items-center space-x-2 px-4 py-2 rounded-lg ${accounts.find((account) => account?.platform == "instagram")
                 ? 'bg-red-600 hover:bg-red-700 text-white'
@@ -346,6 +355,7 @@ export function Dashboard() {
               <span>{accounts.find((account) => account?.platform == 'instagram') ? "Disconnect Instagram" : "Connect Instagram"}</span>
               <Link2 className="h-4 w-4" />
             </button>
+
           </div>
 
           <div className='flex flex-wrap gap-4 mt-4'>
@@ -473,6 +483,7 @@ export function Dashboard() {
           ))}
         </div>}
       </div>
+      {paymentStatus && <PaymentSuccessPopup/>}
     </div>
   );
 }

@@ -9,3 +9,13 @@ export const BACKEND_APIPATH = {
 export const PYTHON_SERVER_URI = {
     BASEURL :  import.meta.env.VITE_PYTHON_SERVER_URI
 }
+
+export const FRONTEND_URI = {
+    BASEURL : import.meta.env.VITE_FRONTEND_URI
+} 
+
+export const REDIRECT_URIS = {
+    INSTAGRAM : import.meta.env.VITE_INSTAGRAM_REDIRECT_URI,
+    LINKEDIN : import.meta.env.VITE_LINKEDIN_REDIRECT_URI,
+    TWITTER : import.meta.env.VITE_TWITTER_REDIRECT_URI
+}

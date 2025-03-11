@@ -6,6 +6,8 @@ import { generatePostFromCustomModel } from '../lib/openai';
 import { useAuth } from '../context/AuthContext';
 import { BACKEND_APIPATH } from '../constants';
 import { deleteCustomModel } from '../lib/api';
+import {useProfile} from '../hooks/useProfile' ; 
+import { useNavigate } from 'react-router-dom';
 interface TrainingStatus {
   id: string;
   name: string;
@@ -62,6 +64,8 @@ export function CustomModels() {
   ]);
   const [models , setModels] = useState<CustomModel[]>([
   ]);
+  const {profile , updateProfile}  = useProfile() ; 
+  const {setRefreshHeader}  = useAuth() ; 
 
   useEffect(()  => {
     ;(async () => {
@@ -111,7 +115,15 @@ export function CustomModels() {
     }
   }
   const handleModelTraining = async () => {
+    if((profile?.tokens - 50 ) <  0 ) 
+      {
+        setError("You do not have enough tokens for custom model training ..");
+        return ; 
+    } 
     setTraining(true) ;
+   
+    
+
     if(!file) 
     {
       setError( "please upload file first" ) 
@@ -172,6 +184,12 @@ export function CustomModels() {
       status : "completed"
     })
     setProgress(100);
+    if((profile?.tokens - 50 ) >= 0 ) 
+      {
+        await updateProfile({tokens : profile?.tokens - 10 })
+        setRefreshHeader((prev) => !prev) ; 
+    } 
+      
     
   } catch (error : any ) {
     console.error("Error uploading file:", error);

@@ -41,38 +41,6 @@ export function SocialAccountsManager({selectedPlatform , setSelectedPlatform , 
   const [updateError, setUpdateError] = useState<string | null>(null);
   
 
-  const handleConnect = async (platform: string) => {
-    setConnecting(platform);
-    setUpdateError(null);
-    try {
-      switch (platform) {
-        case 'twitter':
-          initializeTwitterAuth();
-          break;
-        case 'linkedin':
-          initializeLinkedInAuth();
-          break;
-        default:
-          console.log('Platform not implemented:', platform);
-      }
-    } catch (err: any) {
-      setUpdateError(err.message);
-    } finally {
-      setConnecting(null);
-    }
-  };
-
-  const handleDisconnect = async (platform: string) => {
-    setDisconnecting(platform);
-    setUpdateError(null);
-    try {
-      await unlinkAccount(platform);
-    } catch (err: any) {
-      setUpdateError(err.message);
-    } finally {
-      setDisconnecting(null);
-    }
-  };
 
   if (loading) {
     return (
@@ -84,7 +52,7 @@ export function SocialAccountsManager({selectedPlatform , setSelectedPlatform , 
 
   
 
-  return (
+  return accounts && accounts?.length > 0 && (
     <div>
       <h2 className="text-lg font-medium text-white mb-4">Connected Accounts</h2>
 
@@ -100,7 +68,7 @@ export function SocialAccountsManager({selectedPlatform , setSelectedPlatform , 
           const account = accounts.find(acc => acc.platform === platform);
           const isLoading = connecting === platform || disconnecting === platform;
 
-          return (
+          return isConnected && (
             <div key={platform} onClick={() => {setSelectedPlatform(platform) ; handleFetchProfileInfo(platform) }} className={`flex items-center justify-between bg-gray-700 p-4 rounded-lg ${selectedPlatform  == platform ? "border-2 border-purple-500 " : ""} ` }>
               <div className="flex items-center space-x-3">
                 <div className={`${config.color}`}>

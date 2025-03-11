@@ -1,12 +1,13 @@
 import { supabase } from './supabase';
 import { generateState, generateCodeVerifier, generateCodeChallenge } from './oauth';
 import { BACKEND_APIPATH } from '../constants';
+import { REDIRECT_URIS} from '../constants';
 // const TWITTER_CLIENT_ID = 'Y2RKeWJ2T1hzQ3dxNnBuT3BCUVI6MTpjaQ';
 // const TWITTER_CLIENT_SECRET = 'MP0G4dsn7efJqahuJL2HsEm9L9eUBcHtCsLJLVHPF-t9qVMe9Q';
 // const REDIRECT_URI = `http://localhost:5173/callback/twitter`;
 
 const TWITTER_CLIENT_ID = 'Y2RKeWJ2T1hzQ3dxNnBuT3BCUVI6MTpjaQ';
-const REDIRECT_URI = `http://localhost:5173/callback/twitter`;
+const REDIRECT_URI = REDIRECT_URIS.TWITTER;
 
 // Store OAuth state and PKCE values in localStorage
 function storeOAuthState(state: string, codeVerifier: string) {

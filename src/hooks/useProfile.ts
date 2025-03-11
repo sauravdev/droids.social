@@ -1,15 +1,17 @@
 import { useState, useEffect } from 'react';
 import { getProfile, updateProfile } from '../lib/api';
 import type { Profile } from '../lib/types';
+import { useAuth } from '../context/AuthContext';
 
 export function useProfile() {
   const [profile, setProfile] = useState<Profile | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const {refreshHeader} = useAuth(); 
 
   useEffect(() => {
     loadProfile();
-  }, []);
+  }, [refreshHeader]);
 
   async function loadProfile() {
     try {

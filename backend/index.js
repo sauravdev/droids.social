@@ -10,6 +10,9 @@ import { openaiRouter } from './routes/oepnai.route.js';
 import axios from 'axios' ;
 import dotenv from 'dotenv' ;
 import { TwitterApi } from 'twitter-api-v2';
+import Stripe from 'stripe';
+
+
 dotenv.config() ; 
 const app = express();
 const port = 3000;
@@ -26,6 +29,7 @@ const conn = supabase.conn
 const data = await testConnection() ; 
 const fullName = data?.[0]?.full_name
 const scheduledJobsMap = new Map();
+const stripe = new Stripe('sk_test_51R12emDCiR3nso8USeNxcVubuynPX6FI9Hn3PHZlew9Md0642tDiZ6QaQIuwPAw2iixO3CJF89ynjnVOokxptvGK00Sz62DocD');
 // const scheduledJobs = await loadScheduledJobs() 
 // if(scheduledJobs)
 // {
@@ -45,6 +49,24 @@ app.get("/fetch-image", async (req, res) => {
     res.send(Buffer.from(response.data)); 
   } catch (error) {
     res.status(500).json({ error: "Failed to fetch image" });
+  }
+});
+
+app.post('/create-payment-intent', async (req, res) => {
+  console.log("payment api")  ; 
+  try {
+    const paymentIntent = await stripe.paymentIntents.create({
+      amount: 1000,
+      currency: 'usd',
+      payment_method_types: ['card'],
+    });
+    console.log("paymentIntent.client_secret = " , paymentIntent.client_secret) ; 
+    res.json({
+      clientSecret: paymentIntent.client_secret,
+    });
+  } catch (err) {
+    console.log(err);
+    res.status(500).json({ message: 'Internal Server Error' });
   }
 });
 

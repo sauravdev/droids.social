@@ -9,6 +9,8 @@ import { useSocialAccounts } from '../hooks/useSocialAccounts.js';
 import {useScheduledPosts} from '../hooks/useScheduledPosts.js'
 import { getSocialMediaAccountInfo } from '../lib/api.js';
 import { BACKEND_APIPATH } from '../constants/';
+import { useAuth } from '../context/AuthContext';
+import { useProfile } from '../hooks/useProfile.js';
 interface HistoryItem {
   id: string;
   topic: string;
@@ -34,6 +36,10 @@ export function AIGenerator() {
   const [history, setHistory] = useState<HistoryItem[]>([]);
   const [posting , setPosting  ] = useState(false ); 
   const [generatedImage , setGeneratedImage ] = useState("") ;
+  const {updateProfile , profile } = useProfile() ; 
+
+  const {setRefreshHeader} = useAuth() ; 
+
 
   const { createPlan } = useContentPlan();
   const {accounts} = useSocialAccounts() ; 
@@ -209,6 +215,12 @@ async function uploadToSupabase(imageData: File | Blob, fileName: string): Promi
   }; 
 
   const handleGenerate = async () => {
+    if((profile?.tokens - 10 ) < 0 ) 
+      {
+        setError("You do not have enough tokens for post generation ..") ; 
+       return ; 
+      } 
+      
     if (!topic) {
       setError('Please enter a topic');
       return;
@@ -235,6 +247,11 @@ async function uploadToSupabase(imageData: File | Blob, fileName: string): Promi
         createdAt: new Date().toISOString()
       };
       setHistory(prev => [historyItem, ...prev]);
+      if((profile?.tokens - 10 ) >= 0 ) 
+        {
+          await updateProfile({tokens : profile?.tokens - 10 })
+          setRefreshHeader((prev) => !prev) ; 
+        } 
     } catch (err: any) {
       setError(err.message);
     } finally {
@@ -305,6 +322,7 @@ async function uploadToSupabase(imageData: File | Blob, fileName: string): Promi
         } , body : JSON.stringify({data : generatedContent , date  : date.toString() , jobId  :postId})})
         console.log("scheduled response from API  =  "  , await scheduledResponse.json() ) ;
       }
+      
     } catch (err: any) {
       setError(err.message);
     }
@@ -540,7 +558,7 @@ async function uploadToSupabase(imageData: File | Blob, fileName: string): Promi
                   {formatOptions.map((format) => (
                     <button
                       key={format}
-                      onClick={() => handleFormatToggle(format)}
+                      onClick={() =>{ handleFormatToggle(format)}}
                       className={`px-3 py-1 rounded-full text-xs sm:text-sm ${
                         formats.includes(format)
                           ? 'bg-purple-600 text-white'

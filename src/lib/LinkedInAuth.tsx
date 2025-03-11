@@ -2,13 +2,13 @@ import React, { useEffect, useState } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import { supabase } from './supabase';
 import { useNavigate } from'react-router-dom';
-import { BACKEND_APIPATH } from '../constants';
+import { BACKEND_APIPATH, REDIRECT_URIS } from '../constants';
 
 const handleLogin = () => {
   localStorage.removeItem("linkedIn_access_token");
   localStorage.removeItem("code") 
   const clientId = '77zwm3li56ua2a';
-  const redirectUri = 'http://127.0.0.1:5173/linkedin/callback/auth/linkedIn';
+  const redirectUri = REDIRECT_URIS.LINKEDIN;
   const params = new URLSearchParams({
     response_type: 'code',
     client_id: clientId,

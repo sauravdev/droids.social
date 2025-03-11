@@ -1,13 +1,21 @@
-import React from 'react';
+import React , {useState} from 'react';
 import { Link } from 'react-router-dom';
 import {Check} from 'lucide-react' ; 
 import { Header } from '../components/Header';
 import { Footer } from '../components/Footer';
+import { Elements } from '@stripe/react-stripe-js';
+import { loadStripe } from '@stripe/stripe-js';
+import { BACKEND_APIPATH } from '../constants';
+
+import {CheckoutForm} from '../components/CheckoutForm'
 export function Pricing() {
+  const stripePromise = loadStripe('pk_test_51R12emDCiR3nso8UC0vdYSlOA2zj3rYKCvcfFYM1V0M4Nkqe3TTrfXH8EHvtcvIBF4VRlhmNS5SMsnSd6551Ktye00f3pk3q3W');
+  const [paymentResponse , setPaymentResponse] = useState<boolean>(false) ; 
+  const [options , setoptions ] = useState<any>({}) ; 
     const pricingPlans = [
         {
           name: 'Starter',
-          price: '29',
+          price: '10',
           features: [
             '3 Social Media Accounts',
             '100 AI-Generated Posts/mo',
@@ -18,7 +26,7 @@ export function Pricing() {
         },
         {
           name: 'Professional',
-          price: '79',
+          price: '50',
           features: [
             '10 Social Media Accounts',
             'Unlimited AI-Generated Posts',
@@ -30,7 +38,7 @@ export function Pricing() {
         },
         {
           name: 'Enterprise',
-          price: '199',
+          price: '100',
           features: [
             'Unlimited Social Accounts',
             'Unlimited AI-Generated Posts',
@@ -41,6 +49,25 @@ export function Pricing() {
           ]
         }
       ];
+
+      const handlePayments = async () => {
+        fetch(`${BACKEND_APIPATH.BASEURL}/create-payment-intent`  , {method : 'post'})
+        .then((response) => response.json())
+        .then((data) => {
+          const newOptions = { clientSecret: data.clientSecret };
+          setoptions(newOptions) ;
+          setPaymentResponse(true); 
+        });
+      }
+      if(paymentResponse) 
+      {
+        
+        return (
+          <Elements stripe={stripePromise} options={options}>
+            <CheckoutForm />
+          </Elements>
+        );
+      }
     return  <>
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
             <div className="text-center">
@@ -70,12 +97,12 @@ export function Pricing() {
                     ))}
                     </ul>
                     <div className="mt-8">
-                    <Link
-                        to="/signup"
+                    <button
+                        onClick={handlePayments}
                         className="block w-full bg-purple-600 hover:bg-purple-700 text-white font-medium py-2 px-4 rounded-md text-center"
                     >
                         Get Started
-                    </Link>
+                    </button>
                     </div>
                 </div>
                 </div>

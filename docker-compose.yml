@@ -6,7 +6,7 @@ services:
       context: ./  # Make sure this is set to the root of your project if 'backend' is under root
       dockerfile: backend/Dockerfile  # Specify Dockerfile location for the backend if needed
     ports:
-      - "3000:3000"
+      - "3001:3001"
     command: /bin/bash -c "npm i && node index.js"
     networks:
       - socialdroids_network

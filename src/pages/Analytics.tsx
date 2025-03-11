@@ -298,7 +298,7 @@ useEffect(()=>{
       console.log("show type" ,cardType)
       if(cardType === 'Instagram'){
           console.log('Inside insta',cardType);
-          metricCardData.engagementRate = instaEngagement || '0.00%'
+          metricCardData.engagementRate = instaEngagement || '0.00'
           metricCardData.totalFollowers  = instaFollowers || '0'
           metricCardData.totalPosts = instaPost  || 0
           metricCardData.reach = instaReach || 0
