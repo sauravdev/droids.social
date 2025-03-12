@@ -15,6 +15,8 @@ import { useScheduledPosts } from '../hooks/useScheduledPosts';
 import { BACKEND_APIPATH } from '../constants';
 import Editor from '../components/Editor';
 import { useAuth } from '../context/AuthContext';
+import { useNavigate } from 'react-router-dom';
+
 interface CarouselSlide {
   id: string;
   header: string;
@@ -82,6 +84,8 @@ export function CarouselGenerator() {
   const [schedulingInstagramCarousel , setSchedulingInstagramCarousel ] = useState<boolean>(false) ; 
   const [generatedCaption , setGeneratedCaption] = useState<string>(""); 
   const {setRefreshHeader} = useAuth() ; 
+  const navigateTo = useNavigate() ; 
+
 
 
   
@@ -109,7 +113,8 @@ export function CarouselGenerator() {
     if((profile?.tokens - 10 ) < 0 ) 
       {
       setError("You do not have enough tokens for carousel generation ..") ; 
-       return ; 
+      navigateTo("/pricing"); 
+      return ; 
       } 
     if (!topic) {
       setError('Please enter a topic');

@@ -11,6 +11,7 @@ import { getSocialMediaAccountInfo } from '../lib/api.js';
 import { BACKEND_APIPATH } from '../constants/';
 import { useAuth } from '../context/AuthContext';
 import { useProfile } from '../hooks/useProfile.js';
+import { useNavigate } from 'react-router-dom';
 interface HistoryItem {
   id: string;
   topic: string;
@@ -37,6 +38,7 @@ export function AIGenerator() {
   const [posting , setPosting  ] = useState(false ); 
   const [generatedImage , setGeneratedImage ] = useState("") ;
   const {updateProfile , profile } = useProfile() ; 
+  const navigateTo = useNavigate() ; 
 
   const {setRefreshHeader} = useAuth() ; 
 
@@ -218,6 +220,7 @@ async function uploadToSupabase(imageData: File | Blob, fileName: string): Promi
     if((profile?.tokens - 10 ) < 0 ) 
       {
         setError("You do not have enough tokens for post generation ..") ; 
+        navigateTo("/pricing"); 
        return ; 
       } 
       

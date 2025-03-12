@@ -66,6 +66,7 @@ export function CustomModels() {
   ]);
   const {profile , updateProfile}  = useProfile() ; 
   const {setRefreshHeader}  = useAuth() ; 
+  const navigateTo = useNavigate() ; 
 
   useEffect(()  => {
     ;(async () => {
@@ -118,9 +119,10 @@ export function CustomModels() {
     if((profile?.tokens - 50 ) <  0 ) 
       {
         setError("You do not have enough tokens for custom model training ..");
+        navigateTo("/pricing"); 
         return ; 
     } 
-    setTraining(true) ;
+    
    
     
 
@@ -143,6 +145,7 @@ export function CustomModels() {
       return ; 
 
     }
+    setTraining(true) ;
     if ( modelName !== "" ) {setTrainingSession((prev) => {
       return [
         ...prev , 

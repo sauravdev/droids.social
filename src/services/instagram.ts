@@ -4,7 +4,7 @@ import { INSTA_APIPATH } from "../constants";
 
 
 export class InstagramServices {
-   private static token:string = 'EAAQOGd4dBrcBO6quHrqR0C37ORmURhG5bxepcHzCZBT3dYQQykxO5mZCUgogzflscdKafKup99IPY9lQpWJXPWmHJHtrYNrhKlqwWHMHOIvVzHfAk0OzuAm4G1If8VovuRHCJMbqDesvOfDuiO3YuNtRZAvNTtYYSZCir8FUmLEmLQFZBh1jEOWZBeu1Lt3WQXGtLtEcRgenASW2ZB6weUflKhq1gZDZD'
+   private static token:string = 'EAAQOGd4dBrcBOZBQoM46UwdB4yeupohPMeXSsCNfX9btSoyogF48Un0KOHLyMoSTfIjq47FCx7Qv8AElBJ32USqlzStmn5gX0wHKYSW5Nc2MAx4ZAViXsTd4B5H59ehEcW0L81TKfz0J1YDUflw9RVielNXR3ZCSHT7PGtIPPo55y8vxuN2AbR1Yr0RtZCQ6aglZB4n9P6fBHWR9AjqTW9cddKkUZD'
     static async fetchLinkedAccounts(instaToken:string){
         try {
            const res = await axios.get(`${INSTA_APIPATH.BASEURL}/${INSTA_APIPATH.VERSION}/me/accounts?access_token=${this.token}`);

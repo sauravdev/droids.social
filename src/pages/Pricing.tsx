@@ -1,15 +1,24 @@
-import React , {useState} from 'react';
+import React , {useEffect, useState} from 'react';
 import { Link } from 'react-router-dom';
 import {Check} from 'lucide-react' ; 
 import { Header } from '../components/Header';
 import { Footer } from '../components/Footer';
 import { Elements } from '@stripe/react-stripe-js';
 import { loadStripe } from '@stripe/stripe-js';
-import { BACKEND_APIPATH } from '../constants';
-
+import { BACKEND_APIPATH  , STRIPE_KEYS } from '../constants';
 import {CheckoutForm} from '../components/CheckoutForm'
+import { getProfile } from '../lib/api';
 export function Pricing() {
-  const stripePromise = loadStripe('pk_test_51R12emDCiR3nso8UC0vdYSlOA2zj3rYKCvcfFYM1V0M4Nkqe3TTrfXH8EHvtcvIBF4VRlhmNS5SMsnSd6551Ktye00f3pk3q3W');
+  const [profile , setProfile]  = useState<any>(null) ; 
+  useEffect(() => {
+    ;(async () => {
+      const data = await getProfile();
+      console.log("profile info = " , data) ; 
+      setProfile(data) ; 
+    })()
+
+  } , [] ) ; 
+  const stripePromise = loadStripe(STRIPE_KEYS.PUBLISH_KEY);
   const [paymentResponse , setPaymentResponse] = useState<boolean>(false) ; 
   const [options , setoptions ] = useState<any>({}) ; 
     const pricingPlans = [
@@ -51,13 +60,20 @@ export function Pricing() {
       ];
 
       const handlePayments = async () => {
-        fetch(`${BACKEND_APIPATH.BASEURL}/create-payment-intent`  , {method : 'post'})
-        .then((response) => response.json())
-        .then((data) => {
+        console.log("profile inside payments = " , profile )  ;
+        if(!profile?.email ) return  ;
+     
+          fetch(`${BACKEND_APIPATH.BASEURL}/create-payment-intent`  , {method : 'POST' , headers: {
+            'Content-Type': 'application/json',
+          } ,  body :JSON.stringify({email : profile?.email  })})
+          .then((response) => response.json())
+          .catch((err) => {console.log("Something went wrong")})
+          .then((data) => {
           const newOptions = { clientSecret: data.clientSecret };
           setoptions(newOptions) ;
           setPaymentResponse(true); 
-        });
+        }).catch((err : any ) => {console.log("Something went wrong")})
+       
       }
       if(paymentResponse) 
       {

@@ -12,6 +12,7 @@ import { getSocialMediaAccountInfo } from '../lib/api';
 import { BACKEND_APIPATH } from '../constants';
 import { useProfile } from '../hooks/useProfile';
 import { useAuth } from '../context/AuthContext';
+import { useNavigate } from 'react-router-dom';
 interface ContentPlanCardProps {
   plan: ContentPlan;
   onSave: (planId: string, updates: Partial<ContentPlan>) => Promise<void>;
@@ -42,6 +43,8 @@ export function ContentStrategy() {
   const [selectedPlan, setSelectedPlan] = useState<ContentPlan | null>(null);
   const [showScheduleModal, setShowScheduleModal] = useState(false);
   const {profile , updateProfile } = useProfile() ; 
+  const navigateTo = useNavigate() ; 
+  
   const {setRefreshHeader }  = useAuth() ; 
 
   const {createPost} = useScheduledPosts() ; 
@@ -62,6 +65,7 @@ export function ContentStrategy() {
     if((profile?.tokens - 10 ) < 0 ) 
       {
       setError("You do not have enough tokens for strategy generation ..") ; 
+      navigateTo("/pricing") ;
        return ; 
       } 
     if (!niche || goals.length === 0) {

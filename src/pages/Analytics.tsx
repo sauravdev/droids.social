@@ -379,7 +379,7 @@ useEffect(()=>{
               setPlatforms((prevPlatforms) =>
                 prevPlatforms.map((platform) =>
                   platform.name.toLowerCase() === data?.[0]?.platform
-                    ? { ...platform, engagementChange :  `${(( Number ( platform?.engagement )  - data[0]?.engagement)/data[0]?.engagement) * 100}`} 
+                    ? { ...platform, engagementChange :  ` ${Number ( platform?.engagement )  !== 0  ? (( Number ( platform?.engagement )  - data[0]?.engagement)/data[0]?.engagement) * 100 : 0 }`} 
                     : platform
                 )
               );
@@ -414,7 +414,7 @@ useEffect(()=>{
             setPlatforms((prevPlatforms) =>
               prevPlatforms.map((platform) =>
                 platform.name.toLowerCase() === data?.[0]?.platform
-                  ? { ...platform, engagementChange :  `${(( Number ( platform?.engagement )  - data[0]?.engagement)/data[0]?.engagement) * 100}`} 
+            ? { ...platform, engagementChange :  ` ${Number ( platform?.engagement )  !== 0  ? (( Number ( platform?.engagement )  - data[0]?.engagement)/data[0]?.engagement) * 100 : 0 }`} 
                   : platform
               )
             );
@@ -450,7 +450,7 @@ async function fetchPast6monthsData(tableName: string , platformname : string): 
           setPlatforms((prevPlatforms) =>
             prevPlatforms.map((platform) =>
               platform.name.toLowerCase() === data?.[0]?.platform
-                ? { ...platform, engagementChange :  `${(( Number ( platform?.engagement )  - data[0]?.engagement)/data[0]?.engagement) * 100}`} 
+          ? { ...platform, engagementChange :  ` ${Number ( platform?.engagement )  !== 0  ? (( Number ( platform?.engagement )  - data[0]?.engagement)/data[0]?.engagement) * 100 : 0 }`} 
                 : platform
             )
           );
@@ -486,7 +486,7 @@ async function fetchPastTwelveMonthsData(tableName: string , platformname : stri
           setPlatforms((prevPlatforms) =>
             prevPlatforms.map((platform) =>
               platform.name.toLowerCase() === data?.[0]?.platform
-                ? { ...platform, engagementChange :  `${(( Number ( platform?.engagement )  - data[0]?.engagement)/data[0]?.engagement) * 100}`} 
+          ? { ...platform, engagementChange :  ` ${Number ( platform?.engagement )  !== 0  ? (( Number ( platform?.engagement )  - data[0]?.engagement)/data[0]?.engagement) * 100 : 0 }`} 
                 : platform
             )
           );
@@ -616,7 +616,7 @@ async function fetchPastTwelveMonthsData(tableName: string , platformname : stri
           icon={<Users className="w-6 h-6 text-purple-500" />}
           title="Total Followers"
           value= {metricCardData.totalFollowers}
-          change={`${pastAnalytics?.followers ? (((Number( metricCardData.totalFollowers) - pastAnalytics?.followers )/ pastAnalytics?.followers ) * 100).toFixed(2): 0  }`    }
+          change={`${(Number ( metricCardData.totalFollowers  )  !== 0  ) &&  pastAnalytics?.followers ? (((Number( metricCardData.totalFollowers) - pastAnalytics?.followers )/ pastAnalytics?.followers ) * 100).toFixed(2): 0  }`    }
           positive={true}
           timeRange={selectedTimeRange}
           
@@ -625,7 +625,7 @@ async function fetchPastTwelveMonthsData(tableName: string , platformname : stri
           icon={<MessageSquare className="w-6 h-6 text-purple-500" />}
           title="Engagement Rate"
           value= {metricCardData.engagementRate}
-          change={`${pastAnalytics?.engagement ? (((Number( metricCardData.engagementRate )  - pastAnalytics?.engagement )/ pastAnalytics?.engagement ) * 100  ).toFixed(2): 0  }`   }
+          change={`${(Number ( metricCardData.engagementRate )  !== 0  ) && pastAnalytics?.engagement ? (((Number( metricCardData.engagementRate )  - pastAnalytics?.engagement )/ pastAnalytics?.engagement ) * 100  ).toFixed(2): 0  }`   }
           positive={true}
           timeRange={selectedTimeRange}
         />
@@ -633,7 +633,7 @@ async function fetchPastTwelveMonthsData(tableName: string , platformname : stri
           icon={<TrendingUp className="w-6 h-6 text-purple-500" />}
           title="Reach"
           value= {metricCardData.reach.toString()}
-          change={`${pastAnalytics?.reach ? (((metricCardData.reach - pastAnalytics?.reach) /pastAnalytics?.reach) * 100).toFixed(2) : 0  } `   }
+          change={`${(Number ( metricCardData.reach.toString())  !== 0  ) && pastAnalytics?.reach ? (((metricCardData.reach - pastAnalytics?.reach) /pastAnalytics?.reach) * 100).toFixed(2) : 0  } `   }
           positive={true}
           timeRange={selectedTimeRange}
         />

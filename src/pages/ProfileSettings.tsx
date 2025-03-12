@@ -32,6 +32,7 @@ export function ProfileSettings() {
   const [publicAvatarTwitterUrl , setPublicAvatarTwitterUrl] = useState<string | null > (null) ; 
   const [publicBannarTwitterUrl  , setPublicBannarTwitterUrl] = useState<string | null> (null) ; 
   const [content , setContent ] = useState<any>({}) ;
+  const navigateTo = useNavigate(); 
   const {setRefreshHeader} = useAuth() ; 
 
   useEffect(() => {
@@ -69,6 +70,7 @@ export function ProfileSettings() {
     if((profile?.tokens - 10 ) < 0 ) 
       {
       setError("You do not have enough tokens for profile content generation ..") ; 
+      navigateTo("/pricing"); 
        return ; 
     } 
     if (!fullName || !niche) {

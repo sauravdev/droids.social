@@ -19,3 +19,7 @@ export const REDIRECT_URIS = {
     LINKEDIN : import.meta.env.VITE_LINKEDIN_REDIRECT_URI,
     TWITTER : import.meta.env.VITE_TWITTER_REDIRECT_URI
 }
+
+export const STRIPE_KEYS={
+    PUBLISH_KEY : import.meta.env.VITE_STRIPE_PUBLISH_KEY
+}
