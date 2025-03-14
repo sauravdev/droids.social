@@ -14,6 +14,9 @@ interface AuthContextType {
   setRefreshHeader: React.Dispatch<React.SetStateAction<boolean>> 
   paymentStatus : boolean , 
   setPaymentStatus: React.Dispatch<React.SetStateAction<boolean>> 
+  tokens  : number , 
+  setTokens :  React.Dispatch<React.SetStateAction<number>> 
+
 
 }
 
@@ -25,7 +28,9 @@ const AuthContext = createContext<AuthContextType>({
   refreshHeader : false , 
   setRefreshHeader : () => {} ,
   paymentStatus : false, 
-  setPaymentStatus : () => {} 
+  setPaymentStatus : () => {}  ,
+  tokens : 0  , 
+  setTokens : () => {} 
 });
 
 export function AuthProvider({ children }: { children: React.ReactNode }) {
@@ -36,9 +41,13 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [connectionError, setConnectionError] = useState<string | null>(null);
   const [refreshHeader , setRefreshHeader ] = useState<boolean>(false) ; 
   const [paymentStatus , setPaymentStatus ] = useState<boolean>(false) ; 
-
+  const [tokens , setTokens ] = useState(0) ;
   
   const navigate = useNavigate();
+
+  useEffect(() => {
+    console.log("use effect  tokens = " , tokens ) ; 
+  } , [tokens ]  )   ;   
 
   async function isThisMonthRecordPresentForInstagram(tableName: string): Promise<boolean> {
     const now = new Date();
@@ -203,7 +212,7 @@ if (insertError) {
   }, [navigate]);
 
   return (
-    <AuthContext.Provider value={{ session, loading, isFirstLogin, connectionError , refreshHeader , setRefreshHeader  , paymentStatus , setPaymentStatus }}>
+    <AuthContext.Provider value={{ session, loading, isFirstLogin, connectionError , refreshHeader , setRefreshHeader  , paymentStatus , setPaymentStatus  , tokens , setTokens }}>
       {connectionError ? (
         <div className="min-h-screen bg-gray-900 flex items-center justify-center p-4">
           <div className="bg-red-900 text-white px-6 py-4 rounded-lg max-w-md text-center">

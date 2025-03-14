@@ -17,7 +17,7 @@ const twitterClient = new TwitterApi({
     appKey:process.env.Twitter_APP_KEY,
     appSecret: process.env.Twitter_APP_SECRET,
     accessToken: process.env.Twitter_ACCESSS_TOKEN,
-    accessSecret: process.env.Twitter_APP_SECRET,
+    accessSecret: process.env.Twitter_APP_ACCESS_SECRET,
   });
 
 
@@ -42,13 +42,8 @@ const generateAccessToken = async (req, res) => {
         code_verifier,
       }),
     });
-    if (!tokenResponse.ok) {
-      const error = await tokenResponse.json();
-      return res.status(400).json({ error: error.error_description });
-    }
-
+    console.log("tokens response   = "    ,tokenResponse) ; 
     const tokens = await tokenResponse.json();
-    console.log(tokens);
     return res.json(tokens);
   } catch (error) {
     console.error('Error fetching token:', error);
@@ -92,10 +87,7 @@ const getInsights = async ( req  , res ) => {
   }
   return res.status(200).json({data}) ;
 }
-const postContent = async (data = "Some random text" , postId = null  ) => {
-  if(data == "") {
-    data = "Sample data from  nodejs application"
-  }
+const postContent = async (data    = "sample text"  , postId = null  ) => {
     try {
       const tweetText = data ; 
       const rwClient = twitterClient.readWrite;
@@ -118,7 +110,7 @@ const postContentHandler = async (req , res ) => {
     console.log(req.body);
     const {data , postId } = req.body ;
     if(!data) return res.status(400).json({message : "Bad request : Empty body received"})
-    if (  postContent(data , postId  ) ) {
+    if (  await  postContent(data , postId  ) ) {
       return res.status(201).json({message : "Tweet posted successfully"})
     }
     return res.status(500).json({message : "Something went wrong" })

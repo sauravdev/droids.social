@@ -23,3 +23,14 @@ export const REDIRECT_URIS = {
 export const STRIPE_KEYS={
     PUBLISH_KEY : import.meta.env.VITE_STRIPE_PUBLISH_KEY
 }
+
+export const  TWITTER_CREDENTIALS = {
+    TWITTER_CLIENT_ID :  import.meta.env.TWITTER_CLIENT_ID
+}
+
+export const LINKEDIN_CREDENTIALS = {
+    LINKEDIN_CLIENT_ID : import.meta.env.LINKEDIN_CLIENT_ID
+}
+export const INSTAGRAM_CREDENTIALS = {
+    INSTAGRAM_CLIENT_ID : import.meta.env.INSTAGRAM_CLIENT_ID
+}

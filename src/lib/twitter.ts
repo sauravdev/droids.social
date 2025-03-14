@@ -1,12 +1,13 @@
 import { supabase } from './supabase';
 import { generateState, generateCodeVerifier, generateCodeChallenge } from './oauth';
 import { BACKEND_APIPATH } from '../constants';
-import { REDIRECT_URIS} from '../constants';
+import { REDIRECT_URIS , TWITTER_CREDENTIALS} from '../constants';
 // const TWITTER_CLIENT_ID = 'Y2RKeWJ2T1hzQ3dxNnBuT3BCUVI6MTpjaQ';
 // const TWITTER_CLIENT_SECRET = 'MP0G4dsn7efJqahuJL2HsEm9L9eUBcHtCsLJLVHPF-t9qVMe9Q';
 // const REDIRECT_URI = `http://localhost:5173/callback/twitter`;
 
-const TWITTER_CLIENT_ID = 'Y2RKeWJ2T1hzQ3dxNnBuT3BCUVI6MTpjaQ';
+// jayant sir
+const TWITTER_CLIENT_ID = TWITTER_CREDENTIALS.TWITTER_CLIENT_ID;
 const REDIRECT_URI = REDIRECT_URIS.TWITTER;
 
 // Store OAuth state and PKCE values in localStorage
@@ -35,7 +36,7 @@ export async function initializeTwitterAuth() {
   // Build authorization URL
   const params = new URLSearchParams({
     response_type: 'code',
-    client_id: TWITTER_CLIENT_ID,
+    client_id: TWITTER_CLIENT_ID, 
     redirect_uri: REDIRECT_URI,
     // making tweet.write 
     scope: 'tweet.read users.read like.write tweet.write offline.access',

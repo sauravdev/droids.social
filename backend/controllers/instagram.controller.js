@@ -35,7 +35,7 @@ const generateAccessToken = async (req, res) => {
       }
     );
 
-    
+    console.log("token response = " , tokenResponse) ; 
     
     const tokenData = await tokenResponse.json();
     console.log("tokenData" , tokenData) ; 

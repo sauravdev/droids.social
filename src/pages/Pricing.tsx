@@ -8,7 +8,11 @@ import { loadStripe } from '@stripe/stripe-js';
 import { BACKEND_APIPATH  , STRIPE_KEYS } from '../constants';
 import {CheckoutForm} from '../components/CheckoutForm'
 import { getProfile } from '../lib/api';
+import { useAuth } from '../context/AuthContext';
+
 export function Pricing() {
+  const {setTokens } = useAuth() ; 
+
   const [profile , setProfile]  = useState<any>(null) ; 
   useEffect(() => {
     ;(async () => {
@@ -31,7 +35,8 @@ export function Pricing() {
             'Basic Analytics',
             'Content Calendar',
             'Email Support'
-          ]
+          ],
+          tokens : 1000
         },
         {
           name: 'Professional',
@@ -43,7 +48,8 @@ export function Pricing() {
             'Content Calendar',
             'Priority Support',
             'Custom Branding'
-          ]
+          ],
+          tokens : 5000
         },
         {
           name: 'Enterprise',
@@ -55,11 +61,15 @@ export function Pricing() {
             'Content Calendar',
             '24/7 Priority Support',
             'Custom AI Training'
-          ]
+          ],
+          tokens : 10000
         }
       ];
 
-      const handlePayments = async () => {
+      const handlePayments = async (tokens : number ) => {
+        console.log("tokens" , tokens ) ; 
+        localStorage.setItem("tokens" , tokens.toString()   ) 
+        setTokens(tokens) ; 
         console.log("profile inside payments = " , profile )  ;
         if(!profile?.email ) return  ;
      
@@ -114,10 +124,10 @@ export function Pricing() {
                     </ul>
                     <div className="mt-8">
                     <button
-                        onClick={handlePayments}
+                        onClick={() => {handlePayments(plan?.tokens )}}
                         className="block w-full bg-purple-600 hover:bg-purple-700 text-white font-medium py-2 px-4 rounded-md text-center"
                     >
-                        Get Started
+                        Get Started 
                     </button>
                     </div>
                 </div>

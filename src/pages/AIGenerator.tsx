@@ -26,7 +26,7 @@ const sourceOptions = ['arxiv', 'youtube', 'twitter', 'linkedin', 'feedly'];
 export function AIGenerator() {
   const [topic, setTopic] = useState('');
   const [platforms, setPlatforms] = useState<any>(['twitter' , "instagram" , "linkedin"]);  const [formats, setFormats] = useState<string[]>(['text']);
-  const [selectedPlatforms , setSelectedPlatforms ] = useState<any>(["instagram"]) ; 
+  const [selectedPlatforms , setSelectedPlatforms ] = useState<any>([]) ; 
   const [platform , setPlatform ] = useState<string>("instagram")
   const [sources, setSources] = useState<string[]>([]);
   const [generatedContent, setGeneratedContent] = useState('');

@@ -105,9 +105,9 @@ export function Dashboard() {
       const instagramReach = pastOneWeekForInstagram[0]?.reach ; 
       const twitterFollowers = pastOneWeekForTwitter[0]?.followers ; 
       const twitterReach = pastOneWeekForTwitter[0]?.reach
-      // const response  = await  generateAIContentSuggestion(instagramFollowers , instagramReach ,twitterFollowers , twitterReach ) ; 
-      // console.log("suggestions = " , response  ) ; 
-      // setSuggestions(response?.tips) ; 
+      const response  = await  generateAIContentSuggestion(instagramFollowers , instagramReach ,twitterFollowers , twitterReach ) ; 
+      console.log("suggestions = " , response  ) ; 
+      setSuggestions(response?.tips) ; 
       setPosts(newPosts) ;
       try{
         await fetchLinkedAccount()  

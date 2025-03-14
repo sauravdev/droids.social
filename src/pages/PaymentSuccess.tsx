@@ -8,17 +8,20 @@ import { useProfile } from '../hooks/useProfile';
 import { getProfile } from '../lib/api';
 
 export function PaymentSuccess() {  
+  const {tokens } = useAuth() ; 
   const { updateProfile} = useProfile() ; 
     const navigateTo  = useNavigate() ; 
-    const handleRedirectToDashBoard = () => {
-            setTimeout(async () => {
+    const handleRedirectToDashBoard = async () => {
             const profile = await getProfile();
-            const newTokens = profile?.tokens + 1000 ; 
+            const newTokens = profile?.tokens + Number( localStorage.getItem("tokens") )  ; 
             await updateProfile({tokens : newTokens  })
+            localStorage.removeItem("tokens") ; 
+            setTimeout( () => {
             navigateTo("/") ; 
-        } , 2500) 
+        } , 2000) 
     }
     useEffect(() => {
+      // console.log("tokens = " , tokens ) ; 
         handleRedirectToDashBoard() ; 
     } , [] )
     return  <>

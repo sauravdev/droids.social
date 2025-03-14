@@ -2,12 +2,12 @@ import React, { useEffect, useState } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import { supabase } from './supabase';
 import { useNavigate } from'react-router-dom';
-import { BACKEND_APIPATH, REDIRECT_URIS } from '../constants';
+import { BACKEND_APIPATH, REDIRECT_URIS , LINKEDIN_CREDENTIALS} from '../constants';
 
 const handleLogin = () => {
   localStorage.removeItem("linkedIn_access_token");
   localStorage.removeItem("code") 
-  const clientId = '77zwm3li56ua2a';
+  const clientId = LINKEDIN_CREDENTIALS.LINKEDIN_CLIENT_ID;
   const redirectUri = REDIRECT_URIS.LINKEDIN;
   const params = new URLSearchParams({
     response_type: 'code',
