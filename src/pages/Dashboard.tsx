@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useCallback, useEffect, useState } from 'react';
 import { Calendar, MessageSquare, Users, TrendingUp, Twitter, Linkedin, Instagram, Link2} from 'lucide-react';
 import { useProfile } from '../hooks/useProfile';
 import { useScheduledPosts } from '../hooks/useScheduledPosts';
@@ -278,8 +278,7 @@ export function Dashboard() {
   const handleConnect = async (platform: string) => {
     switch (platform) {
       case 'twitter':
-        await handleTwitterConnect() ; 
-        
+        await handleTwitterConnect()
         break;
       case 'linkedin':
         await handleLinkedInConnect() ; 

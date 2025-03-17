@@ -42,8 +42,8 @@ const generateAccessToken = async (req, res) => {
         code_verifier,
       }),
     });
-    console.log("tokens response   = "    ,tokenResponse) ; 
     const tokens = await tokenResponse.json();
+    console.log("tokens = " , tokens ) ; 
     return res.json(tokens);
   } catch (error) {
     console.error('Error fetching token:', error);
@@ -51,7 +51,7 @@ const generateAccessToken = async (req, res) => {
   }
 }
 const getUserInfo = async (req, res) => {
-  const { access_token } = req.headers;
+  const { access_token } = req.body;
   console.log("access token for user " + access_token);
 
   if (!access_token) {

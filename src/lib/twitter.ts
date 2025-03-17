@@ -23,34 +23,27 @@ function clearOAuthState() {
 
 // Initialize Twitter OAuth flow
 export async function initializeTwitterAuth() {
- 
+  clearOAuthState() ; 
   // Generate PKCE values
   const state = generateState();
   console.log("state = " , state) ;
   const codeVerifier =   generateCodeVerifier();
   const codeChallenge = await generateCodeChallenge(codeVerifier);
-
-  // Store state and code verifier
   storeOAuthState(state, codeVerifier);
-
-  // Build authorization URL
   const params = new URLSearchParams({
     response_type: 'code',
     client_id: TWITTER_CLIENT_ID, 
     redirect_uri: REDIRECT_URI,
-    // making tweet.write 
     scope: 'tweet.read users.read like.write tweet.write offline.access',
     state: state,
     code_challenge: codeChallenge,
     code_challenge_method: 'S256'
   });
   console.log(params.toString() );
-
-  // Redirect to Twitter's authorization endpoint
   window.location.href = `https://twitter.com/i/oauth2/authorize?${params.toString()}`;
 }
 
-// Handle OAuth callback
+
 export async function handleTwitterCallback(code: string, returnedState: string) {
   // Verify state matches
   const storedState = localStorage.getItem('twitter_oauth_state');
@@ -73,54 +66,48 @@ export async function handleTwitterCallback(code: string, returnedState: string)
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({
       code,
-      code_verifier: codeVerifier,
+      code_verifier: localStorage.getItem('twitter_code_verifier')
   }),
     });
-    // console.log("token response = " , await tokenResponse.json() );
 
-    // if (!tokenResponse.ok) {
-    //   const error = await tokenResponse.json();
-    //   throw new Error(error.error_description || 'Failed to exchange code for tokens');
-    // }
-// 
     const tokens = await tokenResponse.json();
-    console.log(tokens);
-
+    console.log("tokens = " , tokens ) ;
    
-    // get user info 
-    const userResponse = await fetch(`${BACKEND_APIPATH.BASEURL}/twitter/users/me`, {
-      method: 'GET',
-      headers: {
+    const body = JSON.stringify({access_token : tokens?.access_token}) 
+      const userResponse = await fetch(`${BACKEND_APIPATH.BASEURL}/twitter/users/me`, {
+        method: 'POST',
+        body , 
+        headers: {
+          "Content-Type": "application/json"
+        },
+      });
+      if (!userResponse.ok) {
+        throw new Error('Failed to get user info');
+      }
+  
+      const userData = await userResponse.json();
+      console.log("twitter response = " , userData) ; 
+  
+      // Get the current user's ID from Supabase
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) throw new Error('No authenticated user found');
+  
+      // Save connection to database
+      const { error: dbError } = await supabase.from('social_accounts').insert({
+        profile_id: user.id,
+        platform: 'twitter',
+        username: userData.data.username,
         access_token: tokens.access_token,
-      },
-    });
-
-    if (!userResponse.ok) {
-      throw new Error('Failed to get user info');
-    }
-
-    const userData = await userResponse.json();
-    console.log("twitter response = " , userData) ; 
-
-    // Get the current user's ID from Supabase
-    const { data: { user } } = await supabase.auth.getUser();
-    if (!user) throw new Error('No authenticated user found');
-
-    // Save connection to database
-    const { error: dbError } = await supabase.from('social_accounts').insert({
-      profile_id: user.id,
-      platform: 'twitter',
-      username: userData.data.username,
-      access_token: tokens.access_token,
-      refresh_token: tokens.refresh_token,
-      userId : userData?.data?.id
-    });
-
-    if (dbError) throw dbError;
-    // Clear OAuth state
-    // clearOAuthState();
-
-    return userData.data;
+        refresh_token: tokens.refresh_token,
+        userId : userData?.data?.id
+      });
+  
+      if (dbError) throw dbError;
+      // Clear OAuth state
+      // clearOAuthState();
+      return userData.data;
+    
+   
   } catch (error) {
     clearOAuthState();
     throw error;
