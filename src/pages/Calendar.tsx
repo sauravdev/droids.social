@@ -408,87 +408,109 @@ export function Calendar() {
 
   return (
     <div className="space-y-8">
-      <div className="flex justify-between items-center">
-       <div className = "flex gap-4 items-center ">
-       <h1 className="text-3xl font-bold text-white">Content Calendar</h1>
-       <button className={`${refreshingState ? 'animate-spin' : ""}`} onClick={() => {setRefreshingState(true) ; setRefreshCalender(!refreshCalendar)} }><RefreshCcw className = {`h-6 w-6 text-gray-800    ${refreshingState  ? 'animate-spin' : ''}`} /></button>
-       </div>
-        <div className="flex space-x-4">
-          <button onClick={() => setCurrentDate(subMonths(currentDate, 1))} className="text-white">
-            <ChevronLeft className="h-6 w-6" />
-          </button>
-          <span className="text-white font-medium">{format(currentDate, 'MMMM yyyy')}</span>
-          <button onClick={() => setCurrentDate(addMonths(currentDate, 1))} className="text-white">
-            <ChevronRight className="h-6 w-6" />
-          </button>
-        </div>
-      </div>
-
-      <div onClick={() => {setRefreshCalender(!refreshCalendar)}} className="space-y-8">
-        {Object.entries(months).map(([monthKey, days]) => (
-          <div key={monthKey} className="bg-gray-800 rounded-xl p-6">
-            <h2 className="text-xl font-semibold text-white mb-4">
-              {format(days[0], 'MMMM yyyy')}
-            </h2>
-            <div className="grid grid-cols-7 gap-4">
-              {['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'].map(day => (
-                <div key={day} className="text-center text-gray-400 text-sm">
-                  {day}
-                </div>
-              ))}
-              
-              {days.map((date, index) => {
-                const dayPosts = getPostsForDay(date);
-                return (
-                  <div 
-                    key={index}
-                    className={`min-h-[100px] p-2 rounded-lg ${
-                      isSameMonth(date, new Date(monthKey)) 
-                        ? 'bg-gray-700' 
-                        : 'bg-gray-800 opacity-50'
-                    }`}
-                  >
-                    <p className="text-white text-sm mb-2">{format(date, 'd')}</p>
-                    <div className="space-y-2">
-                      {dayPosts.map((post : Post) => (
-                        
-                        post?.status !== "published" && <div
-                          key={post.id}
-                          onClick={() => setSelectedPost(post)}
-                          className={`${
-                            post.type === 'planned' 
-                              ? 'bg-blue-600 bg-opacity-20 border-blue-500' 
-                              : 'bg-purple-600 bg-opacity-20 border-purple-500'
-                          } border rounded-lg p-2 cursor-pointer hover:bg-opacity-30 transition`}
-                        >
-                          <p className="text-white text-xs">
-                            {post.content.slice(0, 20)}...
-                          </p>
-                          <p className="text-gray-400 text-xs">
-                            {/* {format(parseISO(post.scheduled_for.replace(" ", "T")), "HH:mm:ss")} */}
-                            {`${parseISO(post?.scheduled_for).getUTCHours()}:${parseISO(post?.scheduled_for).getUTCMinutes()}:${parseISO(post?.scheduled_for).getUTCSeconds()}` }
-
-                            
-                          </p>
-                        </div>
-                      ))}
-                    </div>
-                  </div>
-                );
-              })}
-            </div>
-          </div>
-        ))}
-      </div>
-
-      {selectedPost && (
-        <PostModal
-        refreshCalendar = {refreshCalendar}
-        setRefreshCalendar = {setRefreshCalender}
-          post={selectedPost}
-          onClose={() => setSelectedPost(null)}
-        />
-      )}
+  <div className="flex justify-between items-center">
+    <div className="flex gap-4 items-center">
+      <h1 className="text-3xl font-bold text-white">Content Calendar</h1>
+      <button 
+        className={`${refreshingState ? 'animate-spin' : ""}`} 
+        onClick={() => {setRefreshingState(true); setRefreshCalender(!refreshCalendar)}}
+      >
+        <RefreshCcw className={`h-6 w-6 text-gray-800 ${refreshingState ? 'animate-spin' : ''}`} />
+      </button>
     </div>
+    
+    <div className="flex space-x-4">
+      <button 
+        onClick={() => setCurrentDate(subMonths(currentDate, 1))} 
+        className="text-white"
+      >
+        <ChevronLeft className="h-6 w-6" />
+      </button>
+      <span className="text-white font-medium">{format(currentDate, 'MMMM yyyy')}</span>
+      <button 
+        onClick={() => setCurrentDate(addMonths(currentDate, 1))} 
+        className="text-white"
+      >
+        <ChevronRight className="h-6 w-6" />
+      </button>
+    </div>
+  </div>
+  
+  <div onClick={() => {setRefreshCalender(!refreshCalendar)}} className="space-y-8">
+    {/* Sort months to ensure current month appears first */}
+    {Object.entries(months)
+      .sort(([keyA], [keyB]) => {
+        // Get current month key in same format as month keys
+        const currentMonthKey = format(currentDate, 'yyyy-MM');
+        
+        // If keyA is current month, it should come first
+        if (keyA.startsWith(currentMonthKey)) return -1;
+        // If keyB is current month, it should come first
+        if (keyB.startsWith(currentMonthKey)) return 1;
+        
+        // Otherwise sort chronologically
+        return new Date(keyA) - new Date(keyB);
+      })
+      .map(([monthKey, days]) => (
+        <div key={monthKey} className="bg-gray-800 rounded-xl p-6">
+          <h2 className="text-xl font-semibold text-white mb-4">
+            {format(days[0], 'MMMM yyyy')}
+          </h2>
+          <div className="grid grid-cols-7 gap-4">
+            {['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'].map(day => (
+              <div key={day} className="text-center text-gray-400 text-sm">
+                {day}
+              </div>
+            ))}
+            
+            {days.map((date, index) => {
+              const dayPosts = getPostsForDay(date);
+              return (
+                <div
+                  key={index}
+                  className={`min-h-[100px] p-2 rounded-lg ${
+                    isSameMonth(date, new Date(monthKey))
+                      ? 'bg-gray-700'
+                      : 'bg-gray-800 opacity-50'
+                  }`}
+                >
+                  <p className="text-white text-sm mb-2">{format(date, 'd')}</p>
+                  <div className="space-y-2">
+                    {dayPosts.map((post: Post) => (
+                      post?.status !== "published" && <div
+                        key={post.id}
+                        onClick={() => setSelectedPost(post)}
+                        className={`${
+                          post.type === 'planned'
+                            ? 'bg-blue-600 bg-opacity-20 border-blue-500'
+                            : 'bg-purple-600 bg-opacity-20 border-purple-500'
+                        } border rounded-lg p-2 cursor-pointer hover:bg-opacity-30 transition`}
+                      >
+                        <p className="text-white text-xs">
+                          {post.content.slice(0, 20)}...
+                        </p>
+                        <p className="text-gray-400 text-xs">
+                          {`${parseISO(post?.scheduled_for).getUTCHours()}:${parseISO(post?.scheduled_for).getUTCMinutes()}:${parseISO(post?.scheduled_for).getUTCSeconds()}`}
+                        </p>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        </div>
+      ))}
+  </div>
+  
+  {selectedPost && (
+    <PostModal
+      refreshCalendar={refreshCalendar}
+      setRefreshCalendar={setRefreshCalender}
+      post={selectedPost}
+      onClose={() => setSelectedPost(null)}
+    />
+  )}
+</div>
   );
 }

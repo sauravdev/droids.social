@@ -87,7 +87,14 @@ function setCache<T>(key: string, data: T) {
   cache.set(key, { data, timestamp: Date.now() });
 }
 
-export async function generateContentStrategy(niche: string, goals: string[]): Promise<ContentStrategy> {
+export async function generateContentStrategy(niche: string, goals: string[] , platforms  : any   ): Promise<ContentStrategy> {
+  let allowedPlatforms  = '';
+  for  (const  platform of platforms) {
+    allowedPlatforms = allowedPlatforms + platform + " | " ; 
+  }
+
+  console.log("allowed platforms = " ,allowedPlatforms) ; 
+
   const cacheKey = `strategy:${niche}:${goals.join(',')}`;
   const cached = checkCache<ContentStrategy>(cacheKey);
   if (cached) return cached;
@@ -98,8 +105,8 @@ export async function generateContentStrategy(niche: string, goals: string[]): P
     Include:
     1. A monthly theme
     2. Weekly themes
-    3. Daily content suggestions for Twitter, LinkedIn, and Instagram
-    4. Mix of content formats (text, image, video)
+    3. Daily content suggestions for ${allowedPlatforms}
+    4. Mix of content formats (text, image)
     
     Format the response as a structured JSON object with the following schema:
     {
@@ -109,8 +116,8 @@ export async function generateContentStrategy(niche: string, goals: string[]): P
         "days": [{
           "date": string (ISO date),
           "posts": [{
-            "platform": "twitter" | "linkedin" | "instagram",
-            "format": "text" | "image" | "video",
+            "platform": ${allowedPlatforms}, 
+            "format": "text" | "image" , 
             "topic": string,
             "suggestion": string,
             "status": "pending"
@@ -137,11 +144,7 @@ export async function generateContentStrategy(niche: string, goals: string[]): P
 
     const response = completion.choices[0].message.content;
     if (!response) throw new Error('Failed to generate content strategy');
-    // const response = await generatePostFromCustomModel(prompt) ;
-
     const strategy = JSON.parse(response);
-    // console.log("content strategy")
-    // const strategy = response
     setCache(cacheKey, strategy);
     return strategy;
   } catch (error: any) {

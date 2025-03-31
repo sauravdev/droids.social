@@ -13,11 +13,13 @@ const RETRY_DELAY = 1000; // 1 second
 
 // Custom fetch with retry logic
 async function fetchWithRetry(...args: Parameters<typeof fetch>): Promise<Response> {
+  
   let lastError: Error | null = null;
   
   for (let i = 0; i < MAX_RETRIES; i++) {
     try {
       const response = await fetch(...args);
+      // console.log("supabase response  = " , response  ) ; 
       if (!response.ok) {
         throw new Error(`HTTP error! status: ${response.status}`);
       }
@@ -44,6 +46,7 @@ export const supabase = createClient(supabaseUrl, supabaseAnonKey, {
     },
     fetch: async (...args) => {
       try {
+        
         return await fetchWithRetry(...args);
       } catch (err) {
         console.error('Supabase fetch error:', err);

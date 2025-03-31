@@ -19,6 +19,11 @@ interface HistoryItem {
   createdAt: string;
 }
 
+interface Success{
+  state : boolean ; 
+  message : string ;
+}
+
 
 const formatOptions = ['text', 'image'];
 const sourceOptions = ['arxiv', 'youtube', 'twitter', 'linkedin', 'feedly'];
@@ -27,7 +32,7 @@ export function AIGenerator() {
   const [topic, setTopic] = useState('');
   const [platforms, setPlatforms] = useState<any>(['twitter' , "instagram" , "linkedin"]);  const [formats, setFormats] = useState<string[]>(['text']);
   const [selectedPlatforms , setSelectedPlatforms ] = useState<any>([]) ; 
-  const [platform , setPlatform ] = useState<string>("instagram")
+  // const [platform , setPlatform ] = useState<string>("instagram")
   const [sources, setSources] = useState<string[]>([]);
   const [generatedContent, setGeneratedContent] = useState('');
   const [loading, setLoading] = useState(false);
@@ -38,7 +43,11 @@ export function AIGenerator() {
   const [posting , setPosting  ] = useState(false ); 
   const [generatedImage , setGeneratedImage ] = useState("") ;
   const {updateProfile , profile } = useProfile() ; 
+  const [success  ,setSuccess ] = useState<Success>({state : false ,message : '' }) ; 
   const navigateTo = useNavigate() ; 
+  const removeToast = () => {
+    setTimeout(() => {setSuccess({state : false , message : ""})} , 1500)
+  }
 
   const {setRefreshHeader} = useAuth() ; 
 
@@ -46,19 +55,42 @@ export function AIGenerator() {
   const { createPlan } = useContentPlan();
   const {accounts} = useSocialAccounts() ; 
 
-  const {createPost} = useScheduledPosts() ; 
-  async function handlePostTweet() {
-    setPosting(true) ;
+  const {createPost} = useScheduledPosts() ;
 
-    const response = await fetch(`${BACKEND_APIPATH.BASEURL}/post/tweet/twitter` , {  headers: {
-      'Accept': 'application/json',
-      'Content-Type': 'application/json'
-    }, method :  "POST" ,body : JSON.stringify({data  :generatedContent} )} )
-    const data = await response.json() 
-    console.log(data ) ;
-    setPosting(false) ;
+  async function handlePostTweet() {
+    setSuccess({state : false , message : ''}) ; 
+    setPosting(true) ;
+    try{
+      const response = await fetch(`${BACKEND_APIPATH.BASEURL}/post/tweet/twitter` , {  headers: {
+        'Accept': 'application/json',
+        'Content-Type': 'application/json'
+      }, method :  "POST" ,body : JSON.stringify({data  :generatedContent} )} )
+      const data = await response.json() ; 
+      console.log(data ) ;
+      if(response?.status >= 400  ) 
+      {
+        setError("Something went wrong while posting on twitter") ; 
+        setTopic('') ;
+        setGeneratedContent('') ;
+        setGeneratedImage('') ;
+        return ; 
+      }
+      setSuccess({state : true , message : 'Content posted !!'}) ; 
+      removeToast() ;
+    }
+    catch(err : any ) 
+    {
+      setError(err?.message) ; 
+    }
+    finally{
+      setTopic('') ;
+      setGeneratedContent('') ;
+      setGeneratedImage('') ;
+      setPosting(false) ;
+    }
   }
   const handlePostInstagram = async () => {
+    setSuccess({state : false , message : ''}) ; 
     setPosting(true)  ;
     if(!generatedImage) 
       {
@@ -93,18 +125,27 @@ export function AIGenerator() {
       );
       const data = await response.json() ; 
       console.log("post instagram api " , data) ; 
+      setSuccess({state : true , message : 'Content posted !!'}) ; 
+      removeToast() ; 
     }
-    catch(err )
+    catch(err : any  )
     {
       console.log(err) ; 
+      setError(err.message);
     }
     finally{
       setPosting(false) ;
+      setTopic('') ; 
+      setGeneratedContent('') ;
+      setGeneratedImage('') ;
+
     }
   }
 
   const handlePostLinkedin = async () => {
+    
     setPosting(true)  ;
+    setSuccess({state : false , message : ''}) ; 
     if(!generatedContent) 
       {
         setError("Please Provide Caption For Uploading On Instagram ") ; 
@@ -129,14 +170,19 @@ export function AIGenerator() {
       );
       const data = await response.json() ; 
       console.log("post linkedin api " , data) ;
-
+      setSuccess({state : true , message : 'Content posted !!'}) ; 
+      removeToast() ; 
     }
-    catch(err) 
+    catch(err : any ) 
     {
       console.log(err)  ;
+      setError(err?.message) ; 
     }
     finally{
       setPosting(false) ;
+      setGeneratedContent('');
+      setTopic(''); 
+      setGeneratedImage('') ; 
     }
   }
 
@@ -217,6 +263,7 @@ async function uploadToSupabase(imageData: File | Blob, fileName: string): Promi
   }; 
 
   const handleGenerate = async () => {
+    setSuccess({state : false , message : ''}) ; 
     if((profile?.tokens - 10 ) < 0 ) 
       {
         setError("You do not have enough tokens for post generation ..") ; 
@@ -239,10 +286,9 @@ async function uploadToSupabase(imageData: File | Blob, fileName: string): Promi
     }
     try {
       
-      // const content = await generatePost(topic, platform, tone);
-      const content = await generatePostFromCustomModel(topic)
+      const content = await generatePost(topic, selectedPlatforms[0] );
+      // const content = await generatePostFromCustomModel(topic)
       setGeneratedContent(content);
-      // Add to history
       const historyItem: HistoryItem = {
         id: crypto.randomUUID(),
         topic,
@@ -263,6 +309,7 @@ async function uploadToSupabase(imageData: File | Blob, fileName: string): Promi
   };
 
   const handleSave = async (platform : string ) => {
+    setSuccess({state : false  , message : ''}) ;
     if (!generatedContent) {
       setError('Please generate content first');
       return;
@@ -284,7 +331,8 @@ async function uploadToSupabase(imageData: File | Blob, fileName: string): Promi
         status: 'pending',
         scheduled_for: null
       });
-      
+      setSuccess({state : true , message : 'Content Saved !'}) ;
+      removeToast() ; 
     } catch (err: any) {
       setError(err.message);
     } finally {
@@ -297,6 +345,7 @@ async function uploadToSupabase(imageData: File | Blob, fileName: string): Promi
       setError("Please generate content first") ; 
       return  ; 
     }
+    setSuccess({state : false , message : ''}) ; 
     try {
       // protected route 
       const { data: { user } } = await supabase.auth.getUser();
@@ -325,6 +374,8 @@ async function uploadToSupabase(imageData: File | Blob, fileName: string): Promi
         } , body : JSON.stringify({data : generatedContent , date  : date.toString() , jobId  :postId})})
         console.log("scheduled response from API  =  "  , await scheduledResponse.json() ) ;
       }
+      setSuccess({state : true , message : 'Content Scheduled Successfully !!'}) ; 
+      removeToast() ; 
       
     } catch (err: any) {
       setError(err.message);
@@ -336,6 +387,7 @@ async function uploadToSupabase(imageData: File | Blob, fileName: string): Promi
     }
   };
   const handleScheduleInstaPost = async (date :string , postId : null | string = null ) => {
+    setSuccess({state : false , message : ''}) ; 
     if(!generatedImage)
     {
       setError("Please Provide Image For Uploading On Instagram") ;
@@ -376,6 +428,8 @@ async function uploadToSupabase(imageData: File | Blob, fileName: string): Promi
         })
         const data = await response.json() 
         console.log("scheduled insta post api " , data ) ;
+        setSuccess({state : true , message : 'Content Posted Successfully !!'}) ; 
+        removeToast() ; 
       }
       else{
         const response  = await fetch(`${BACKEND_APIPATH.BASEURL}/schedule/post/instagram` , {
@@ -399,6 +453,7 @@ async function uploadToSupabase(imageData: File | Blob, fileName: string): Promi
     }
   }
   const handleScheduleLinkedinPost = async (date : string ,  postId : null | string = null) => {
+  setSuccess({state : false , message : ''}) ; 
   try{
     const accountInfo = await getSocialMediaAccountInfo("linkedin") ; 
     const {access_token , userId  } = accountInfo  ;
@@ -439,6 +494,9 @@ async function uploadToSupabase(imageData: File | Blob, fileName: string): Promi
     const data = await response.json() ; 
     console.log("data = " , data )  ;
    }
+
+   setSuccess({state : true , message : 'Content Posted Successfully'}) ; 
+   removeToast(); 
    
   }
   catch(err) 
@@ -447,10 +505,8 @@ async function uploadToSupabase(imageData: File | Blob, fileName: string): Promi
   }
   finally{
     setShowScheduleModal(false); 
-  
   }
 }
-
   const loadHistoryItem = (item: HistoryItem) => {
     setTopic(item.topic);
     setGeneratedContent(item.content);
@@ -461,6 +517,7 @@ async function uploadToSupabase(imageData: File | Blob, fileName: string): Promi
   };
 
   const handleMultiPlatformPost = async () => {
+    setSuccess({state : false , message  : '' }) ; 
     setPosting(true)  ;
     console.log("selected platforms  = " , selectedPlatforms  ) ; 
     const apiCalls = selectedPlatforms.map((selectedPlatform : string ) => selectedPlatform == "twitter" ? handlePostTweet : selectedPlatform == "instagram" ? handlePostInstagram : handlePostLinkedin )
@@ -474,16 +531,20 @@ async function uploadToSupabase(imageData: File | Blob, fileName: string): Promi
       {
         await handlePostLinkedin() ; 
       }
-      // if(selectedPlatforms?.find((selectedPlatform : string  ) => selectedPlatform == "twitter"))
-      // {
-      //   await handlePostTweet()  ;
-      // }
+      if(selectedPlatforms?.find((selectedPlatform : string  ) => selectedPlatform == "twitter"))
+      {
+        await handlePostTweet()  ;
+      }
     } catch (error) {
       console.error("Error:", error);
       setError("Something went wrong") ; 
     }
     finally{
       setPosting(false) ; 
+      setTopic(''); 
+      setGeneratedContent(''); 
+      setGeneratedImage('') ;
+
     }
     
   }
@@ -498,6 +559,11 @@ async function uploadToSupabase(imageData: File | Blob, fileName: string): Promi
             {error && (
               <div className="bg-red-900 text-white px-3 py-2 sm:px-4 rounded-md text-sm">
                 {error}
+              </div>
+            )}
+            {success.state && (
+              <div className="bg-green-600 text-white px-3 py-2 sm:px-4 rounded-md text-sm">
+                {success.message}
               </div>
             )}
 
@@ -625,85 +691,96 @@ async function uploadToSupabase(imageData: File | Blob, fileName: string): Promi
                     <Editor data = {generatedContent} />
                   </div>
 
-                  <div className="flex flex-col sm:flex-row gap-2 sm:space-x-2">
-                    <button
-                      onClick={handleGenerate}
-                      className="flex-1 bg-purple-600 hover:bg-purple-700 text-white px-4 py-2 rounded-md flex items-center justify-center space-x-2 text-sm sm:text-base"
-                    >
-                      <RefreshCw className="h-4 w-4 sm:h-5 sm:w-5" />
-                      <span>Regenerate</span>
-                    </button>
-                    {<button
-                      onClick={() => {selectedPlatforms.map((selectedPlatform  : string ) => {
-                        handleSave(selectedPlatform) 
-                      }) ; 
-                      setTopic('');
-                      setGeneratedContent('');
-                      setGeneratedImage("") ; 
-                    }}
-                      disabled={saving}
-                      className="flex-1 bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-md flex items-center justify-center space-x-2 disabled:opacity-50 text-sm sm:text-base"
-                    >
-                      {saving ? (
-                        <>
-                          <Loader className="h-4 w-4 sm:h-5 sm:w-5 animate-spin" />
-                          <span>Saving...</span>
-                        </>
-                      ) : (
-                        <>
-                          <Save className="h-4   w-4 sm:h-5 sm:w-5" />
-                          <span>Save</span>
-                        </>
-                      )}
-                    </button>}
-                   {
-                    selectedPlatforms?.length == 1 && postButtons.map((postButton) => {
-                      return  selectedPlatforms.find((selectedPlatform : string ) => selectedPlatform === postButton?.value )  && <button
-                      onClick={postButton?.method}
-                      disabled={posting}
-                      className="flex-1 bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-md flex items-center justify-center space-x-2 disabled:opacity-50 text-sm sm:text-base"
-                    >
-                      {posting ? (
-                        <>
-                          <Loader className="h-4 w-4 sm:h-5 sm:w-5 animate-spin" />
-                          <span>posting...</span>
-                        </>
-                      ) : (
-                        <>
-                          
-                          {postButton?.icon}
-                          <span>Post</span>
-                        </>
-                      )}
-                    </button>
-                    })
-                   }
+                  <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-2">
+  <button
+    onClick={handleGenerate}
+    className="bg-purple-600 hover:bg-purple-700 text-white px-4 py-2 rounded-md flex items-center justify-center space-x-2 text-sm sm:text-base"
+  >
+    <RefreshCw className="h-4 w-4 sm:h-5 sm:w-5" />
+    <span>Regenerate</span>
+  </button>
 
-                   {
-                    selectedPlatforms?.length > 1 && 
-                    <div className='flex-1'><button disabled={posting} onClick={handleMultiPlatformPost} className='flex-1 bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-md flex items-center justify-center space-x-2 disabled:opacity-50 text-sm sm:text-base w-full '>
+  {<button
+    onClick={() => { 
+      if(selectedPlatforms?.length > 0) {
+        selectedPlatforms.map((selectedPlatform: string) => {
+          handleSave(selectedPlatform);
+        });
+      } else {
+        handleSave('');
+      }
+      setTopic('');
+      setGeneratedContent('');
+      setGeneratedImage("");
+    }}
+    disabled={saving}
+    className="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-md flex items-center justify-center space-x-2 disabled:opacity-50 text-sm sm:text-base"
+  >
+    {saving ? (
+      <>
+        <Loader className="h-4 w-4 sm:h-5 sm:w-5 animate-spin" />
+        <span>Saving...</span>
+      </>
+    ) : (
+      <>
+        <Save className="h-4 w-4 sm:h-5 sm:w-5" />
+        <span>Save</span>
+      </>
+    )}
+  </button>}
+  
+  {selectedPlatforms?.length == 1 && postButtons.map((postButton) => {
+    return selectedPlatforms.find((selectedPlatform: string) => selectedPlatform === postButton?.value) && (
+      <button
+        key={postButton.value}
+        onClick={postButton?.method}
+        disabled={posting}
+        className="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-md flex items-center justify-center space-x-2 disabled:opacity-50 text-sm sm:text-base"
+      >
+        {posting ? (
+          <>
+            <Loader className="h-4 w-4 sm:h-5 sm:w-5 animate-spin" />
+            <span>posting...</span>
+          </>
+        ) : (
+          <>
+            {postButton?.icon}
+            <span>Post</span>
+          </>
+        )}
+      </button>
+    );
+  })}
 
-                        {posting ? (
-                        <>
-                          <Loader className="h-4 w-4 sm:h-5 sm:w-5 animate-spin" />
-                          <span>posting...</span>
-                        </>
-                      ) : (
-                        <>
-                          <span>Post</span>
-                        </>
-                      )}
-                      </button></div>
-                   }
-                   { selectedPlatforms?.length == 1 && <button
-                    
-                      onClick={() => setShowScheduleModal(true)}
-                      className="flex-1 bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-md flex items-center justify-center space-x-2 text-sm sm:text-base"
-                    >
-                      <Calendar className="h-4 w-4 sm:h-5 sm:w-5" />
-                      <span>Schedule</span>
-                    </button>}
-                  </div>
+  {selectedPlatforms?.length > 1 && (
+    <button 
+      disabled={posting} 
+      onClick={handleMultiPlatformPost} 
+      className="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-md flex items-center justify-center space-x-2 disabled:opacity-50 text-sm sm:text-base"
+    >
+      {posting ? (
+        <>
+          <Loader className="h-4 w-4 sm:h-5 sm:w-5 animate-spin" />
+          <span>posting...</span>
+        </>
+      ) : (
+        <>
+          <span>Post</span>
+        </>
+      )}
+    </button>
+  )}
+  
+  {selectedPlatforms?.length == 1 && (
+    <button
+      onClick={() => setShowScheduleModal(true)}
+      className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-md flex items-center justify-center space-x-2 text-sm sm:text-base"
+    >
+      <Calendar className="h-4 w-4 sm:h-5 sm:w-5" />
+      <span>Schedule</span>
+    </button>
+  )}
+</div>
                 </div>
               )}
             </div>
@@ -761,7 +838,7 @@ async function uploadToSupabase(imageData: File | Blob, fileName: string): Promi
           plan={{
             id: '',
             profile_id: '',
-            platform,
+            platform : selectedPlatforms[0], 
             format: formats[0],
             topic,
             suggestion: generatedContent,

@@ -22,10 +22,16 @@ export function Login() {
         password,
       });
 
-      if (error) throw error;
+      if (error  ) {throw error } ; 
       navigate('/dashboard');
-    } catch (err: any) {
-      setError(err.message);
+    } catch (err : any ) {
+      if(err?.__isAuthError)
+      {
+        setError("Invalid credentials"); 
+      }
+      else{
+        setError(err.message); 
+      }
     } finally {
       setLoading(false);
     }

@@ -13,6 +13,7 @@ import { BACKEND_APIPATH } from '../constants';
 import { useProfile } from '../hooks/useProfile';
 import { useAuth } from '../context/AuthContext';
 import { useNavigate } from 'react-router-dom';
+import { useSocialAccounts } from '../hooks/useSocialAccounts';
 interface ContentPlanCardProps {
   plan: ContentPlan;
   onSave: (planId: string, updates: Partial<ContentPlan>) => Promise<void>;
@@ -31,7 +32,10 @@ function ContentPlanCard({ plan, onSave, onSchedule }: ContentPlanCardProps) {
     </div>
   );
 }
-
+interface Success {
+  state : boolean ; 
+  message : string 
+}
 export function ContentStrategy() {
   const { strategies, loading: strategiesLoading, error: strategiesError, createStrategy } = useContentStrategy();
   const { plans, loading: plansLoading, error: plansError, createPlan, updatePlan } = useContentPlan();
@@ -43,7 +47,9 @@ export function ContentStrategy() {
   const [selectedPlan, setSelectedPlan] = useState<ContentPlan | null>(null);
   const [showScheduleModal, setShowScheduleModal] = useState(false);
   const {profile , updateProfile } = useProfile() ; 
+  const [success , setSuccess] = useState<Success>({state : false , message : ''})    ;
   const navigateTo = useNavigate() ; 
+  const {accounts } = useSocialAccounts() ; 
   
   const {setRefreshHeader }  = useAuth() ; 
 
@@ -62,6 +68,11 @@ export function ContentStrategy() {
   };
 
   const handleGenerateStrategy = async () => {
+    if(accounts?.length == 0 ) 
+    {
+      setError("Please connect atleast one account first ....")
+      return  ;
+    }
     if((profile?.tokens - 10 ) < 0 ) 
       {
       setError("You do not have enough tokens for strategy generation ..") ; 
@@ -77,10 +88,11 @@ export function ContentStrategy() {
     setError(null);
 
     try {
+      const platforms = accounts.map((account) => account.platform ) ; 
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) throw new Error('No authenticated user found');
-
-      const strategy = await generateContentStrategy(niche, goals);
+      console.log("accounts = " , accounts ) ; 
+      const strategy = await generateContentStrategy(niche, goals , platforms  );
       const savedStrategy = await createStrategy({
         profile_id: user.id,
         niche,
@@ -115,7 +127,6 @@ export function ContentStrategy() {
           await updateProfile({tokens : profile?.tokens - 10 })
           setRefreshHeader((prev) => !prev) ; 
         } 
-
     } catch (err: any) {
       setError(err.message);
     } finally {
@@ -155,7 +166,9 @@ export function ContentStrategy() {
         
               })
               const data = await response.json() 
-              console.log("scheduled insta post api " , data ) ;   
+              console.log("scheduled insta post api " , data ) ;  
+              setSuccess({state : true , message : "Content Scheduled Successfully"}) ;
+               
       
             }
             else if (platform == "linkedin") 
@@ -175,15 +188,19 @@ export function ContentStrategy() {
           
               const data = await response.json() ; 
               console.log(data)
+              setSuccess({state : true , message : "Content Scheduled Successfully"}) ;
+
       
             }
             else if(platform == "twitter") 
             {
-              const scheduledResponse = await fetch(`${BACKEND_APIPATH.BASEURL}/schedule/post/api` , {method : "POST"   , headers: {
-              'Content-Type': 'application/json',
-            } , body : JSON.stringify({data : suggestion , date  : scheduled_for , jobId})})
+                
+                const scheduledResponse = await fetch(`${BACKEND_APIPATH.BASEURL}/schedule/post/api` , {method : "POST"   , headers: {
+                'Content-Type': 'application/json',
+              } , body : JSON.stringify({data : suggestion , date  : scheduled_for , jobId})})
               const data =  await scheduledResponse.json()  ;
               console.log("scheduled response from API  =  "  , data ) ;
+              setSuccess({state : true , message : "Content Scheduled Successfully"}) ;
             }
             else{
               console.warn("Invalid platform selected") ;
@@ -227,6 +244,12 @@ export function ContentStrategy() {
           <div className="bg-red-900 text-white px-4 py-2 rounded-md text-sm mb-4">
             {error}
           </div>
+        )}
+
+        {success.state && (
+              <div className="bg-green-600 text-white px-3 py-2 my-3 sm:px-4 rounded-md text-sm">
+                {success.message}
+              </div>
         )}
 
         <div className="space-y-4">

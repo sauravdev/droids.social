@@ -66,6 +66,11 @@ const themes = [
   { name: 'Gradient Purple', bg: 'linear-gradient(135deg, #5B21B6, #8B5CF6)', text: '#FFFFFF' }
 ];
 
+interface Success {
+  state : boolean; 
+  message  : string ; 
+}
+
 export function CarouselGenerator() {
   const { profile , updateProfile  } = useProfile();
   const {createPost} = useScheduledPosts() ; 
@@ -84,12 +89,14 @@ export function CarouselGenerator() {
   const [schedulingInstagramCarousel , setSchedulingInstagramCarousel ] = useState<boolean>(false) ; 
   const [generatedCaption , setGeneratedCaption] = useState<string>(""); 
   const {setRefreshHeader} = useAuth() ; 
+  const [success  , setSuccess] =useState<Success>({state : false , message : ''})
   const navigateTo = useNavigate() ; 
 
-
-
-  
-
+  const removeToast = () => {
+    setTimeout(() => {
+      setSuccess({state : false , message : ''}) ; 
+    } , 2000 ) ;
+  }
   const handleBrandLogoUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
     if (file) {
@@ -298,6 +305,7 @@ export function CarouselGenerator() {
 
   
   const exportToPDF = async () => {
+    setSuccess({state : false , message : ''}) ;
     if (slides.length === 0) {
       setError('No slides to export');
       return;
@@ -340,6 +348,9 @@ export function CarouselGenerator() {
       downloadLink.textContent = 'Download PDF';
       document.body.appendChild(downloadLink);
       downloadLink.click();
+      setSuccess({state : true  ,message  : "PDF Downloaded successfully !!"}); 
+      
+      removeToast() ; 
     } catch (err : any ) {
       setError('Error exporting to PDF: ' + (err?.message || 'Unknown error'));
     } finally {
@@ -348,6 +359,7 @@ export function CarouselGenerator() {
   };
 
   const handleInstagramExport = async () => {
+    setSuccess({state : false , message : ''}); 
     if (slides.length === 0) {
       setError('No slides to export');
       return;
@@ -399,6 +411,8 @@ export function CarouselGenerator() {
       {
         console.log("Something went wrong while publishing carousel " , err || err?.message  )
       }
+      setSuccess({state  :true , message : 'Content posted successfully'}) ; 
+      removeToast() ; 
      
     }
     catch(error : any ) 
@@ -414,6 +428,7 @@ export function CarouselGenerator() {
 
   const handleScheduleCarouselOnInstagram = async (date : string    , postId : null | string = null) => {
     setSchedulingInstagramCarousel(true ) ;
+    setSuccess({state : false , message : ''}) ;
     if (slides.length === 0) {
       setError('No slides to export');
       return;
@@ -470,6 +485,9 @@ export function CarouselGenerator() {
           const data = await response.json() 
           console.log("scheduled insta post api " , data ) ;
         }  
+
+        setSuccess({state : true , message  : 'Content scheduled successfully !!'}) ;
+        removeToast() ; 
     }
     catch(error : any ) 
     {
@@ -663,44 +681,8 @@ export function CarouselGenerator() {
                 )}
               </button>
             )}
-             {slides.length > 0 && platform == "linkedin" &&  (
-              <button
-                onClick={handleLinkedinExport}
-                disabled={postingOnLinkedin}
-                className="flex-1 bg-[#1E40AF] hover:bg-[#2753e6]  text-[#FFFFFF] px-4 py-2 rounded-lg flex items-center justify-center space-x-2 disabled:opacity-50"
-              >
-                {postingOnLinkedin ? (
-                  <>
-                    <Loader className="h-5 w-5 animate-spin" />
-                    <span>Exporting...</span>
-                  </>
-                ) : (
-                  <>
-                    <Linkedin className="h-5 w-5" />
-                    <span className='capitalize'>Post</span>
-                  </>
-                )}
-              </button>
-            )}
-            {slides.length > 0 && platform == "linkedin" &&  (
-              <button
-                onClick={() => {setShowScheduleModal(true ) }}
-                disabled={postingOnLinkedin}
-                className="flex-1 bg-[#1E40AF] hover:bg-[#2753e6]  text-[#FFFFFF] px-4 py-2 rounded-lg flex items-center justify-center space-x-2 disabled:opacity-50"
-              >
-                {postingOnLinkedin ? (
-                  <>
-                    <Loader className="h-5 w-5 animate-spin" />
-                    <span>Scheduling...</span>
-                  </>
-                ) : (
-                  <>
-                    <Linkedin className="h-5 w-5" />
-                    <span className='capitalize'>Schedule</span>
-                  </>
-                )}
-              </button>
-            )}
+            
+            
           </div>
 
           {error && (
@@ -708,6 +690,12 @@ export function CarouselGenerator() {
               {error}
             </div>
           )}
+
+          {success.state && (
+              <div className="bg-green-600 text-white px-3 py-2 sm:px-4 rounded-md text-sm">
+                {success.message}
+              </div>
+            )}
         </div>
       </div>
 

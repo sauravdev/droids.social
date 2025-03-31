@@ -91,18 +91,19 @@ const postContent = async (data    = "sample text"  , postId = null  ) => {
     try {
       const tweetText = data ; 
       const rwClient = twitterClient.readWrite;
-      await rwClient.v2.tweet(tweetText);
+      const response  = await rwClient.v2.tweet(tweetText);
+      console.log("response = " , response) ; 
       console.log("Tweet posted successfully:", tweetText);
       if(postId ) 
       {
         await updateScheduledPost(postId , {status : 'published'} )
       }
-      return true  
-    
+      return true ;
     } catch (error) {
       console.error("Error posting tweet:", error);
       return false 
     } 
+    return false; 
   };
 
 

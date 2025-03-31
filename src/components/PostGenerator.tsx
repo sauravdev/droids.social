@@ -10,6 +10,10 @@ interface PostGeneratorProps {
   onSave: (updates: Partial<ContentPlan>) => Promise<void>;
   onSchedule: () => void;
 }
+interface Success {
+  state : boolean ,
+  message : string 
+}
 
 export function PostGenerator({ plan, onSave, onSchedule }: PostGeneratorProps) {
   const [loading, setLoading] = useState(false);
@@ -18,20 +22,40 @@ export function PostGenerator({ plan, onSave, onSchedule }: PostGeneratorProps) 
   const [content, setContent] = useState(plan.suggestion);
   const [tone, setTone] = useState<string>('');
   const [posting , setPosting ] = useState<boolean | null>(false);
+  const [success  , setSuccess ] = useState<Success>({state : false , message : ''}) ; 
+
  
 
   async function handlePostTweet() {
     setPosting(true) ;
-    const response = await fetch(`${BACKEND_APIPATH.BASEURL}/post/tweet/twitter` , {  headers: {
-      'Accept': 'application/json',
-      'Content-Type': 'application/json'
-    }, method :  "POST" ,body : JSON.stringify({data  :plan?.suggestion} )} )
-    const data = response.json() 
-    console.log(data ) ;
+    setSuccess({state : false, message : ''}) ;
+    try{
+      const response = await fetch(`${BACKEND_APIPATH.BASEURL}/post/tweet/twitter` , {  headers: {
+        'Accept': 'application/json',
+        'Content-Type': 'application/json'
+      }, method :  "POST" ,body : JSON.stringify({data  :plan?.suggestion} )} )
+      const data = await response.json()  ;
+      console.log('twitter api response = ' , data) ;
+      if(response?.status >= 400 )
+      {
+        setError("Something went wrong while posting on twitter"); 
+        setTimeout(() => {setError('')}  ,1500 )
+        setPosting(false) ;
+        return ;
+      }
+      setSuccess({state : true , message : 'Content posted successfully !!'}) ;
+      removeToast() ;
+    }
+    catch(err : any)
+    {
+      setError(err.message);
+    }
+    
     setPosting(false) ;
     
   }
   const handlePostInstagram = async () => {
+    setSuccess({state : false, message : ''}) ;
   try{
         const accountInfo = await getSocialMediaAccountInfo("instagram") ; 
         const {access_token , userId  } = accountInfo  ;
@@ -48,13 +72,17 @@ export function PostGenerator({ plan, onSave, onSchedule }: PostGeneratorProps) 
         );
         const data = await response.json() ; 
         console.log("post instagram api " , data) ; 
+        setSuccess({state : true , message : 'Content posted successfully !!'}) ;
+        removeToast() ;
       }
-      catch(err )
+      catch(err : any  )
       {
+        setError(err?.message) ;
         console.log(err) ; 
       }
   }
   const handlePostLinkedin = async () => {
+    setSuccess({state : false, message : ''}) ;
 
      try{
           const accountInfo = await getSocialMediaAccountInfo("linkedin") ; 
@@ -71,10 +99,14 @@ export function PostGenerator({ plan, onSave, onSchedule }: PostGeneratorProps) 
           );
           const data = await response.json() ; 
           console.log("post linkedin api " , data) ;
+          setSuccess({state : true , message : 'Content posted successfully !!'}) ;
+          removeToast() ; 
+
     
         }
-        catch(err) 
+        catch(err : any ) 
         {
+          setError(err?.message) ;
           console.log(err)  ;
         }
   }
@@ -88,12 +120,6 @@ export function PostGenerator({ plan, onSave, onSchedule }: PostGeneratorProps) 
       handlePostLinkedin();
     }
   }
-
-
-
-
-
-
   const handleGenerate = async () => {
     setLoading(true);
     setError(null);
@@ -109,14 +135,24 @@ export function PostGenerator({ plan, onSave, onSchedule }: PostGeneratorProps) 
 
   const handleSave = async () => {
     setSaving(true);
+    setSuccess({state : false , message : ''}) ;
+
     try {
       await onSave({ suggestion: content });
+      setSuccess({state : true , message : 'Content saved successfully !!'}) ;
+      removeToast() ;
     } catch (err: any) {
       setError(err.message);
     } finally {
       setSaving(false);
     }
+    
   };
+  const removeToast = () => {
+    setTimeout(() => {
+      setSuccess({state : false , message : ''}) ;
+    } , 1500 ); 
+  }
 
   return (
     <div className="bg-gray-700 rounded-lg p-4 space-y-4 flex flex-col justify-between">
@@ -149,6 +185,11 @@ export function PostGenerator({ plan, onSave, onSchedule }: PostGeneratorProps) 
         <div className="text-red-500 text-sm">
           {error}
         </div>
+      )}
+      {success.state && (
+              <div className="bg-green-600 text-white px-3 py-2 sm:px-4 rounded-md text-sm">
+                {success.message}
+              </div>
       )}
 
       <div>

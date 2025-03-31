@@ -47,7 +47,9 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   useEffect(() => {
     console.log("use effect  tokens = " , tokens ) ; 
-  } , [tokens ]  )   ;   
+  } , [tokens ]  )   ;  
+  
+
 
   async function isThisMonthRecordPresentForInstagram(tableName: string): Promise<boolean> {
     const now = new Date();
@@ -153,6 +155,7 @@ if (insertError) {
           setLoading(false);
           return;
         }
+       
 
         // Get initial session
         const { data: { session } } = await supabase.auth.getSession();
@@ -189,7 +192,6 @@ if (insertError) {
     }
 
     initialize();
-    
     isThisMonthRecordPresentForInstagram("account_analytics");
     isThisMonthRecordPresentForTwitter("account_analytics") ;
 
@@ -198,6 +200,7 @@ if (insertError) {
       data: { subscription },
     } = supabase.auth.onAuthStateChange((_event, session) => {
       if (mounted) {
+        
         setSession(session);
         if (!session) {
           setIsFirstLogin(false);
