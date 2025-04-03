@@ -56,14 +56,16 @@ const emojis = ['🚀', '💡', '✨', '🎯', '📈', '🔥', '💪', '🌟', '
 const icons = ['✓', '→', '•', '◆', '★', '○', '□', '△', '▷', '◎'];
 
 const themes = [
-  { name: 'Modern Dark', bg: '#1F2937', text: '#FFFFFF' },
-  { name: 'Ocean Blue', bg: '#1E40AF', text: '#FFFFFF' },
-  { name: 'Forest Green', bg: '#065F46', text: '#FFFFFF' },
-  { name: 'Royal Purple', bg: '#5B21B6', text: '#FFFFFF' },
-  { name: 'Sunset Orange', bg: '#9A3412', text: '#FFFFFF' },
-  { name: 'Light Minimal', bg: '#F3F4F6', text: '#111827' },
-  { name: 'Gradient Blue', bg: 'linear-gradient(135deg, #1E40AF, #3B82F6)', text: '#FFFFFF' },
-  { name: 'Gradient Purple', bg: 'linear-gradient(135deg, #5B21B6, #8B5CF6)', text: '#FFFFFF' }
+  { name: 'Midnight Blue', bg: '#0F172A', text: '#FFFFFF' },
+{ name: 'Cherry Red', bg: '#7F1D1D', text: '#FFFFFF' },
+{ name: 'Teal Accent', bg: '#0F766E', text: '#FFFFFF' },
+{ name: 'Golden Amber', bg: '#92400E', text: '#FFFFFF' },
+{ name: 'Lavender Calm', bg: '#6B21A8', text: '#FFFFFF' },
+{ name: 'Slate Gray', bg: '#334155', text: '#FFFFFF' },
+{ name: 'Mint Fresh', bg: '#065F46', text: '#FFFFFF' },
+{ name: 'Soft Beige', bg: '#F5F5DC', text: '#2D3748' },
+{ name: 'Charcoal Dark', bg: '#1E1E1E', text: '#E2E8F0' },
+{ name: 'Rose Pink', bg: '#9D174D', text: '#FFFFFF' },
 ];
 
 interface Success {
@@ -95,7 +97,7 @@ export function CarouselGenerator() {
   const removeToast = () => {
     setTimeout(() => {
       setSuccess({state : false , message : ''}) ; 
-    } , 2000 ) ;
+    } , 2500 ) ;
   }
   const handleBrandLogoUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
@@ -589,7 +591,7 @@ export function CarouselGenerator() {
             </div>
           </div>
 
-          <div>
+         {platform == "linkedin" &&  <div>
             <label htmlFor="linkedin" className="block text-sm font-medium text-gray-300 mb-2">
               LinkedIn Profile URL
             </label>
@@ -601,7 +603,7 @@ export function CarouselGenerator() {
               className="w-full bg-gray-700 border border-gray-600 rounded-lg p-3 text-white"
               placeholder="https://linkedin.com/in/username"
             />
-          </div>
+          </div>}
 
           <div className="flex space-x-4">
             <button

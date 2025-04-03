@@ -186,6 +186,7 @@ function PostModal({refreshCalendar , setRefreshCalendar  ,  post, onClose}: Pos
               );
               const data = await response.json() ; 
               console.log("post instagram api " , data) ; 
+              setRefreshCalendar(!refreshCalendar) ;
             }
             catch(err )
             {
@@ -210,6 +211,7 @@ function PostModal({refreshCalendar , setRefreshCalendar  ,  post, onClose}: Pos
               );
               const data = await response.json() ; 
               console.log("post linkedin api " , data) ;
+              setRefreshCalendar(!refreshCalendar) ;
         
             }
             catch(err) 
@@ -226,6 +228,7 @@ function PostModal({refreshCalendar , setRefreshCalendar  ,  post, onClose}: Pos
       }, method :  "POST" ,body : JSON.stringify({data  :post?.content , postId : post?.id  } )} )
         const data = await response.json()  ; 
         console.log("twitter response  : " , data) ; 
+        setRefreshCalendar(!refreshCalendar) ;
       }
       else{
         console.log("Invalid platform") 
@@ -353,6 +356,7 @@ export function Calendar() {
     setAllPosts(newAllPosts)
   }
 
+  useEffect(() => {})
 
   useEffect(() => {
     setRefreshingState(true) 

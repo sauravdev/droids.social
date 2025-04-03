@@ -14,7 +14,7 @@ import { InstagramServices } from '../services/instagram';
 import { getSocialAccounts, getSocialMediaAccountInfo } from '../lib/api';
 import { BACKEND_APIPATH } from '../constants';
 import { supabase } from '../lib/supabase';
-import { parse, parseISO } from 'date-fns';
+import { parse, parseISO ,format} from 'date-fns';
 import { useAuth } from '../context/AuthContext';
 import PaymentSuccessPopup from '../components/PaymentSuccessPopup';
 
@@ -449,6 +449,7 @@ export function Dashboard() {
             .filter(post => post?.status === "pending" && parseISO(post?.scheduled_for)  >=  new Date())
             .slice(0, 3)
             .map((post) => (
+              
               <div key={post.id} className="flex items-center justify-between bg-gray-700 p-4 rounded-lg">
                 <div>
                   <p className="text-white font-medium">{post.content.slice(0, 50)}...</p>
@@ -456,7 +457,8 @@ export function Dashboard() {
                 </div>
                 <div className="text-right">
                   <p className="text-purple-400">
-                   {`${new Date(post.scheduled_for).toLocaleDateString()}` }
+                   {/* {`${new Date(post.scheduled_for).toLocaleDateString()}` } */}
+                   {`${parseISO(post?.scheduled_for).getUTCDate()}/${parseISO(post?.scheduled_for).getUTCMonth() + 1 }/${parseISO(post?.scheduled_for).getFullYear()}   `}
                   </p>
                   <p className="text-gray-400 text-sm">
                     {`${parseISO(post?.scheduled_for).getUTCHours()}:${parseISO(post?.scheduled_for).getUTCMinutes()}:${parseISO(post?.scheduled_for).getUTCSeconds()}` }
