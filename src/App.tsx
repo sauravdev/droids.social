@@ -57,7 +57,8 @@ export default function App() {
       <Route path="/settings" element={session ? <Layout><ProfileSettings /></Layout> : <Navigate to="/login" replace />} />
       <Route path="/callback/twitter" element={session ? <TwitterCallback /> : <Navigate to="/login" replace />} />
       <Route path="/settings/callback/linkedin" element={session ? <LinkedInCallback /> : <Navigate to="/login" replace />} />
-      <Route path="/oauth/twitter" element={session ? <OauthTwitterCallback /> : <Navigate to="/login" replace />} />
+      {/* <Route path="/oauth/twitter" element={session ? <OauthTwitterCallback /> : <Navigate to="/login" replace />} /> */}
+      <Route path="/callback/twitter" element={session ? <OauthTwitterCallback /> : <Navigate to="/login" replace />} />
       <Route path="/auth/instagram/" element={<InstagramAuth />} />
       <Route path="/linkedin/callback/auth/linkedIn" element={<LinkedInAuth />} /> 
 

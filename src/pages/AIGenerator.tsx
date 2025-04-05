@@ -46,7 +46,7 @@ export function AIGenerator() {
   const [success  ,setSuccess ] = useState<Success>({state : false ,message : '' }) ; 
   const navigateTo = useNavigate() ; 
   const removeToast = () => {
-    setTimeout(() => {setSuccess({state : false , message : ""})} , 1500)
+    setTimeout(() => {setSuccess({state : false , message : ""})} , 2000)
   }
 
   const {setRefreshHeader} = useAuth() ; 
@@ -59,12 +59,14 @@ export function AIGenerator() {
 
   async function handlePostTweet() {
     setSuccess({state : false , message : ''}) ; 
+    const accountInfo = await getSocialMediaAccountInfo("twitter") ; 
+    const {access_token , refresh_token  } = accountInfo  ;
     setPosting(true) ;
     try{
       const response = await fetch(`${BACKEND_APIPATH.BASEURL}/post/tweet/twitter` , {  headers: {
         'Accept': 'application/json',
         'Content-Type': 'application/json'
-      }, method :  "POST" ,body : JSON.stringify({data  :generatedContent} )} )
+      }, method :  "POST" ,body : JSON.stringify({access_token , refresh_token , data  :generatedContent} )} )
       const data = await response.json() ; 
       console.log(data ) ;
       if(response?.status >= 400  ) 
@@ -359,19 +361,21 @@ async function uploadToSupabase(imageData: File | Blob, fileName: string): Promi
         scheduled_for  :date , 
         status : "pending" , 
       }
+      const accountInfo = await getSocialMediaAccountInfo("twitter") ; 
+      const {access_token , refresh_token  } = accountInfo  ;
       if(!postId) 
       {
         const createdPost = await createPost(post) ; 
         console.log("createdPost (in tweet) = " , createdPost ); 
         const scheduledResponse = await fetch(`${BACKEND_APIPATH.BASEURL}/schedule/post/api` , {method : "POST"   , headers: {
           'Content-Type': 'application/json',
-        } , body : JSON.stringify({data : generatedContent , date  : date.toString() , jobId  :createdPost?.id })})
+        } , body : JSON.stringify({access_token , refresh_token   , data : generatedContent , date  : date.toString() , jobId  :createdPost?.id })})
         console.log("scheduled response from API  =  "  , await scheduledResponse.json() ) ;
       }
       else{
         const scheduledResponse = await fetch(`${BACKEND_APIPATH.BASEURL}/schedule/post/api` , {method : "POST"   , headers: {
           'Content-Type': 'application/json',
-        } , body : JSON.stringify({data : generatedContent , date  : date.toString() , jobId  :postId})})
+        } , body : JSON.stringify({access_token , refresh_token   , data : generatedContent , date  : date.toString() , jobId  :postId})})
         console.log("scheduled response from API  =  "  , await scheduledResponse.json() ) ;
       }
       setSuccess({state : true , message : 'Content Scheduled Successfully !!'}) ; 

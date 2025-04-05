@@ -16,11 +16,10 @@ const TWITTER_REDIRECT_URI = process.env.TWITTER_REDIRECT_URI;
 const twitterClient = new TwitterApi({
     appKey:process.env.Twitter_APP_KEY,
     appSecret: process.env.Twitter_APP_SECRET,
+    // user 
     accessToken: process.env.Twitter_ACCESSS_TOKEN,
     accessSecret: process.env.Twitter_APP_ACCESS_SECRET,
   });
-
-
 const generateAccessToken = async (req, res) => {
   const { code, code_verifier } = req.body;
   console.log("code =   " + code);
@@ -87,7 +86,14 @@ const getInsights = async ( req  , res ) => {
   }
   return res.status(200).json({data}) ;
 }
-const postContent = async (data    = "sample text"  , postId = null  ) => {
+const postContent = async (data    = "sample text"  , access_token , refresh_token ,  postId = null  ) => {
+  const twitterClient = new TwitterApi({
+    appKey:process.env.Twitter_APP_KEY,
+    appSecret: process.env.Twitter_APP_SECRET,
+    // user 
+    accessToken: access_token , 
+    accessSecret: refresh_token,
+  });
     try {
       const tweetText = data ; 
       const rwClient = twitterClient.readWrite;
@@ -109,9 +115,14 @@ const postContent = async (data    = "sample text"  , postId = null  ) => {
 
 const postContentHandler = async (req , res ) => {
     console.log(req.body);
-    const {data , postId } = req.body ;
+    console.log("headers = " , req.headers); 
+    const {data , postId , access_token , refresh_token  } = req.body ;
+    if(!access_token || !refresh_token ) 
+    {
+      return res.status(401).json({message : 'Unauthorized'}); 
+    }
     if(!data) return res.status(400).json({message : "Bad request : Empty body received"})
-    if (  await  postContent(data , postId  ) ) {
+    if (  await  postContent(data , access_token , refresh_token ,  postId   ) ) {
       return res.status(201).json({message : "Tweet posted successfully"})
     }
     return res.status(500).json({message : "Something went wrong" })

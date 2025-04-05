@@ -11,6 +11,9 @@ import axios from 'axios' ;
 import dotenv from 'dotenv' ;
 import { TwitterApi } from 'twitter-api-v2';
 import { paymentRouter } from './routes/payment.route.js';
+import crypto from 'crypto'; 
+import querystring from 'querystring' ;
+import OAuth from 'oauth-1.0a';
 dotenv.config() 
 
 
@@ -120,6 +123,104 @@ app.listen(port, async () => {
 // updateProfileInfo() 
 
 
+
+app.post('/api/getRequestToken' , async (req, res) => {
+  const oauth = OAuth({
+    consumer: {
+      key: process.env.Twitter_APP_KEY,
+      secret: process.env.Twitter_APP_SECRET
+    },
+    signature_method: 'HMAC-SHA1',
+    hash_function(base_string, key) {
+      return crypto.createHmac('sha1', key).update(base_string).digest('base64');
+    },
+  });
+  const url = 'https://api.twitter.com/oauth/request_token';
+  const method = 'POST';
+  const callback = process.env.TWITTER_REDIRECT_URI;
+
+  const request_data = {
+    url,
+    method,
+    data: {
+      oauth_callback: callback,
+    },
+  };
+
+  const headers = {
+    ...oauth.toHeader(oauth.authorize(request_data)),
+    'Content-Type': 'application/x-www-form-urlencoded',
+  };
+
+  const body = querystring.stringify({ oauth_callback: callback });
+
+  console.log('Headers:', headers);
+  console.log('Body:', body);
+
+  try {
+    const response = await fetch(url, {
+      method,
+      headers,
+      body,
+    });
+
+    const text = await response.text();
+    console.log('Twitter Response:', text);
+
+    const params = querystring.parse(text);
+    if (params.oauth_token && params.oauth_token_secret) {
+      return res.json({
+        oauth_token: params.oauth_token,
+        oauth_token_secret: params.oauth_token_secret,
+        authorization_url: `https://api.twitter.com/oauth/authorize?oauth_token=${params.oauth_token}`,
+      });
+    } else {
+      throw new Error('Invalid response from Twitter');
+    }
+  } catch (error) {
+    console.error('Error fetching request token:', error);
+    res.status(500).json({ error: 'Failed to fetch request token' });
+  }
+});
+
+
+app.post('/api/getAccessToken' , async (req, res) => {
+  const { oauth_token, oauth_verifier } = req.body;
+
+  if (!oauth_token || !oauth_verifier) {
+    return res.status(400).json({ error: 'Missing oauth_token or oauth_verifier' });
+  }
+
+  try {
+    const response = await fetch('https://api.twitter.com/oauth/access_token', {
+      method: 'POST',
+      headers: {
+        Authorization: `OAuth oauth_consumer_key="${process.env.Twitter_APP_KEY}", oauth_nonce="${crypto.randomBytes(16).toString('hex')}", oauth_signature_method="HMAC-SHA1", oauth_timestamp="${Math.floor(Date.now() / 1000)}", oauth_version="1.0"`,
+      },
+      body: new URLSearchParams({
+        oauth_token,
+        oauth_verifier,
+      }),
+    });
+
+    const data = await response.text();
+    const params = querystring.parse(data);
+
+    if (params.oauth_token && params.oauth_token_secret) {
+      console.log('Access Token:', params);
+      return res.json({
+        access_token: params.oauth_token,
+        access_token_secret: params.oauth_token_secret,
+      });
+    } else {
+      throw new Error('Failed to obtain access token');
+    }
+  } catch (error) {
+    console.error('Error fetching access token:', error);
+    return res.status(500).json({ error: 'Failed to fetch access token' });
+  }
+}
+)
 
 
 

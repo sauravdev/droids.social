@@ -29,6 +29,7 @@
     "openai": "^4.85.4",
     "pdf-compressor": "^1.0.5",
     "pdf-lib": "^1.17.1",
+    "querystring": "^0.2.1",
     "stripe": "^17.7.0",
     "twitter-api-v2": "^1.19.0"
   }

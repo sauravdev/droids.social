@@ -13,17 +13,23 @@ export function OauthTwitterCallback() {
     async function handleCallback() {
       try {
         console.log("handle call back URI = " , searchParams); 
-        const code = searchParams.get('code');
-        const state = searchParams.get('state');
-        if (!code || !state) {
-          throw new Error('Missing required parameters');
+        // const code = searchParams.get('code');
+        // const state = searchParams.get('state');
+        // if (!code || !state) {
+        //   throw new Error('Missing required parameters');
+        // }
+        // await handleTwitterCallback(code, state);
+        // // navigating  to the profile settings page 
+        // navigate('/settings', { 
+        //   replace: true,
+        //   state: { message: 'Twitter account connected successfully!' }
+        // });
+        const oauthToken = searchParams.get('oauth_token') ; 
+        console.log('oauthToken' ,  oauthToken) ; 
+        if(oauthToken)
+        {
+          navigate('/'); 
         }
-        await handleTwitterCallback(code, state);
-        // navigating  to the profile settings page 
-        navigate('/settings', { 
-          replace: true,
-          state: { message: 'Twitter account connected successfully!' }
-        });
       } catch (err: any) {
         setError(err.message);
       }
