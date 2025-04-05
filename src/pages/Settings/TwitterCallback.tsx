@@ -3,6 +3,7 @@ import { useNavigate, useSearchParams } from 'react-router-dom';
 import { Loader } from 'lucide-react';
 import { handleTwitterCallback } from '../../lib/twitter';
 import { supabase } from '../../lib/supabase';
+import { BACKEND_APIPATH } from '../../constants';
 
 export function TwitterCallback() {
   const [searchParams] = useSearchParams();
@@ -18,7 +19,7 @@ export function TwitterCallback() {
     }
   
     try {
-      const response = await fetch('http://localhost:3000/api/getAccessToken', {
+      const response = await fetch(`${BACKEND_APIPATH.BASEURL}/api/getAccessToken`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',

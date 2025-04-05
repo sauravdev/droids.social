@@ -24,7 +24,7 @@ function clearOAuthState() {
 
 const getRequestToken = async () => {
   try {
-    const response = await fetch('http://localhost:3000/api/getRequestToken', {
+    const response = await fetch(`${BACKEND_APIPATH.BASEURL}/api/getRequestToken`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
