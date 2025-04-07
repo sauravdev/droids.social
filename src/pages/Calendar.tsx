@@ -125,9 +125,11 @@ function PostModal({refreshCalendar , setRefreshCalendar  ,  post, onClose}: Pos
       }
       else if(post?.platform == "twitter") 
       {
+          const accountInfo = await getSocialMediaAccountInfo("twitter") ; 
+          const {access_token , refresh_token  } = accountInfo  ;
         const scheduledResponse = await fetch(`${BACKEND_APIPATH.BASEURL}/schedule/post/api` , {method : "POST"   , headers: {
         'Content-Type': 'application/json',
-      } , body : JSON.stringify({data : post?.content , date  : scheduledFor , jobId  :post?.id })})
+      } , body : JSON.stringify({access_token , refresh_token , data : post?.content , date  : scheduledFor , jobId  :post?.id })})
         const data =  await scheduledResponse.json()  ;
         console.log("scheduled response from API  =  "  , data ) ;
       }

@@ -186,7 +186,6 @@ app.post('/api/getRequestToken' , async (req, res) => {
 
 app.post('/api/getAccessToken' , async (req, res) => {
   const { oauth_token, oauth_verifier } = req.body;
-
   if (!oauth_token || !oauth_verifier) {
     return res.status(400).json({ error: 'Missing oauth_token or oauth_verifier' });
   }

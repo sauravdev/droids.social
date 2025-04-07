@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { useContentStrategy } from '../hooks/useContentStrategy';
 import { useContentPlan } from '../hooks/useContentPlan';
 import { generateContentStrategy } from '../lib/openai';
@@ -8,7 +8,7 @@ import { supabase } from '../lib/supabase';
 import type { ContentPlan, ContentStrategy as ContentStrategyType } from '../lib/types';
 import { Loader, Plus, X, Calendar } from 'lucide-react';
 import {useScheduledPosts} from '../hooks/useScheduledPosts'
-import { getSocialMediaAccountInfo } from '../lib/api';
+import { getContentPlans, getSocialMediaAccountInfo } from '../lib/api';
 import { BACKEND_APIPATH } from '../constants';
 import { useProfile } from '../hooks/useProfile';
 import { useAuth } from '../context/AuthContext';
@@ -38,8 +38,9 @@ interface Success {
 }
 export function ContentStrategy() {
   const { strategies, loading: strategiesLoading, error: strategiesError, createStrategy } = useContentStrategy();
-  const { plans, loading: plansLoading, error: plansError, createPlan, updatePlan } = useContentPlan();
+  const { loading: plansLoading, error: plansError, createPlan, updatePlan } = useContentPlan();
   const [niche, setNiche] = useState('');
+  const [plans , setPlans ] = useState<any>([]) ;
   const [goals, setGoals] = useState<string[]>([]);
   const [newGoal, setNewGoal] = useState('');
   const [generating, setGenerating] = useState(false);
@@ -50,6 +51,21 @@ export function ContentStrategy() {
   const [success , setSuccess] = useState<Success>({state : false , message : ''})    ;
   const navigateTo = useNavigate() ; 
   const {accounts } = useSocialAccounts() ; 
+  const [refreshPlans , setRefreshPlans ] = useState<boolean>(false) ; 
+
+
+  useEffect(() => {
+    ;(async () => {
+       try {
+            const data = await getContentPlans();
+            setPlans(data);
+            console.log('plans = ' , plans ) ; 
+          } catch (err: any) {
+            setError(err.message);
+          } 
+    })()
+  } , [refreshPlans] ) ; 
+
   
   const {setRefreshHeader }  = useAuth() ; 
 
@@ -118,7 +134,7 @@ export function ContentStrategy() {
           }
         }
       }
-
+      setRefreshPlans((prev) => !prev) ; 
       // Reset form
       setNiche('');
       setGoals([]);
@@ -222,7 +238,7 @@ export function ContentStrategy() {
       </div>
     );
   }
-
+  
   return (
     <div className="space-y-8">
       <div className="flex justify-between items-center">

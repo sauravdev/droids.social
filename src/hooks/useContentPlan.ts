@@ -15,6 +15,7 @@ export function useContentPlan() {
     try {
       const data = await getContentPlans();
       setPlans(data);
+      console.log('plans = ' , plans ) ; 
     } catch (err: any) {
       setError(err.message);
     } finally {

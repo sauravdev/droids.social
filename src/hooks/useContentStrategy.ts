@@ -15,6 +15,7 @@ export function useContentStrategy() {
     try {
       const data = await getContentStrategies();
       setStrategies(data);
+      console.log("strategies = " , data) ; 
     } catch (err: any) {
       setError(err.message);
     } finally {

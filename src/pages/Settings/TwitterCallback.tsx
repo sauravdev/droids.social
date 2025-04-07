@@ -42,7 +42,7 @@ export function TwitterCallback() {
                 userId : ''
               });
               if (dbError) throw dbError;
-        // Use these tokens for further API calls
+
       } else {
         console.error('Failed to get access token:', data.error);
       }

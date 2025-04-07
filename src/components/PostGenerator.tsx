@@ -30,10 +30,12 @@ export function PostGenerator({ plan, onSave, onSchedule }: PostGeneratorProps) 
     setPosting(true) ;
     setSuccess({state : false, message : ''}) ;
     try{
+      const accountInfo = await getSocialMediaAccountInfo("twitter") ; 
+      const {access_token , refresh_token  } = accountInfo  ;
       const response = await fetch(`${BACKEND_APIPATH.BASEURL}/post/tweet/twitter` , {  headers: {
         'Accept': 'application/json',
         'Content-Type': 'application/json'
-      }, method :  "POST" ,body : JSON.stringify({data  :plan?.suggestion} )} )
+      }, method :  "POST" ,body : JSON.stringify({access_token , refresh_token , data  :content} )} )
       const data = await response.json()  ;
       console.log('twitter api response = ' , data) ;
       if(response?.status >= 400 )
@@ -67,7 +69,7 @@ export function PostGenerator({ plan, onSave, onSchedule }: PostGeneratorProps) 
               'Authorization': `Bearer ${access_token}`,
               'Content-Type': 'application/json',
             },
-            body: JSON.stringify({IG_USER_ID : userId ,  caption: plan?.suggestion  }),
+            body: JSON.stringify({IG_USER_ID : userId ,  caption: content }),
           }
         );
         const data = await response.json() ; 
@@ -94,7 +96,7 @@ export function PostGenerator({ plan, onSave, onSchedule }: PostGeneratorProps) 
                 'Authorization': `Bearer ${access_token}`,
                 'Content-Type': 'application/json',
               },
-              body: JSON.stringify({ id : userId ,  text: plan?.suggestion }),
+              body: JSON.stringify({ id : userId ,  text: content }),
             }
           );
           const data = await response.json() ; 

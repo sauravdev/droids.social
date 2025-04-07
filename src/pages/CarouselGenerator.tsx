@@ -784,7 +784,7 @@ export function CarouselGenerator() {
             <span>{slide.emoji}</span>
             <div
              contentEditable="true"
-              className="text-center bg-transparent  outline-none w-full"
+              className="text-center bg-transparent  outline-none w-full tracking-wider"
               onChange={(e : any ) => updateSlide(slide.id, { header: e.target.value })}
             >{slide.header}</div>
           </h2>
@@ -805,7 +805,7 @@ export function CarouselGenerator() {
                 outline: 'none',
                 textAlign: 'center',
     }}
-    className="bg-transparent text-2xl tracking-wide font-medium text-white"
+    className="bg-transparent text-2xl tracking-wider font-medium text-white"
     onChange={(e) => updateSlide(slide.id, { content:e.target.value })} // Updates state on change
 >
     {slide.content}
