@@ -5,6 +5,7 @@ import type { ContentPlan } from '../lib/types';
 import Editor from './Editor';
 import { getSocialMediaAccountInfo } from '../lib/api';
 import { BACKEND_APIPATH } from '../constants';
+import { initializeTwitterAuth } from '../lib/twitter';
 interface PostGeneratorProps {
   plan: ContentPlan;
   onSave: (updates: Partial<ContentPlan>) => Promise<void>;
@@ -40,6 +41,19 @@ export function PostGenerator({ plan, onSave, onSchedule }: PostGeneratorProps) 
       console.log('twitter api response = ' , data) ;
       if(response?.status >= 400 )
       {
+        if(response?.status == 401 ) 
+        {
+          // redirect to login 
+          initializeTwitterAuth() ; 
+          return ; 
+        }
+        else if(response?.status == 403 ) 
+          {
+          setError("Content already posted") ; 
+          setTimeout(() => {setError('')}  ,1500 )
+          setPosting(false) ;
+          return ; 
+          }
         setError("Something went wrong while posting on twitter"); 
         setTimeout(() => {setError('')}  ,1500 )
         setPosting(false) ;
@@ -57,6 +71,7 @@ export function PostGenerator({ plan, onSave, onSchedule }: PostGeneratorProps) 
     
   }
   const handlePostInstagram = async () => {
+    setPosting(true) ;
     setSuccess({state : false, message : ''}) ;
   try{
         const accountInfo = await getSocialMediaAccountInfo("instagram") ; 
@@ -82,8 +97,12 @@ export function PostGenerator({ plan, onSave, onSchedule }: PostGeneratorProps) 
         setError(err?.message) ;
         console.log(err) ; 
       }
+      finally{
+        setPosting(false) ;
+      }
   }
   const handlePostLinkedin = async () => {
+    setPosting(true) ; 
     setSuccess({state : false, message : ''}) ;
 
      try{
@@ -110,6 +129,9 @@ export function PostGenerator({ plan, onSave, onSchedule }: PostGeneratorProps) 
         {
           setError(err?.message) ;
           console.log(err)  ;
+        }
+        finally{
+          setPosting(false) ;
         }
   }
 

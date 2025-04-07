@@ -12,6 +12,7 @@ import { BACKEND_APIPATH } from '../constants/';
 import { useAuth } from '../context/AuthContext';
 import { useProfile } from '../hooks/useProfile.js';
 import { useNavigate } from 'react-router-dom';
+import { initializeTwitterAuth } from '../lib/twitter.js';
 interface HistoryItem {
   id: string;
   topic: string;
@@ -71,6 +72,21 @@ export function AIGenerator() {
       console.log(data ) ;
       if(response?.status >= 400  ) 
       {
+        if(response?.status == 403 ) 
+        {
+        setError("Content already posted") ; 
+        setTopic('') ;
+        setGeneratedContent('') ;
+        setGeneratedImage('') ;
+        return ;
+        }
+        else if(response?.status == 401 ) 
+        {
+            // redirect to login 
+            initializeTwitterAuth() ; 
+            return ; 
+  
+        }
         setError("Something went wrong while posting on twitter") ; 
         setTopic('') ;
         setGeneratedContent('') ;

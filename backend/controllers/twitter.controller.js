@@ -104,15 +104,21 @@ const postContent = async (data    = "sample text"  , access_token , refresh_tok
       {
         await updateScheduledPost(postId , {status : 'published'} )
       }
-      return true ;
+      return {status : 201 , state : true } ;
     } catch (error) {
+      if(error?.code == 403 )
+      {
+        return {status : 403 , state : false } ;
+      }
+      else if(error?.code == 401 ) 
+      {
+        return {status : 401 , state : false} ; 
+      }
       console.error("Error posting tweet:", error);
-      return false 
+      console.log("error status = " , error?.code ) ; 
+      return {status : 500 , state : false } ;
     } 
-    return false; 
   };
-
-
 const postContentHandler = async (req , res ) => {
     console.log(req.body);
     console.log("headers = " , req.headers); 
@@ -122,12 +128,21 @@ const postContentHandler = async (req , res ) => {
       return res.status(401).json({message : 'Unauthorized'}); 
     }
     if(!data) return res.status(400).json({message : "Bad request : Empty body received"})
-    if (  await  postContent(data , access_token , refresh_token ,  postId   ) ) {
+      const {status , state } = await  postContent(data , access_token , refresh_token ,  postId   ); 
+
+    if (state) {
       return res.status(201).json({message : "Tweet posted successfully"})
+    }
+    else if(!state && status == 401 ) 
+      {
+        return res.status(403).json({message : "Unauthorized"}) ;
+      }
+    else if(!state && status == 403 ) 
+    {
+      return res.status(403).json({message : "Content already posted on twitter !!"}) ;
     }
     return res.status(500).json({message : "Something went wrong" })
   }
-
 const schedulePostHandler = async  (req , res ) => {
     const { data  ,date , jobId} = req.body ;
     if(!jobId) 

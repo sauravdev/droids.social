@@ -413,7 +413,7 @@ export function CarouselGenerator() {
       {
         console.log("Something went wrong while publishing carousel " , err || err?.message  )
       }
-      setSuccess({state  :true , message : 'Content posted successfully'}) ; 
+      setSuccess({state  :true , message : 'content scheduled successfully'}) ; 
       removeToast() ; 
      
     }

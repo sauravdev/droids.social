@@ -265,12 +265,7 @@ function PostModal({refreshCalendar , setRefreshCalendar  ,  post, onClose}: Pos
             <label className="block text-sm font-medium text-gray-300 mb-1">
               Content
             </label>
-            {/* <textarea
-              value={content}
-              onChange={(e) => setContent(e.target.value)}
-              rows={4}
-              className="w-full bg-gray-700 border border-gray-600 rounded-md shadow-sm py-2 px-3 text-white focus:ring-purple-500 focus:border-purple-500"
-            /> */}
+           
             <Editor data = {content}/>
           </div>
 
@@ -287,17 +282,7 @@ function PostModal({refreshCalendar , setRefreshCalendar  ,  post, onClose}: Pos
           </div>
 
           <div className="flex flex-wrap gap-2 justify-start">
-            {/* <button
-              onClick={handleSave}
-              disabled={saving || !hasContentChanged}
-              className={`px-4 py-2 text-white rounded-md flex items-center space-x-2 ${
-                hasContentChanged ? 'bg-purple-600 hover:bg-purple-700' : 'bg-gray-600 cursor-not-allowed'
-              } disabled:opacity-50`}
-            >
-              <Edit2 className="h-4 w-4" />
-              <span>Save Changes</span>
-            </button> */}
-
+       
             <button
               onClick={handleDeletePost}
               disabled={deleting}
