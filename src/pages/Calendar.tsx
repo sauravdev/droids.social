@@ -152,11 +152,12 @@ function PostModal({refreshCalendar , setRefreshCalendar  ,  post, onClose}: Pos
   const handlePostNow = async () => {
     setSaving(true);
     setError(null);
-    setPosting(true) ; 
+   
     try {
      
       if(post?.platform  == "instagram") 
       {
+        setPosting(true) ;
          try{
               const accountInfo = await getSocialMediaAccountInfo("instagram") ; 
               const {access_token , userId } = accountInfo  ;
