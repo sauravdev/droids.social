@@ -121,7 +121,6 @@ const postContent = async (data    = "sample text"  , access_token , refresh_tok
   };
 const postContentHandler = async (req , res ) => {
     console.log(req.body);
-    console.log("headers = " , req.headers); 
     const {data , postId , access_token , refresh_token  } = req.body ;
     if(!access_token || !refresh_token ) 
     {
@@ -135,7 +134,7 @@ const postContentHandler = async (req , res ) => {
     }
     else if(!state && status == 401 ) 
       {
-        return res.status(403).json({message : "Unauthorized"}) ;
+        return res.status(401).json({message : "Unauthorized"}) ;
       }
     else if(!state && status == 403 ) 
     {

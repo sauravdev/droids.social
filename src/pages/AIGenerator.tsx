@@ -85,7 +85,6 @@ export function AIGenerator() {
             // redirect to login 
             initializeTwitterAuth() ; 
             return ; 
-  
         }
         setError("Something went wrong while posting on twitter") ; 
         setTopic('') ;
@@ -448,7 +447,7 @@ async function uploadToSupabase(imageData: File | Blob, fileName: string): Promi
         })
         const data = await response.json() 
         console.log("scheduled insta post api " , data ) ;
-        setSuccess({state : true , message : 'Content Posted Successfully !!'}) ; 
+        setSuccess({state : true , message : 'Content Scheduled Successfully !!'}) ; 
         removeToast() ; 
       }
       else{
@@ -515,7 +514,7 @@ async function uploadToSupabase(imageData: File | Blob, fileName: string): Promi
     console.log("data = " , data )  ;
    }
 
-   setSuccess({state : true , message : 'Content Posted Successfully'}) ; 
+   setSuccess({state : true , message : 'Content Scheduled Successfully'}) ; 
    removeToast(); 
    
   }

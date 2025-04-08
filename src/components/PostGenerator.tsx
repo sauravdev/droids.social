@@ -19,6 +19,7 @@ interface Success {
 export function PostGenerator({ plan, onSave, onSchedule }: PostGeneratorProps) {
   const [loading, setLoading] = useState(false);
   const [saving, setSaving] = useState(false);
+  // const [deleting , setDeleting] = useState(false) ; 
   const [error, setError] = useState<string | null>(null);
   const [content, setContent] = useState(plan.suggestion);
   const [tone, setTone] = useState<string>('');
@@ -248,8 +249,6 @@ export function PostGenerator({ plan, onSave, onSchedule }: PostGeneratorProps) 
 
       <div className="w-full    flex  items-center gap-4 ">
         <button onClick={postContentHandler} className='px-3 py-1 bg-purple-600 hover:bg-purple-700 text-white text-sm rounded-md flex items-center gap-1 '>
-        
-
         {posting ? (
             <>
               <Loader className="h-4 w-4 animate-spin" />

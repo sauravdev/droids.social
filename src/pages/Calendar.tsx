@@ -2,11 +2,12 @@ import React, { useState, useEffect } from 'react';
 import { format, startOfWeek, addDays, parseISO , startOfMonth, addMonths, subMonths, eachDayOfInterval, endOfMonth, isSameMonth } from 'date-fns';
 import { useScheduledPosts } from '../hooks/useScheduledPosts';
 import { useContentPlan } from '../hooks/useContentPlan';
-import { Edit2, Clock, Send, MoreVertical, X, AlertCircle , ChevronLeft, ChevronRight, Delete, RefreshCcw } from 'lucide-react';
+import { Edit2, Clock, Send, MoreVertical, X, AlertCircle , ChevronLeft, ChevronRight, Delete, RefreshCcw, Loader, Save } from 'lucide-react';
 import type { ScheduledPost } from '../lib/types';
 import { getSocialMediaAccountInfo } from '../lib/api';
 import { BACKEND_APIPATH } from '../constants';
 import Editor from '../components/Editor';
+import { initializeTwitterAuth } from '../lib/twitter';
 
 interface Post {
   id: string;
@@ -40,29 +41,15 @@ function PostModal({refreshCalendar , setRefreshCalendar  ,  post, onClose}: Pos
   });
   const [saving, setSaving] = useState(false);
   const [deleting , setDeleting ] = useState(false)  ;
+  const [posting , setPosting] = useState(false) ; 
 
   const [error, setError] = useState<string | null>(null);
   const {updatePost , deletePost   } = useScheduledPosts() ; 
 
-  // Track if content or schedule has changed
+ 
   const hasContentChanged = content !== post.content;
   const hasScheduleChanged = scheduledFor !== format(new Date(parseISO(post.scheduled_for).getTime() + parseISO(post.scheduled_for).getTimezoneOffset() * 60000),  "yyyy-MM-dd'T'HH:mm");
-  
-
-  // const handleSave = async () => {
-  //   if (!hasContentChanged) return;
-  //   setSaving(true);
-  //   setError(null);
-  //   try {
-  //     // await onSave(content);
-  //     onClose();
-  //   } catch (err: any) {
-  //     setError(err.message);
-  //   } finally {
-  //     setSaving(false);
-  //   }
-  // };
-
+ 
   const handleReschedule = async () => {
     if (!hasScheduleChanged) return;
     setSaving(true);
@@ -165,11 +152,9 @@ function PostModal({refreshCalendar , setRefreshCalendar  ,  post, onClose}: Pos
   const handlePostNow = async () => {
     setSaving(true);
     setError(null);
+    setPosting(true) ; 
     try {
-      // await onPostNow();
-      // publish the post connect with handle post for each platform 
-      // update the status of scheduled post from 'pending' to 'published' 
-      // refresh the calendar 
+     
       if(post?.platform  == "instagram") 
       {
          try{
@@ -194,9 +179,13 @@ function PostModal({refreshCalendar , setRefreshCalendar  ,  post, onClose}: Pos
             {
               console.log(err) ; 
             }
+            finally{
+              setPosting(false)  ;  
+            }
       }
       else if(post?.platform == "linkedin" ) 
       {
+        setPosting(true) ; 
         console.log("linked in post handler")  ;
         try{
               const accountInfo = await getSocialMediaAccountInfo("linkedin") ; 
@@ -220,17 +209,50 @@ function PostModal({refreshCalendar , setRefreshCalendar  ,  post, onClose}: Pos
             {
               console.log(err)  ;
             }
+            finally{
+              setPosting(false) ;
+            }
       }
       else if(post?.platform == "twitter") 
       {
-        console.log("posting from twitter ... ") 
-      const response = await fetch(`${BACKEND_APIPATH.BASEURL}/post/tweet/twitter` , {  headers: {
-        'Accept': 'application/json',
-        'Content-Type': 'application/json'
-      }, method :  "POST" ,body : JSON.stringify({data  :post?.content , postId : post?.id  } )} )
-        const data = await response.json()  ; 
-        console.log("twitter response  : " , data) ; 
-        setRefreshCalendar(!refreshCalendar) ;
+        try{
+          setPosting(true) ; 
+          console.log("posting from twitter ... ")  ; 
+          const accountInfo = await getSocialMediaAccountInfo("twitter") ; 
+          const {access_token , refresh_token  } = accountInfo  ;
+          const response = await fetch(`${BACKEND_APIPATH.BASEURL}/post/tweet/twitter` , {  headers: {
+          'Accept': 'application/json',
+          'Content-Type': 'application/json'
+          }, method :  "POST" ,body : JSON.stringify({access_token , refresh_token   , data  :post?.content , postId : post?.id  } )} )
+           if(response?.status >= 400  ) 
+                {
+                  if(response?.status == 403 ) 
+                  {
+                  setError("Content already posted") ; 
+                  setPosting(false) ; 
+                  return ;
+                  }
+                  else if(response?.status == 401 ) 
+                  {
+                      // redirect to login 
+                      initializeTwitterAuth() ; 
+                      setPosting(false) ; 
+                      return ; 
+                  }
+                  setError("Something went wrong while posting on twitter") ; 
+                  return ; 
+                }
+            const data = await response.json()  ; 
+            console.log("twitter response  : " , data) ; 
+            setRefreshCalendar(!refreshCalendar) ;
+        }
+        catch(err)
+        {
+          console.log(err) ; 
+        }
+        finally{
+          setPosting(false) ;
+        }
       }
       else{
         console.log("Invalid platform") 
@@ -240,6 +262,7 @@ function PostModal({refreshCalendar , setRefreshCalendar  ,  post, onClose}: Pos
       setError(err.message);
     } finally {
       setSaving(false);
+      setPosting(false) ;
     }
   };
 
@@ -288,8 +311,18 @@ function PostModal({refreshCalendar , setRefreshCalendar  ,  post, onClose}: Pos
               disabled={deleting}
               className={`px-4 py-2 text-white rounded-md flex items-center space-x-2 bg-purple-600 hover:bg-purple-700 disabled:opacity-50`}
             >
-              <Delete className="h-4 w-4" />
-              <span>Delete Post</span>
+              {deleting ? (
+            <>
+              <Loader className="h-4 w-4 animate-spin" />
+              <span>Deleting...</span>
+            </>
+          ) : (
+            <>
+               <Delete className="h-4 w-4" />
+               <span>Delete Post</span>
+            </>
+          )}
+             
             </button>
 
 
@@ -305,11 +338,22 @@ function PostModal({refreshCalendar , setRefreshCalendar  ,  post, onClose}: Pos
             </button>
             <button
               onClick={handlePostNow}
-              disabled={saving}
+              disabled={posting}
               className="px-4 py-2 bg-green-600 hover:bg-green-700 text-white rounded-md flex items-center space-x-2 disabled:opacity-50"
             >
-              <Send className="h-4 w-4" />
-              <span>Post Now</span>
+              {posting ? (
+            <>
+              <Loader className="h-4 w-4 animate-spin" />
+              <span>Posting...</span>
+            </>
+            ) : (
+              <>
+                 <Send className="h-4 w-4" />
+                 <span>Post Now</span>
+              </>
+            )}
+             
+            
             </button>
           </div>
         </div>
