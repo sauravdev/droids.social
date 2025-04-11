@@ -21,6 +21,9 @@ export function SignUp() {
      
        const { error  , data : any } = await supabase.auth.signInWithOAuth({
               provider: 'google',
+              options: {
+                redirectTo: 'https://socialdroids.wisedroids.ai/' // change this to your desired redirect URL
+              }
             });
           
             if (error) console.error('Error logging in:', error?.message);

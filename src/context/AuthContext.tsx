@@ -157,6 +157,7 @@ if (insertError) {
 const createProfileIfNotExists = async (user : any ) => {
   console.log("create profile if not exists getting triggered ....");
   const { id, email, user_metadata } = user;
+  console.log("------------------metadata------------------" , user ); 
   const fullName = user_metadata.full_name || user_metadata.name || '';
 
   // Check if profile already exists
@@ -166,7 +167,10 @@ const createProfileIfNotExists = async (user : any ) => {
     .eq('id', id)
     .single();
 
-  if (!existing) {
+  console.log("existing ------------------> " , existing) ; 
+
+  if (!existing?.id) {
+    console.log("inserting record --------> " , existing?.id) ;
     const { error: insertError } = await supabase
       .from('profiles')
       .insert([
@@ -174,7 +178,7 @@ const createProfileIfNotExists = async (user : any ) => {
           id,
           email,
           full_name: fullName,
-          avatar_url: user_metadata.avatar_url || '',
+          avatar_url: user_metadata.picture || '',
           tokens: 100,
         },
       ]);
@@ -251,12 +255,11 @@ useEffect(() => {
           }
         } catch (error) {
           console.error('Error checking profile:', error);
-          if (mounted) {
-            setConnectionError('Error loading profile. Please try again.');
-          }
+          // if (mounted) {
+          //   setConnectionError('Error loading profile. Please try again.');
+          // }
         }
       }
-      
       if (mounted) setLoading(false);
       
     } catch (error) {
@@ -273,7 +276,7 @@ useEffect(() => {
   // Auth state subscription
   const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
     if (session?.user) {
-      createProfileIfNotExists(session.user);
+      // createProfileIfNotExists(session.user);
     }
     if (mounted) {
       setSession(session);
