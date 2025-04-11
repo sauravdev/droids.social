@@ -1,9 +1,10 @@
-import React, { createContext, useContext, useEffect, useState } from 'react';
+import React, { createContext, useContext, useEffect, useRef, useState } from 'react';
 import { Session } from '@supabase/supabase-js';
 import { useNavigate } from 'react-router-dom';
 import { supabase, checkSupabaseConnection } from '../lib/supabase';
 import { getProfile } from '../lib/api';
 import { useSocialAccounts } from '../hooks/useSocialAccounts';
+import { getProfileData } from '../utils/profile';
 
 interface AuthContextType {
   session: Session | null;
@@ -16,8 +17,8 @@ interface AuthContextType {
   setPaymentStatus: React.Dispatch<React.SetStateAction<boolean>> 
   tokens  : number , 
   setTokens :  React.Dispatch<React.SetStateAction<number>> 
-
-
+  isUsingGoogleAuth  : boolean , 
+  setIsUsingGoogleAuth :React.Dispatch<React.SetStateAction<boolean>> 
 }
 
 const AuthContext = createContext<AuthContextType>({
@@ -30,7 +31,9 @@ const AuthContext = createContext<AuthContextType>({
   paymentStatus : false, 
   setPaymentStatus : () => {}  ,
   tokens : 0  , 
-  setTokens : () => {} 
+  setTokens : () => {} ,
+  isUsingGoogleAuth  : false  , 
+  setIsUsingGoogleAuth : () => {}  
 });
 
 export function AuthProvider({ children }: { children: React.ReactNode }) {
@@ -42,6 +45,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [refreshHeader , setRefreshHeader ] = useState<boolean>(false) ; 
   const [paymentStatus , setPaymentStatus ] = useState<boolean>(false) ; 
   const [tokens , setTokens ] = useState(0) ;
+  const [isUsingGoogleAuth , setIsUsingGoogleAuth] = useState(false) ;
   
   const navigate = useNavigate();
 
@@ -139,83 +143,188 @@ if (insertError) {
   return data.length > 0;
 }
 
+
+// const calledOnceRef = useRef(false);
+// useEffect(() => {
+//   if (!session || calledOnceRef.current) return;
+//   calledOnceRef.current = true;
+
+//   isThisMonthRecordPresentForInstagram("account_analytics");
+//   isThisMonthRecordPresentForTwitter("account_analytics");
+// }, [session]);
+
+
+const createProfileIfNotExists = async (user : any ) => {
+  console.log("create profile if not exists getting triggered ....");
+  const { id, email, user_metadata } = user;
+  const fullName = user_metadata.full_name || user_metadata.name || '';
+
+  // Check if profile already exists
+  const { data: existing, error: fetchError } = await supabase
+    .from('profiles')
+    .select('id')
+    .eq('id', id)
+    .single();
+
+  if (!existing) {
+    const { error: insertError } = await supabase
+      .from('profiles')
+      .insert([
+        {
+          id,
+          email,
+          full_name: fullName,
+          avatar_url: user_metadata.avatar_url || '',
+          tokens: 100,
+        },
+      ]);
+    
+
+    if (insertError) {
+      console.error('Error inserting profile:', insertError.message);
+      
+    }
+
+    
+    const profileData = {
+      id,
+      email,
+      full_name: fullName,
+      avatar_url: user_metadata.avatar_url || '',
+      tokens: 100,
+  }
+  console.log("profile info ------------------------> "  , profileData) ;
+  localStorage.setItem('profile', JSON.stringify(profileData));
+};
+
+}
+
+
   
 
 
-  useEffect(() => {
-    let mounted = true;
-
-    async function initialize() {
+useEffect(() => {
+  let mounted = true;
+  
+  async function initialize() {
+    try {
+      // Start connection check and session fetch in parallel
+      const connectionCheckPromise = checkSupabaseConnection();
+      const sessionPromise = supabase.auth.getSession();
+      
+      // Wait for connection check first
+      const isConnected = await connectionCheckPromise;
+      if (!isConnected && mounted) {
+        setConnectionError('Unable to connect to the database. Please ensure you are connected to Supabase.');
+        setLoading(false);
+        return;
+      }
      
-      try {
-        // Check Supabase connection first
-        const isConnected = await checkSupabaseConnection();
-        if (!isConnected && mounted) {
-          setConnectionError('Unable to connect to the database. Please ensure you are connected to Supabase.');
-          setLoading(false);
-          return;
-        }
-       
-
-        // Get initial session
-        const { data: { session } } = await supabase.auth.getSession();
-        console.log("session: " + JSON.stringify(session));
-        if (mounted) {
-          setSession(session);
-          if (session) {
-            try {
-              const profile = await getProfile();
-              if (mounted) {
-                if (!profile.full_name) {
-                  setIsFirstLogin(true);
-                  navigate('/settings');
-                } else {
-                  setIsFirstLogin(false);
-                }
-              }
-            } catch (error) {
-              console.error('Error checking profile:', error);
-              if (mounted) {
-                setConnectionError('Error loading profile. Please try again.');
-              }
-            }
+      const { data: { session } } = await sessionPromise;
+      
+      if (!mounted) return;
+      setRefreshHeader((prev)=> !prev) ; 
+      setSession(session);
+      
+     
+      if (session) {
+        try {
+          let profile;
+          const cachedProfile = localStorage.getItem('profile');
+          if (cachedProfile) {
+            profile = JSON.parse(cachedProfile);
+            setRefreshHeader((prev)=> !prev) ; 
+          } else {
+            profile = await getProfile();
+            localStorage.setItem('profile', JSON.stringify(profile));
+            setRefreshHeader((prev)=> !prev) ; 
+            
           }
-          setLoading(false);
+          
+          if (!mounted) return;
+ 
+          const isFirstTime = !profile.full_name;
+          setIsFirstLogin(isFirstTime);
+          
+          if (isFirstTime) {
+            navigate('/settings');
+          }
+        } catch (error) {
+          console.error('Error checking profile:', error);
+          if (mounted) {
+            setConnectionError('Error loading profile. Please try again.');
+          }
         }
-      } catch (error) {
-        console.error('Initialization error:', error);
-        if (mounted) {
-          setConnectionError('Failed to initialize the application. Please try again.');
-          setLoading(false);
-        }
+      }
+      
+      if (mounted) setLoading(false);
+      
+    } catch (error) {
+      console.error('Initialization error:', error);
+      if (mounted) {
+        setConnectionError('Failed to initialize the application. Please try again.');
+        setLoading(false);
       }
     }
-
-    initialize();
-    isThisMonthRecordPresentForInstagram("account_analytics");
-    isThisMonthRecordPresentForTwitter("account_analytics") ;
-
-    // Listen for auth changes
-    const {
-      data: { subscription },
-    } = supabase.auth.onAuthStateChange((_event, session) => {
-      if (mounted) {
-        
-        setSession(session);
-        if (!session) {
-          setIsFirstLogin(false);
-        }
+  }
+  
+  initialize();
+  
+  // Auth state subscription
+  const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
+    if (session?.user) {
+      createProfileIfNotExists(session.user);
+    }
+    if (mounted) {
+      setSession(session);
+      if (!session) {
+        setIsFirstLogin(false);
       }
-    });
+    }
+  });
+  
+  return () => {
+    mounted = false;
+    subscription.unsubscribe();
+  };
+}, [navigate]);
 
-    return () => {
-      mounted = false;
-      subscription.unsubscribe();
-    };
-  }, [navigate]);
+
+useEffect(() => {
+  console.log("signing with google  =  " , isUsingGoogleAuth) ;
+} , [isUsingGoogleAuth]); 
+
+useEffect(() => {
+
+  const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
+    if (session?.user) {
+      try{
+
+          createProfileIfNotExists(session.user);
+      }
+      catch(err) 
+      {
+        console.log(err) ; 
+      }
+    }
+  });
+
+  return () => {
+    subscription.unsubscribe();
+  }
+
+})
+
+
+  // useEffect(() => {
+  //   if (!session) return;
+  
+  //   // isThisMonthRecordPresentForInstagram("account_analytics");
+  //   // isThisMonthRecordPresentForTwitter("account_analytics");
+  // }, [session]);
 
   return (
-    <AuthContext.Provider value={{ session, loading, isFirstLogin, connectionError , refreshHeader , setRefreshHeader  , paymentStatus , setPaymentStatus  , tokens , setTokens }}>
+    <AuthContext.Provider value={{ session, loading, isFirstLogin, connectionError , refreshHeader , setRefreshHeader  , paymentStatus , setPaymentStatus  , tokens , setTokens , isUsingGoogleAuth , setIsUsingGoogleAuth }}>
       {connectionError ? (
         <div className="min-h-screen bg-gray-900 flex items-center justify-center p-4">
           <div className="bg-red-900 text-white px-6 py-4 rounded-lg max-w-md text-center">

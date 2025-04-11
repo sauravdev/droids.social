@@ -97,15 +97,15 @@ export function Dashboard() {
     ;(async () => {
       const newPosts = await loadPosts() ; 
       console.log("scheduled posts = "  , newPosts ) ;
-      const pastOneWeekForInstagram= await fetchPastOneWeekData("account_analytics" , "instagram") ;
-      const pastOneWeekForTwitter= await fetchPastOneWeekData("account_analytics" , "instagram") ;
-      console.log("past one week data for instagram = " ,  pastOneWeekForInstagram ) ; 
-      console.log("past one week data for twitter  = " ,  pastOneWeekForTwitter ) ; 
-      const instagramFollowers =  pastOneWeekForInstagram[0]?.followers 
-      const instagramReach = pastOneWeekForInstagram[0]?.reach ; 
-      const twitterFollowers = pastOneWeekForTwitter[0]?.followers ; 
-      const twitterReach = pastOneWeekForTwitter[0]?.reach
-      const response  = await  generateAIContentSuggestion(instagramFollowers , instagramReach ,twitterFollowers , twitterReach ) ; 
+      // const pastOneWeekForInstagram= await fetchPastOneWeekData("account_analytics" , "instagram") ;
+      // const pastOneWeekForTwitter= await fetchPastOneWeekData("account_analytics" , "instagram") ;
+      // console.log("past one week data for instagram = " ,  pastOneWeekForInstagram ) ; 
+      // console.log("past one week data for twitter  = " ,  pastOneWeekForTwitter ) ; 
+      // const instagramFollowers =  pastOneWeekForInstagram[0]?.followers 
+      // const instagramReach = pastOneWeekForInstagram[0]?.reach ; 
+      // const twitterFollowers = pastOneWeekForTwitter[0]?.followers ; 
+      // const twitterReach = pastOneWeekForTwitter[0]?.reach
+      const response  = await  generateAIContentSuggestion() ; 
       console.log("suggestions = " , response  ) ; 
       setSuggestions(response?.tips) ; 
       setPosts(newPosts) ;

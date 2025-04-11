@@ -2,9 +2,11 @@ import { useState, useEffect } from 'react';
 import { getProfile, updateProfile } from '../lib/api';
 import type { Profile } from '../lib/types';
 import { useAuth } from '../context/AuthContext';
+import { getProfileData, updateProfileDataInCache } from '../utils/profile';
+// import { getProfileData } from '../utils/profile.js';
 
 export function useProfile() {
-  const [profile, setProfile] = useState<Profile | null>(null);
+  const [profile, setProfile] = useState<Profile | null>(JSON.parse( localStorage.getItem('profile') ) );
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const {refreshHeader} = useAuth(); 
@@ -15,7 +17,9 @@ export function useProfile() {
 
   async function loadProfile() {
     try {
-      const data = await getProfile();
+      // const data = await getProfile();
+      const data = getProfileData() ;
+      console.log("getting profile data = " , data)  ;
       setProfile(data);
     } catch (err: any) {
       setError(err.message);
@@ -29,6 +33,7 @@ export function useProfile() {
     try {
       console.log("profile updates = " , updates);
       const updated = await updateProfile(updates);
+      updateProfileDataInCache(updated) ;
       setProfile(updated);
       return updated;
     } catch (err: any) {

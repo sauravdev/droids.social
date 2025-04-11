@@ -7,6 +7,7 @@ import coin from '../assets/dollar.png';
 import { useAuth } from '../context/AuthContext';
 import { getProfile } from '../lib/api';
 
+
 export function Header() {
   const navigate = useNavigate();
   // const [profile , setProfile] = useState<any>(null) ; 
@@ -14,13 +15,9 @@ export function Header() {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const menuRef = useRef<HTMLDivElement>(null);
   const buttonRef = useRef<HTMLButtonElement>(null);
-  const {refreshHeader } = useAuth() ; 
+  const {refreshHeader , setIsUsingGoogleAuth } = useAuth() ; 
 
   useEffect(() => {
-    // ;(async () => {
-    //   const data = await getProfile();
-    //   setProfile(data);
-    // })()
     function handleClickOutside(event: MouseEvent) {
       if (
         menuRef.current &&
@@ -37,8 +34,10 @@ export function Header() {
   }, []);
 
   const handleLogout = async () => {
+    setIsUsingGoogleAuth(false) ; 
     try {
       await supabase.auth.signOut();
+      localStorage.clear() ;
       navigate('/login');
     } catch (error) {
       console.error('Error signing out:', error);

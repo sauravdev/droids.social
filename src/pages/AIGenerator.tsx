@@ -165,7 +165,7 @@ export function AIGenerator() {
     setSuccess({state : false , message : ''}) ; 
     if(!generatedContent) 
       {
-        setError("Please Provide Caption For Uploading On Instagram ") ; 
+        setError("Please Provide Caption For Uploading On Linkedin ") ; 
       }
     try{
       const accountInfo = await getSocialMediaAccountInfo("linkedin") ; 

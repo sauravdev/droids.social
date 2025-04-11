@@ -14,6 +14,7 @@ import { paymentRouter } from './routes/payment.route.js';
 import crypto from 'crypto'; 
 import querystring from 'querystring' ;
 import OAuth from 'oauth-1.0a';
+import { googleOAuthRouter } from './routes/googleOAuth.route.js';
 dotenv.config() 
 
 
@@ -28,6 +29,8 @@ app.use(linkedinRouter)
 app.use(instagramRouter)
 app.use(openaiRouter) ; 
 app.use(paymentRouter) ; 
+app.use(googleOAuthRouter); 
+
 
 
 const conn = supabase.conn 

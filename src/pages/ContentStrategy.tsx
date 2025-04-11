@@ -14,13 +14,15 @@ import { useProfile } from '../hooks/useProfile';
 import { useAuth } from '../context/AuthContext';
 import { useNavigate } from 'react-router-dom';
 import { useSocialAccounts } from '../hooks/useSocialAccounts';
+
 interface ContentPlanCardProps {
   plan: ContentPlan;
   onSave: (planId: string, updates: Partial<ContentPlan>) => Promise<void>;
   onSchedule: (plan: ContentPlan) => void;
+  setSelectedPlan : (action: any) => void
 }
 
-function ContentPlanCard({ plan, onSave, onSchedule }: ContentPlanCardProps) {
+function ContentPlanCard({ plan, onSave, onSchedule , setSelectedPlan  }: ContentPlanCardProps) {
   return (
     <div className="bg-gray-800 rounded-lg p-4 flex flex-col justify-between">
       <h3 className="text-lg font-medium text-white mb-2">{plan.topic}</h3>
@@ -28,6 +30,7 @@ function ContentPlanCard({ plan, onSave, onSchedule }: ContentPlanCardProps) {
         plan={plan}
         onSave={(updates) => onSave(plan.id, updates)}
         onSchedule={() => onSchedule(plan)}
+        setSelectedPlan = {setSelectedPlan}
       />
     </div>
   );
@@ -352,12 +355,14 @@ export function ContentStrategy() {
                 key={plan.id}
                 plan={plan}
                 onSave={updatePlan}
+            
                 onSchedule={(plan) => {
                   console.log("scheduling plan = " , plan ) ;
                   setSelectedPlan(plan);
                   setShowScheduleModal(true);
                   // add logic to schedule post 
                 }}
+                setSelectedPlan={setSelectedPlan}
               />
             ))}
           </div>

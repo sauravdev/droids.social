@@ -15,8 +15,7 @@ const loadScheduledJobs = async () => {
     if(error) {
         throw error ; 
     }
-    console.log("Data = " , data) ; 
-    
+    // console.log("Data = " , data) ; 
     if(data) 
     {
       data.map((job) => {

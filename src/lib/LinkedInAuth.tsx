@@ -77,6 +77,7 @@ const LinkedInAuth = () => {
   useEffect(() => {
     const code = searchParams.get('code');
     if (code && !localStorage.getItem("code") ) {
+      console.log("setting code ... in local storage code = " , code) ; 
       localStorage.setItem("code" ,code) ;
       setAuthCode(code);
       exchangeAuthCodeForToken(code);

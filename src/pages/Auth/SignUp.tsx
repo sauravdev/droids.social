@@ -3,6 +3,9 @@ import { useNavigate, Link } from 'react-router-dom';
 import { Bot } from 'lucide-react';
 import { supabase } from '../../lib/supabase';
 import { AuthLayout } from '../../components/AuthLayout';
+import GoogleLogo from '../../assets/google.png'; 
+import { GOOGLE_CLIENT_ID } from '../../constants';
+import { useAuth } from '../../context/AuthContext';
 
 export function SignUp() {
   const navigate = useNavigate();
@@ -11,6 +14,44 @@ export function SignUp() {
   const [fullName, setFullName] = useState('');
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
+  const {setIsUsingGoogleAuth} = useAuth(); 
+  const handleGoogleAuthentication = async () => {
+    setIsUsingGoogleAuth(true) ;
+     try{
+     
+       const { error  , data : any } = await supabase.auth.signInWithOAuth({
+              provider: 'google',
+            });
+          
+            if (error) console.error('Error logging in:', error?.message);
+
+            if (data.user) {
+              // Create profile
+              const { error: profileError } = await supabase
+                .from('profiles')
+                .insert([
+                  {
+                    id: data.user.id,
+                    email,
+                    full_name: fullName,
+                    avatar_url: '',
+                    tokens : 100
+                  },
+                ]);
+      
+              if (profileError) throw profileError;
+            }
+
+            
+     }
+     catch(error : any ) 
+     {
+      setError(error?.message)
+      console.log(error); 
+     }
+
+  
+   }
 
   const handleSignUp = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -126,6 +167,13 @@ export function SignUp() {
                 />
               </div>
             </div>
+
+            <div className='text-gray-200 w-full text-center'>OR</div>
+            <div className='flex items-center justify-center gap-2 bg-gray-200 text-slate-900 px-4 py-2 rounded-md text-sm '>
+              <img className='h-4 w-4' src= {GoogleLogo}/>
+              <button onClick={() => {handleGoogleAuthentication() }} type = "button" className='   text-sm ' >SIGN UP WITH GOOGLE</button>
+            </div>
+           
 
             <div>
               <button

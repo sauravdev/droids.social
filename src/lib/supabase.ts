@@ -7,9 +7,8 @@ if (!supabaseUrl || !supabaseAnonKey) {
   throw new Error('Missing Supabase environment variables. Please connect to Supabase using the "Connect to Supabase" button.');
 }
 
-// Retry configuration
-const MAX_RETRIES = 3;
-const RETRY_DELAY = 1000; // 1 second
+const MAX_RETRIES = 1;
+const RETRY_DELAY = 250;
 
 // Custom fetch with retry logic
 async function fetchWithRetry(...args: Parameters<typeof fetch>): Promise<Response> {
@@ -19,7 +18,8 @@ async function fetchWithRetry(...args: Parameters<typeof fetch>): Promise<Respon
   for (let i = 0; i < MAX_RETRIES; i++) {
     try {
       const response = await fetch(...args);
-      // console.log("supabase response  = " , response  ) ; 
+      
+
       if (!response.ok) {
         throw new Error(`HTTP error! status: ${response.status}`);
       }
@@ -83,6 +83,7 @@ export async function checkSupabaseConnection() {
 
 // Health check function
 export async function checkSupabaseHealth() {
+  console.log("supabase health check function called !!!") ; 
   try {
     const start = Date.now();
     const { error } = await supabase.from('profiles').select('count', { count: 'exact', head: true });

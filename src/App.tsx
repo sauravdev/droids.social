@@ -25,6 +25,7 @@ import { Contact } from './pages/Contact';
 import { Testimonials } from './pages/Testimonials';
 import { HowItWorks } from './pages/HowItWorks';
 import { PaymentSuccess } from './pages/PaymentSuccess';
+import GoogleAuth from './components/GoogleAuth';
 
 export default function App() {
   const { session, loading } = useAuth();
@@ -43,6 +44,7 @@ export default function App() {
       {/* Public routes */}
       {/* !session ? <LandingPage /> : <Navigate to="/dashboard" */}
       <Route path="/" element={  !session ? <LandingPage /> : <Navigate to="/dashboard"/> } />
+      <Route path="/google-oauth" element={  !session ? <GoogleAuth /> : <Navigate to="/dashboard"/> } />
       <Route path="/login" element={!session ? <Login /> : <Navigate to="/dashboard" replace />} />
       <Route path="/signup" element={!session ? <SignUp /> : <Navigate to="/dashboard" replace />} />
       {/* Protected routes */}

@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { Loader, RefreshCw, Calendar, Save ,Twitter, Linkedin, Instagram } from 'lucide-react';
 import { generatePost } from '../lib/openai';
 import type { ContentPlan } from '../lib/types';
@@ -6,17 +6,20 @@ import Editor from './Editor';
 import { getSocialMediaAccountInfo } from '../lib/api';
 import { BACKEND_APIPATH } from '../constants';
 import { initializeTwitterAuth } from '../lib/twitter';
+import aiMagic from '../assets/ai.png';
+import { useContentPlan } from '../hooks/useContentPlan';
 interface PostGeneratorProps {
   plan: ContentPlan;
   onSave: (updates: Partial<ContentPlan>) => Promise<void>;
   onSchedule: () => void;
+  setSelectedPlan : (action: any) => void
 }
 interface Success {
   state : boolean ,
   message : string 
 }
 
-export function PostGenerator({ plan, onSave, onSchedule }: PostGeneratorProps) {
+export function PostGenerator({ plan, onSave, onSchedule,setSelectedPlan }: PostGeneratorProps) {
   const [loading, setLoading] = useState(false);
   const [saving, setSaving] = useState(false);
   // const [deleting , setDeleting] = useState(false) ; 
@@ -25,8 +28,11 @@ export function PostGenerator({ plan, onSave, onSchedule }: PostGeneratorProps) 
   const [tone, setTone] = useState<string>('');
   const [posting , setPosting ] = useState<boolean | null>(false);
   const [success  , setSuccess ] = useState<Success>({state : false , message : ''}) ; 
+  const { updatePlan } = useContentPlan()  ;
 
- 
+  // useEffect(() => {
+  //   console.log("----------------------selected plan =--------------------------- " , plan) ; 
+  // } , [plan ] )
 
   async function handlePostTweet() {
     setPosting(true) ;
@@ -150,6 +156,12 @@ export function PostGenerator({ plan, onSave, onSchedule }: PostGeneratorProps) 
     setError(null);
     try {
       const generated = await generatePost(plan.topic, plan.platform, tone);
+      const newPlan = {
+        ...plan , 
+        suggestion : generated 
+      }
+      await updatePlan(newPlan.id , {suggestion : generated }) ; 
+      setSelectedPlan(newPlan) ;
       setContent(generated);
     } catch (err: any) {
       setError(err.message);
@@ -157,7 +169,6 @@ export function PostGenerator({ plan, onSave, onSchedule }: PostGeneratorProps) 
       setLoading(false);
     }
   };
-
   const handleSave = async () => {
     setSaving(true);
     setSuccess({state : false , message : ''}) ;
@@ -190,11 +201,12 @@ export function PostGenerator({ plan, onSave, onSchedule }: PostGeneratorProps) 
             className="text-gray-400 hover:text-white disabled:opacity-50"
             title="Generate new content"
           >
-            {loading ? (
+            {/* {loading ? (
               <Loader className="h-4 w-4 animate-spin" />
             ) : (
               <RefreshCw className="h-4 w-4" />
-            )}
+            )} */}
+            <img className='h-6 w-6' src = {aiMagic} alt = ""/>
           </button>
           <button
             onClick={onSchedule}

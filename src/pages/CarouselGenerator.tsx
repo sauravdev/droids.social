@@ -135,14 +135,22 @@ export function CarouselGenerator() {
     setError(null);
 
     try {
-      const prompt = `Create a professional carousel post about "${topic}" for ${platform} with exactly 3 slides. Include emojis and make it engaging:
+      const prompt = `Create a high-quality, professional carousel post about "${topic}" optimized for ${platform} (e.g., Instagram, LinkedIn), consisting of exactly 5 slides. Design it to be visually appealing, concise, and engaging, using emojis to enhance tone and draw attention. Follow this structure:
 
-      1. Intro slide: Attention-grabbing headline with emoji
-      2-5. Four content slides: Key points with relevant emojis
-      6. Summary slide: Key takeaways with emoji
-      7. Outro slide: Strong call-to-action with emoji
-      
-      Format as JSON array: [{"header": "headline", "content": "detailed text", "emoji": "relevant_emoji"}, ...]`;
+1. **Intro Slide**: A bold, attention-grabbing headline that introduces the topic, paired with an emoji to set the mood.
+2. **Content Slide**: A single, focused key point or insight about the topic, written in a clear and compelling way, with a relevant emoji to reinforce the message.
+3. **Outro Slide**: A strong summary or call-to-action (CTA) that wraps up the post and encourages audience interaction (e.g., "Follow for more," "Share your thoughts"), paired with an impactful emoji.
+
+**Guidelines**:  
+- Keep text concise (max 20 words per slide) to suit carousel readability.  
+- Use platform-appropriate tone (e.g., professional for LinkedIn, casual for Instagram).  
+- Select emojis that align with the topic and enhance emotional appeal.  
+- Avoid overloading slides with multiple points—focus on one idea per slide.  
+
+Format the output as a JSON array with exactly 3 objects, each containing:  
+- header: The slides headline or title (short and punchy).  
+- content: The supporting text (detailed but concise).  
+- emoji: A single, relevant emoji as a string (e.g., "🚀"). `;
 
       let content = await generatePost(prompt, platform);
       
@@ -192,7 +200,7 @@ export function CarouselGenerator() {
         setGenerating(false) ;
         return ; 
       }
-      while (slideContents.length < 3) {
+      while (slideContents.length <= 5 ) {
         slideContents.push({
           header: `Slide ${slideContents.length + 1}`,
           content: 'Content here',
@@ -201,7 +209,7 @@ export function CarouselGenerator() {
       }
 
       const newSlides = await Promise.all(
-        slideContents.slice(0, 3).map(async (slide , index) => {
+        slideContents.slice(0, 5).map(async (slide , index) => {
           const image = await generateImg( `$A high-quality, detailed image related to ${topic}, visually representing ${slide.header}. The image should be purely illustrative with no text, letters, or written elements. Focus on composition, colors, and meaningful visual storytelling.`);
           
           return {

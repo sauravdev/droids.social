@@ -100,31 +100,39 @@ export async function generateContentStrategy(niche: string, goals: string[] , p
   if (cached) return cached;
   await rateLimit();
   try {
-    const prompt = `Create a monthly social media content strategy for a ${niche} business with the following goals: ${goals.join(', ')}.
-    
-    Include:
-    1. A monthly theme
-    2. Weekly themes
-    3. Daily content suggestions for ${allowedPlatforms}
-    4. Mix of content formats (text, image)
-    
-    Format the response as a structured JSON object with the following schema:
-    {
-      "monthly_theme": string,
-      "weekly_plans": [{
-        "theme": string,
-        "days": [{
-          "date": string (ISO date),
-          "posts": [{
-            "platform": ${allowedPlatforms}, 
-            "format": "text" | "image" , 
-            "topic": string,
-            "suggestion": string,
-            "status": "pending"
-          }]
-        }]
+    const prompt = `Create a monthly social media content strategy for a ${niche} topic designed to maximize reach, engagement, and virality, with the following goals: ${goals.join(', ')}. Craft posts that feel authentic, human-like, and resonate with the target audience, using trending tactics and platform-specific best practices.
+
+Include:
+1. *Monthly Theme*: A compelling, overarching theme that ties the strategy together and aligns with the niche and goals.
+2. *Weekly Themes*: Four distinct, engaging weekly themes that build on the monthly theme and keep content fresh and varied.
+3. *Daily Content Suggestions*: Realistic, platform-optimized post ideas for ${allowedPlatforms} , covering all days of a 4-week month (28 days total).
+4. *Mix of Content Formats*: A balanced blend of formats (text, image, video, carousel, poll) with clear, actionable suggestions to spark engagement (e.g., questions, CTAs, relatable hooks).
+
+*Guidelines*:
+- Design posts to feel conversational, human-like, and authentic—no robotic or generic phrasing.
+- Incorporate viral elements like storytelling, humor, trending hashtags, or emotional hooks where relevant.
+- Tailor content to each platform’s audience and style (e.g., visual for Instagram, professional for LinkedIn, concise for Twitter).
+- Include at least 1 CTA per post (e.g., "Comment below," "Tag a friend," "Save this") to boost interaction.
+- Ensure variety: mix educational, promotional, entertaining, and community-building posts.
+
+Format the response as a structured JSON object with this schema:
+{
+  "monthly_theme": string,
+  "weekly_plans": [{
+    "week_number": number (1-4),
+    "theme": string,
+    "days": [{
+      "date": string (ISO format, e.g., "2025-05-01"),
+      "posts": [{
+        "platform": string (${allowedPlatforms}),
+        "format": "text" | "image" | "video" | "carousel" | "poll",
+        "topic": string,
+        "suggestion": string (concise, max 30 words, with CTA and viral hook),
+        "status": "pending"
       }]
-    }`;
+    }]
+  }]
+}`;
 
     const completion = await openai.chat.completions.create({
       messages: [
@@ -172,7 +180,8 @@ export async function generatePost(
     };
 
     const prompt = `Create a ${platform} post about "${topic}". 
-    Make it ${platformGuide[platform]}${tone ? ` with a ${tone} tone` : ''}.`;
+Make it ${platformGuide[platform]}${tone ? ` with a ${tone} tone` : ''}. 
+Avoid using any markdown formatting like **, *, or __. Just return plain text without styling symbols.`;
 
     const completion = await openai.chat.completions.create({
       messages: [
@@ -236,28 +245,8 @@ export async function generateProfileContent(name: string, niche: string) {
 
 
 
-export async function generateAIContentSuggestion(instaFollowers : string , instaReach : string , twitterFollowers : string , twitterReach : string ) {
-const prompt = `Generate a JSON object containing social media growth tips tailored to my current Instagram and Twitter analytics. The object should have a key named "tips" with an array of at least 5 unique growth strategies. Each item in the array should follow this structure:
-
-{
-  "type": "Category of the tip (e.g., Engagement, Hashtags, Content Strategy, Posting Time, Algorithm Optimization, etc.)",
-  "title": "A short and catchy title summarizing the tip",
-  "description": "A detailed explanation, including actionable advice on how to use this strategy effectively, with direct reference to my analytics data."
-}
-
-My current analytics data:
-- **Instagram Reach:** ${instaReach || 0}
-- **Instagram Followers:** ${instaFollowers || 0}
-- **Twitter Reach:** ${twitterReach || 0}
-- **Twitter Followers:** ${twitterFollowers || 0}
-
-### Requirements:
-- Each tip must integrate my provided analytics data into the advice. For example:
-  - If my Instagram reach is low, suggest strategies to improve it.
-  - If my Twitter followers are growing slowly, provide tactics to increase engagement.
-- Include a mix of strategies such as engagement techniques, posting frequency, algorithm insights, audience interaction, and content optimization.
-- Ensure the response is a valid JSON object, formatted properly for direct use in my application.
-`;
+export async function generateAIContentSuggestion() {
+const prompt = "Generate a JSON object containing social media growth tips for Instagram and Twitter. The object should have a key named \"tips\" with an array of at least 5 unique growth strategies. Each item in the array must follow this structure:\n\n{\n  \"type\": \"Category of the tip (e.g., Engagement, Hashtags, Content Strategy, Posting Time, Algorithm Optimization, etc.)\",\n  \"title\": \"A short and catchy title summarizing the tip\",\n  \"description\": \"A detailed explanation, including actionable advice on how to use this strategy effectively.\"\n}\n\nRequirements:\n- Include a mix of strategies such as engagement techniques, content optimization, posting frequency, audience interaction, and algorithm insights.\n- Ensure the response is a valid JSON object, properly formatted for direct use in a frontend application.";
 
   // await postGenerationApi(prompt) ; 
 
