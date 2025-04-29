@@ -1,8 +1,10 @@
 import OpenAI from 'openai';
 import type { ContentStrategy } from './types';
 import { getCustomModels } from './api';
+import Groq from 'groq-sdk';
 // import { encode } from 'tiktoken';
-import { PYTHON_SERVER_URI } from '../constants';
+import { PYTHON_SERVER_URI  , GROK_API_KEY } from '../constants';
+
 // Initialize OpenAI client
 
 
@@ -345,4 +347,46 @@ export async function postGenerationApi(prompt:string) {
   console.log("response from the server post generation api " , data ) ; 
   console.log("Response:", data.results[0].text[0]);
 return data?.results[0]?.text[0] ;  
+}
+
+
+
+export async function generatePostUsingGrok(
+  topic: string,
+  platform: 'twitter' | 'linkedin' | 'instagram',
+  tone?: string
+): any  {
+  const platformGuide = {
+    twitter: 'short, engaging, under 280 characters',
+    linkedin: 'professional tone, business-focused',
+    instagram: 'visual, engaging, with emojis and hashtags'
+  };
+  const prompt = `Create a ${platform} post about "${topic}". 
+  Make it ${platformGuide[platform]}${tone ? ` with a ${tone} tone` : ''}. 
+  Avoid using any markdown formatting like **, *, or __. Just return plain text without styling symbols.`;
+  console.log("grok api key --------------------------------- >" , GROK_API_KEY) ;
+  try {
+    const groq = new Groq({ 
+        apiKey: GROK_API_KEY,
+        dangerouslyAllowBrowser: true,
+    });
+    const chatCompletion = await groq.chat.completions.create({
+      messages: [
+        {
+          role: "system",
+          content: "You are an expert social media copywriter."
+        },
+        {
+          role: "user",
+          content: prompt
+        }
+      ],
+        model: "llama3-8b-8192",
+    });
+    return chatCompletion.choices[0]?.message?.content;
+} catch (error) {
+     console.error("Error calling Groq API:", error);
+     throw error ; 
+    return null;
+}
 }

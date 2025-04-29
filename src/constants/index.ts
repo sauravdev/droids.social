@@ -36,3 +36,5 @@ export const INSTAGRAM_CREDENTIALS = {
 }
 
 export const GOOGLE_CLIENT_ID = import.meta.env.VITE_GOOGLE_CLIENT_ID
+
+export const GROK_API_KEY = import.meta.env.VITE_GROK_API_KEY 

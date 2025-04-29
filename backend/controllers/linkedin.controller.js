@@ -10,8 +10,6 @@ const linkedInClientId = process.env.linkedInClientId;
 const linkedInClientSecret = process.env.linkedInClientSecret;
 const linkedInRedirectURI = process.env.linkedInRedirectURI;
 
-
-
 const generateAccessToken = async (req , res ) => {
   const { code } = req.body;
   try {
@@ -63,7 +61,7 @@ const uploadContent = async (accessToken , id ,postId = null , text  ) => {
       method: "POST",
       headers: {
         'Authorization': `Bearer ${accessToken}`,
-        'LinkedIn-Version': 202503,
+        'LinkedIn-Version': '202503',
         'X-Restli-Protocol-Version': '2.0.0',
         'Content-Type': 'application/json'
       },
@@ -81,9 +79,11 @@ const uploadContent = async (accessToken , id ,postId = null , text  ) => {
       
     } )
     console.log("response = " , response) ; 
+    // console.log("-----------> " , await response.json() ) ; 
     if(postId) 
     {
-      await updateScheduledPost(postId , {status : 'published'})
+      const post = await updateScheduledPost(postId , {status : 'published'}) ; 
+      console.log("post => " , post) ;
     }
     console.log("linkedin  post published successfully"  ) ; 
   }

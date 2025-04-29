@@ -1,6 +1,6 @@
 import React, { useState , useEffect} from 'react';
 import {Twitter, Linkedin, Instagram , Sparkles, Loader, Save, Edit2, History, RefreshCw, X, Calendar  , HardDriveUpload} from 'lucide-react';
-import { generateImage, generatePost, generatePostFromCustomModel, postGenerationApi } from '../lib/openai';
+import { generateImage, generatePost, generatePostFromCustomModel, generatePostUsingGrok, postGenerationApi } from '../lib/openai';
 import { useContentPlan } from '../hooks/useContentPlan';
 import { supabase } from '../lib/supabase';
 import { ScheduleModal } from '../components/ScheduleModal';
@@ -302,9 +302,22 @@ async function uploadToSupabase(imageData: File | Blob, fileName: string): Promi
       await handleImageGeneration() ;
     }
     try {
+
+
       
       const content = await generatePost(topic, selectedPlatforms[0] );
       // const content = await generatePostFromCustomModel(topic)
+      // const content = await generatePostUsingGrok(topic , selectedPlatforms[0]) ;
+
+      
+
+      if(selectedPlatforms?.length === 0  ) 
+      {
+        setError("Please select platform");
+        return ;
+      } 
+      // const content = await generatePostUsingGrok(topic , selectedPlatforms[0] ) ; 
+      console.log("content => " , content ) ; 
       setGeneratedContent(content);
       const historyItem: HistoryItem = {
         id: crypto.randomUUID(),

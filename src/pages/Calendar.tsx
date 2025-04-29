@@ -388,7 +388,13 @@ export function Calendar() {
     setAllPosts(newAllPosts)
   }
 
-  useEffect(() => {})
+  useEffect(() => {
+    setInterval(() => {
+
+      setRefreshCalender((prev) => !prev) ; 
+
+    } , 5000) 
+  },[])
 
   useEffect(() => {
     setRefreshingState(true) 

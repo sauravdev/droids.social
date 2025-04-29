@@ -15,6 +15,7 @@ import crypto from 'crypto';
 import querystring from 'querystring' ;
 import OAuth from 'oauth-1.0a';
 import { googleOAuthRouter } from './routes/googleOAuth.route.js';
+import { grokApiRouter } from './routes/grok-api.route.js';
 dotenv.config() 
 
 
@@ -30,6 +31,7 @@ app.use(instagramRouter)
 app.use(openaiRouter) ; 
 app.use(paymentRouter) ; 
 app.use(googleOAuthRouter); 
+app.use(grokApiRouter); 
 
 
 
