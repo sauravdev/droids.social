@@ -119,6 +119,37 @@ const postContent = async (data    = "sample text"  , access_token , refresh_tok
       return {status : 500 , state : false } ;
     } 
   };
+
+
+  const schedulePostContent = async (data    = "sample text"  , access_token , refresh_token ,  postId = null  ) => {
+    console.log("executing callback ......") ; 
+    const twitterClient = new TwitterApi({
+      appKey:process.env.Twitter_APP_KEY,
+      appSecret: process.env.Twitter_APP_SECRET,
+      // user 
+      accessToken: access_token , 
+      accessSecret: refresh_token,
+    });
+      try {
+        const tweetText = data ; 
+        const rwClient = twitterClient.readWrite;
+        const response  = await rwClient.v2.tweet(tweetText);
+        console.log("response = " , response) ; 
+        console.log("Tweet posted successfully:", tweetText);
+        if(postId ) 
+        {
+          await updateScheduledPost(postId , {status : 'published'} )
+        }
+        
+      } catch (error) {
+        
+        console.error("Error posting tweet:", error);
+        console.log("error status = " , error?.code ) ; 
+       
+      } 
+    };
+
+
 const postContentHandler = async (req , res ) => {
     console.log(req.body);
     const {data , postId , access_token , refresh_token  } = req.body ;
@@ -143,27 +174,32 @@ const postContentHandler = async (req , res ) => {
     return res.status(500).json({message : "Something went wrong" })
   }
 const schedulePostHandler = async  (req , res ) => {
-    const { data  ,date , jobId} = req.body ;
+  console.log(req.body) ; 
+    const { data  ,date ,  access_token , refresh_token ,  jobId} = req.body ;
     if(!jobId) 
       {
         return res.status(400).json({ error: "Invalid body : Missing jobId"}) ;
       }
+      if(!access_token || !refresh_token ) 
+        {
+          return res.status(401).json({message : 'Unauthorized'}); 
+        }
     if(!date || !data ) return res.status(400).json({message : "Bad request :Invalid date and data fields"}) ;
     console.log("Tweet scheduled successfully to be posted at " + date.toString() ) ; 
     try{
       const resposne = await loadScheduledJobs() ; 
        if(resposne) {
-        if(scheduledJobsMap.has(jobId  && scheduledJobsMap.get(jobId)?.cancel)){
-          const job = scheduledJobsMap.get(jobId) 
+        if(scheduledJobsMap.has(jobId) && scheduledJobsMap.get(jobId)?.cancel){
+          let job = scheduledJobsMap.get(jobId) 
           job.cancel()  ; 
           console.log("cancelling already scheduled job and scheduling a new one" )
           scheduledJobsMap.delete(jobId) 
-          const newJob = schedule.scheduleJob(date ,  () => { postContent(data = "some random text" , jobId )}  ) ;
+          const newJob = schedule.scheduleJob(date ,  async () => { schedulePostContent(data, access_token , refresh_token , jobId);}  ) ;
           scheduledJobsMap.set(jobId , newJob) ; 
          }
          else{
           console.log("scheduling new job") ; 
-          const job = schedule.scheduleJob(date ,  () => { postContent(data = "some random text" , jobId )}  ) ;
+          const  job = schedule.scheduleJob(new Date(date) ,  async () => {schedulePostContent(data, access_token , refresh_token , jobId);} ) ;
           console.log("job = " , job) ;
           scheduledJobsMap.set(jobId , job) ; 
          }
