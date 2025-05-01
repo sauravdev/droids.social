@@ -308,7 +308,9 @@ const scheduleInstagramCarousel = async (req  , res ) => {
       return res.status(400).json({ error: "Invalid body"}) ;
   }
     const ACCESS_TOKEN = authHeader.replace('Bearer ', '')
-    console.log("access toke ="  ,ACCESS_TOKEN ) 
+    console.log("access toke ="  ,ACCESS_TOKEN ) ; 
+  const localTime = DateTime.fromISO(date, { zone: "Asia/Kolkata" });
+  const utcTime = localTime.toUTC()
   try {
     const response  = await loadScheduledJobs() ; 
     if(response) {
@@ -318,12 +320,12 @@ const scheduleInstagramCarousel = async (req  , res ) => {
         job.cancel()  ; 
         console.log("cancelling already scheduled job and scheduling a new one" )
         scheduledJobsMap.delete(jobId) 
-        const newJob = schedule.scheduleJob(date ,  () => {   publishCarousel(imageUrls , ACCESS_TOKEN , userId , caption , jobId)}  ) ;
+        const newJob = schedule.scheduleJob(utcTime.toISO()  ,  () => {   publishCarousel(imageUrls , ACCESS_TOKEN , userId , caption , jobId)}  ) ;
         scheduledJobsMap.set(jobId , newJob) ; 
        }
        else{
         console.log("scheduling new job")
-        const job =schedule.scheduleJob(date ,  () => { publishCarousel(imageUrls , ACCESS_TOKEN , userId , caption , jobId)}  ) ;
+        const job =schedule.scheduleJob(utcTime.toISO()  ,  () => { publishCarousel(imageUrls , ACCESS_TOKEN , userId , caption , jobId)}  ) ;
         console.log("job = " , job) ;
         scheduledJobsMap.set(jobId , job) ; 
        }
