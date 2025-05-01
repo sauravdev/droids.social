@@ -7,6 +7,7 @@ import { scheduledJobsMap } from "../index.js";
 import dotenv from 'dotenv' ;
 import { loadScheduledJobs , updateScheduledPost } from '../test.js';
 import axios from 'axios' ;
+import { DateTime } from 'luxon';
 dotenv.config() 
 const INSTAGRAM_APP_ID = process.env.INSTAGRAM_APP_ID; 
 const INSTAGRAM_APP_SECRET = process.env.INSTAGRAM_APP_SECRET;
@@ -177,7 +178,9 @@ const scheduleContentHandler = async (req , res ) => {
   }
   if(!date || !caption ) return res.status(400).json({message : "Bad request :Invalid date and caption fields"}) ;
   console.log("Instagram post scheduled successfully to be posted at " + date.toString() ) ; 
-  
+  const localTime = DateTime.fromISO(date, { zone: "Asia/Kolkata" });
+  const utcTime = localTime.toUTC()
+    console.log("Tweet scheduled successfully to be posted at " +utcTime.toISO()  ) ;
   try{
     const response  = await loadScheduledJobs() ; 
     if(response) {
@@ -188,12 +191,12 @@ const scheduleContentHandler = async (req , res ) => {
         job.cancel()  ; 
         console.log("cancelling already scheduled job and scheduling a new one" )
         scheduledJobsMap.delete(jobId) 
-        const newJob = schedule.scheduleJob(date ,  () => { uploadContent(ACCESS_TOKEN , IG_USER_ID ,  caption ,  imageUrl  , jobId )}  ) ;
+        const newJob = schedule.scheduleJob(utcTime.toISO() ,  () => { uploadContent(ACCESS_TOKEN , IG_USER_ID ,  caption ,  imageUrl  , jobId )}  ) ;
         scheduledJobsMap.set(jobId , newJob) ; 
        }
        else{
         console.log("scheduling new job")
-        const job =schedule.scheduleJob(date ,  () => { uploadContent(ACCESS_TOKEN , IG_USER_ID ,  caption ,    imageUrl   , jobId )}  ) ;
+        const job =schedule.scheduleJob(utcTime.toISO() ,  () => { uploadContent(ACCESS_TOKEN , IG_USER_ID ,  caption ,    imageUrl   , jobId )}  ) ;
         console.log("job = " , job) ;
         scheduledJobsMap.set(jobId , job) ; 
        }

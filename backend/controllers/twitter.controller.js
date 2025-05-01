@@ -5,6 +5,7 @@ import { URLSearchParams  } from 'url';
 import dotenv from 'dotenv' ;
 import { scheduledJobsMap } from "../index.js";
 import { loadScheduledJobs  ,updateScheduledPost } from '../test.js';
+import { DateTime } from 'luxon';
 // const TWITTER_CLIENT_ID = 'Y2RKeWJ2T1hzQ3dxNnBuT3BCUVI6MTpjaQ';
 // const TWITTER_CLIENT_SECRET = 'MP0G4dsn7efJqahuJL2HsEm9L9eUBcHtCsLJLVHPF-t9qVMe9Q';
 // const REDIRECT_URI = 'http://localhost:5173/callback/twitter';
@@ -185,7 +186,10 @@ const schedulePostHandler = async  (req , res ) => {
           return res.status(401).json({message : 'Unauthorized'}); 
         }
     if(!date || !data ) return res.status(400).json({message : "Bad request :Invalid date and data fields"}) ;
-    console.log("Tweet scheduled successfully to be posted at " + date.toString() ) ; 
+    const localTime = DateTime.fromISO(date, { zone: "Asia/Kolkata" });
+    const utcTime = localTime.toUTC()
+    console.log("Tweet scheduled successfully to be posted at " +utcTime.toISO()  ) ;
+   
     try{
       const resposne = await loadScheduledJobs() ; 
        if(resposne) {
@@ -194,12 +198,12 @@ const schedulePostHandler = async  (req , res ) => {
           job.cancel()  ; 
           console.log("cancelling already scheduled job and scheduling a new one" )
           scheduledJobsMap.delete(jobId) 
-          const newJob = schedule.scheduleJob(date ,  async () => { schedulePostContent(data, access_token , refresh_token , jobId);}  ) ;
+          const newJob = schedule.scheduleJob(utcTime.toISO(),  async () => { schedulePostContent(data, access_token , refresh_token , jobId);}  ) ;
           scheduledJobsMap.set(jobId , newJob) ; 
          }
          else{
           console.log("scheduling new job") ; 
-          const  job = schedule.scheduleJob(new Date(date) ,  async () => {schedulePostContent(data, access_token , refresh_token , jobId);} ) ;
+          const  job = schedule.scheduleJob(utcTime.toISO() ,  async () => {schedulePostContent(data, access_token , refresh_token , jobId);} ) ;
           console.log("job = " , job) ;
           scheduledJobsMap.set(jobId , job) ; 
          }

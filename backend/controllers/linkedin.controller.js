@@ -5,6 +5,7 @@ import schedule from 'node-schedule' ;
 import dotenv from 'dotenv' ;
 import axios from 'axios'
 import fs from 'fs' ; 
+import { DateTime } from 'luxon';
 dotenv.config() 
 const linkedInClientId = process.env.linkedInClientId;
 const linkedInClientSecret = process.env.linkedInClientSecret;
@@ -135,18 +136,21 @@ const scheduleContentHandler = async (req  , res ) => {
   const accessToken = authHeader.replace("Bearer " , "") ; 
   try{
     const response = await loadScheduledJobs() ;
+    const localTime = DateTime.fromISO(date, { zone: "Asia/Kolkata" });
+     const utcTime = localTime.toUTC()
+       console.log("Tweet scheduled successfully to be posted at " +utcTime.toISO()  ) ;
     if(response) {
       if(scheduledJobsMap.has(jobId) && scheduledJobsMap.get(jobId)?.cancel){
         const job = scheduledJobsMap.get(jobId) 
         job.cancel()  ; 
         console.log("cancelling already scheduled job and scheduling a new one" )
         scheduledJobsMap.delete(jobId) 
-        const newJob = schedule.scheduleJob(date ,  () => { uploadContent(accessToken , id  , jobId , text  )}  ) ;
+        const newJob = schedule.scheduleJob(utcTime.toISO() ,  () => { uploadContent(accessToken , id  , jobId , text  )}  ) ;
         scheduledJobsMap.set(jobId , newJob) ; 
        }
        else{
         console.log("scheduling new job") ;
-        const job = schedule.scheduleJob(date ,  () => { uploadContent(accessToken , id  , jobId , text  )}  ) ;
+        const job = schedule.scheduleJob(utcTime.toISO() ,  () => { uploadContent(accessToken , id  , jobId , text  )}  ) ;
         console.log("job = " , job) ;
         scheduledJobsMap.set(jobId , job) ; 
        }
