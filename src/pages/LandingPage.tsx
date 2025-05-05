@@ -121,47 +121,47 @@ export function LandingPage() {
 
       {/* Pricing */}
       <section id="pricing" className="py-20">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="text-center">
-            <h2 className="text-3xl font-extrabold text-white sm:text-4xl">
-              Simple, Transparent Pricing
-            </h2>
-            <p className="mt-4 text-xl text-gray-300">
-              Choose the plan that's right for you
-            </p>
-          </div>
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        <div className="text-center">
+          <h2 className="text-3xl font-extrabold text-white sm:text-4xl">
+            Simple, Transparent Pricing
+          </h2>
+          <p className="mt-4 text-xl text-gray-300">
+            Choose the plan that's right for you
+          </p>
+        </div>
 
-          <div className="mt-16 grid grid-cols-1 gap-8 md:grid-cols-3">
-            {pricingPlans.map((plan) => (
-              <div key={plan.name} className="bg-gray-800 rounded-lg shadow-lg overflow-hidden">
-                <div className="px-6 py-8">
-                  <h3 className="text-2xl font-semibold text-white">{plan.name}</h3>
-                  <p className="mt-4">
-                    <span className="text-4xl font-extrabold text-white">${plan.price}</span>
-                    <span className="text-gray-300">/month</span>
-                  </p>
-                  <ul className="mt-6 space-y-4">
-                    {plan.features.map((feature, index) => (
-                      <li key={index} className="flex items-center">
-                        <Check className="h-5 w-5 text-purple-500 mr-2" />
-                        <span className="text-gray-300">{feature}</span>
-                      </li>
-                    ))}
-                  </ul>
-                  <div className="mt-8">
-                    <Link
-                      to="/signup"
-                      className="block w-full bg-purple-600 hover:bg-purple-700 text-white font-medium py-2 px-4 rounded-md text-center"
-                    >
-                      Get Started
-                    </Link>
-                  </div>
+        <div className="mt-16 grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
+          {pricingPlans.map((plan) => (
+            <div key={plan.name} className="bg-gray-800 rounded-lg shadow-lg overflow-hidden h-full">
+              <div className="px-4 py-6">
+                <h3 className="text-xl font-semibold text-white">{plan.name}</h3>
+                <p className="mt-3">
+                  <span className="text-3xl font-extrabold text-white">${plan.price}</span>
+                  <span className="text-gray-300">/month</span>
+                </p>
+                <ul className="mt-5 space-y-3">
+                  {plan.features.map((feature, index) => (
+                    <li key={index} className="flex items-start">
+                      <Check className="h-5 w-5 text-purple-500 mr-2 flex-shrink-0 mt-0.5" />
+                      <span className="text-sm text-gray-300">{feature}</span>
+                    </li>
+                  ))}
+                </ul>
+                <div className="mt-6">
+                  <a
+                    href="#signup"
+                    className="block w-full bg-purple-600 hover:bg-purple-700 text-white font-medium py-2 px-3 rounded-md text-center text-sm"
+                  >
+                    Get Started
+                  </a>
                 </div>
               </div>
-            ))}
-          </div>
+            </div>
+          ))}
         </div>
-      </section>
+      </div>
+    </section>
 
       {/* Testimonials */}
       <section id="testimonials" className="bg-gray-800 py-20">
@@ -270,6 +270,17 @@ export function LandingPage() {
 }
 
 const pricingPlans = [
+  {
+    name: 'Free',
+    price: '0$',
+    features: [
+      '3 Social Media Accounts',
+      '100 Free Tokens',
+      'Basic Analytics',
+      'Content Calendar',
+      'Email Support'
+    ]
+  },
   {
     name: 'Starter',
     price: '29',

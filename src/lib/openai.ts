@@ -3,7 +3,7 @@ import type { ContentStrategy } from './types';
 import { getCustomModels } from './api';
 import Groq from 'groq-sdk';
 // import { encode } from 'tiktoken';
-import { PYTHON_SERVER_URI  , GROK_API_KEY } from '../constants';
+import { PYTHON_SERVER_URI  , GROK_API_KEY, BACKEND_APIPATH } from '../constants';
 
 // Initialize OpenAI client
 
@@ -283,14 +283,11 @@ export async function generateImage(prompt: string) {
   return response.data[0].url;
 }
 
-export async function generatePostFromCustomModel(prompt : string )
+export async function generatePostFromCustomModel(prompt : string , model : any   )
 {
   try {
-    const customModels  = await getCustomModels() ;  
-    const model = customModels.find((model) => model.selected == true ) 
     console.log("selected model found = " ,model )
-    if(model) 
-    {
+   
       const response = await openai.chat.completions.create({
         model : model?.custom_model,
         messages: [{ "role": "system", "content": "Marv is a factual chatbot that is also sarcastic." } , { role: "user", content: prompt  }],
@@ -299,30 +296,7 @@ export async function generatePostFromCustomModel(prompt : string )
 
       console.log("Response:", response.choices[0].message.content);
       
-      return response.choices[0].message.content ; 
-    }
-    else{
-      const response = await fetch(`${PYTHON_SERVER_URI.BASEURL}/api/process`, {
-            method: 'POST',
-            headers: {
-              'Content-Type': 'application/json'
-            },
-            body: JSON.stringify(
-              {
-                "keyword": prompt,
-                "source": ["arxiv"],
-                "converted_source": ["instagram"],
-                "content_types": ["text"]
-              }
-            )
-          });
-          const data = await response.json() ; 
-        
-          console.log("response from the server post generation api " , data ) ; 
-        console.log("Response:", data.results[0].text[0]);
-        return data?.results[0]?.text[0] ;  
-    }
-    
+      return response.choices[0].message.content ;
   } catch (error) {
     console.error("Error using fine-tuned model:", error);
   }
@@ -352,41 +326,30 @@ return data?.results[0]?.text[0] ;
 
 
 export async function generatePostUsingGrok(
+  
   topic: string,
   platform: 'twitter' | 'linkedin' | 'instagram',
   tone?: string
 ): any  {
-  const platformGuide = {
-    twitter: 'short, engaging, under 280 characters',
-    linkedin: 'professional tone, business-focused',
-    instagram: 'visual, engaging, with emojis and hashtags'
-  };
-  const prompt = `Create a ${platform} post about "${topic}". 
-  Make it ${platformGuide[platform]}${tone ? ` with a ${tone} tone` : ''}. 
-  Avoid using any markdown formatting like **, *, or __. Just return plain text without styling symbols.`;
-  console.log("grok api key --------------------------------- >" , GROK_API_KEY) ;
+
+
+  console.log("inside generate post using grok api") ;
+  
+  
   try {
-    const groq = new Groq({ 
-        apiKey: GROK_API_KEY,
-        dangerouslyAllowBrowser: true,
-    });
-    const chatCompletion = await groq.chat.completions.create({
-      messages: [
-        {
-          role: "system",
-          content: "You are an expert social media copywriter."
-        },
-        {
-          role: "user",
-          content: prompt
-        }
-      ],
-        model: "llama3-8b-8192",
-    });
-    return chatCompletion.choices[0]?.message?.content;
+    const response = await fetch(`${BACKEND_APIPATH.BASEURL}/generate-content` , {
+      method : 'POST',
+      headers : {
+        'Content-Type': 'application/json',
+       
+    } , 
+    body : JSON.stringify({topic  , platform })
+  })
+    return response ;
+    // return chatCompletion.choices[0]?.message?.content;
 } catch (error) {
      console.error("Error calling Groq API:", error);
      throw error ; 
-    return null;
+     
 }
 }

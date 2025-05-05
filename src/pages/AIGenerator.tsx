@@ -13,6 +13,7 @@ import { useAuth } from '../context/AuthContext';
 import { useProfile } from '../hooks/useProfile.js';
 import { useNavigate } from 'react-router-dom';
 import { initializeTwitterAuth } from '../lib/twitter.js';
+import { useCustomModel } from '../hooks/useCustomModel.js';
 interface HistoryItem {
   id: string;
   topic: string;
@@ -48,7 +49,26 @@ export function AIGenerator() {
   const navigateTo = useNavigate() ; 
   const removeToast = () => {
     setTimeout(() => {setSuccess({state : false , message : ""})} , 2000)
-  }
+  }; 
+
+  const [model , setModel] = useState(['openai' , 'grok' ]) ; 
+  const [selectedModel , setSelectedModel] = useState<string>('grok') ;
+  const [customModels , setCustomModels] = useState<any>([]) ;
+  const {loadCustomModels } = useCustomModel() ; 
+
+  const handleCustomModelChange = (e : React.ChangeEvent<HTMLSelectElement>) => {
+
+    const modelId = e.target.value ;
+    const selectedModel  = customModels.find(((cm : any ) => cm?.id == modelId )) ; 
+    console.log("selected model ="  , selectedModel) ; 
+    setSelectedModel(selectedModel)  ; 
+  } 
+
+
+
+  
+
+  
 
   const {setRefreshHeader} = useAuth() ; 
 
@@ -57,6 +77,15 @@ export function AIGenerator() {
   const {accounts} = useSocialAccounts() ; 
 
   const {createPost} = useScheduledPosts() ;
+
+
+  useEffect(() => {
+    ;(async () => {
+      const models = await loadCustomModels() ;
+      console.log("models = " , models ) ; 
+      setCustomModels(models) ; 
+    })()
+  } , []  )
 
   async function handlePostTweet() {
     setSuccess({state : false , message : ''}) ; 
@@ -287,6 +316,12 @@ async function uploadToSupabase(imageData: File | Blob, fileName: string): Promi
         navigateTo("/pricing"); 
        return ; 
       } 
+
+    if(selectedPlatforms.length == 0 ) 
+    {
+      setError("please select platform") ;
+      return ; 
+    }
       
     if (!topic) {
       setError('Please enter a topic');
@@ -302,23 +337,32 @@ async function uploadToSupabase(imageData: File | Blob, fileName: string): Promi
       await handleImageGeneration() ;
     }
     try {
-
-
-      
-      const content = await generatePost(topic, selectedPlatforms[0] );
+      // const content = await generatePost(topic, selectedPlatforms[0] );
       // const content = await generatePostFromCustomModel(topic)
-      // const content = await generatePostUsingGrok(topic , selectedPlatforms[0]) ;
-
-      
-
+      let content = ''; 
+      if(selectedModel == "grok" )
+      {
+        const response = await generatePostUsingGrok(topic , selectedPlatforms[0]) ;
+        const data = await response.json() ;  
+        content = data?.message ; 
+        console.log("content = " , data  ) ;
+        
+      }
+      else if(selectedModel == "openai")
+      {
+        content = await generatePost(topic, selectedPlatforms[0] );
+      }
+      else{
+        content  = await generatePostFromCustomModel(topic , selectedModel ) ;
+      }
+     
       if(selectedPlatforms?.length === 0  ) 
       {
         setError("Please select platform");
         return ;
       } 
       // const content = await generatePostUsingGrok(topic , selectedPlatforms[0] ) ; 
-      console.log("content => " , content ) ; 
-      setGeneratedContent(content);
+      setGeneratedContent(content) ;
       const historyItem: HistoryItem = {
         id: crypto.randomUUID(),
         topic,
@@ -669,6 +713,38 @@ async function uploadToSupabase(imageData: File | Blob, fileName: string): Promi
                       {format}
                     </button>
                   ))}
+                </div>
+              </div>
+
+
+              <div>
+                <label className="block text-sm font-medium text-gray-300 mb-2">
+                  Model
+                </label>
+                <div className="flex flex-wrap gap-2">
+                  {model.map((mod , index ) => (
+                    <button
+                      key={index}
+                      onClick={() =>{ setSelectedModel(mod) }} 
+                      className={`px-3 py-1 rounded-full text-xs sm:text-sm ${
+                        selectedModel === mod 
+                          ? 'bg-purple-600 text-white'
+                          : 'bg-gray-700 text-gray-300 hover:bg-gray-600'
+                      }`}
+                    >
+                      {mod}
+                    </button>
+                  ))}
+
+                  {customModels?.length > 0 && <select value="custom-models"  onChange={(e) => {handleCustomModelChange(e )}} className="bg-gray-700 text-gray-300 border max-w-44 border-gray-600 rounded-md shadow-sm  text-sm sm:text-base">
+                  <option value="custom-models" disabled>Custom Models</option>
+                    {
+                      
+                      customModels.map((cm : any , index) => {
+                        return <option key={index} value={cm?.id}>{cm?.model_name}</option>
+                      })
+                    }
+                  </select>}
                 </div>
               </div>
 
