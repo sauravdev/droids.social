@@ -234,6 +234,7 @@ export async function getContentStrategies() {
   return strategies;
 }
 
+
 export async function saveContentStrategy(strategy: Omit<Tables['content_strategies']['Insert'], 'profile_id'>) {
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) throw new Error('No user found');
@@ -259,6 +260,22 @@ export async function getContentPlans() {
     .eq('profile_id', user.id)
     .order('created_at', { ascending: false });
 
+  if (error) throw error;
+  return plans;
+}
+
+// fetch content plans with matching strategy id and profile id 
+
+export async function getContentPlansWithSpecificStrategyId(strategyId : string) {
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user) throw new Error('No user found');
+
+  const { data: plans, error } = await supabase
+    .from('content_plans')
+    .select('*')
+    .eq('profile_id', user.id)
+    .eq('strategy_id', strategyId)
+    .order('created_at', { ascending: false });
   if (error) throw error;
   return plans;
 }

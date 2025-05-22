@@ -1,28 +1,42 @@
-import React, { useEffect, useState } from 'react';
-import { useContentStrategy } from '../hooks/useContentStrategy';
-import { useContentPlan } from '../hooks/useContentPlan';
-import { generateContentStrategy } from '../lib/openai';
-import { PostGenerator } from '../components/PostGenerator';
-import { ScheduleModal } from '../components/ScheduleModal';
-import { supabase } from '../lib/supabase';
-import type { ContentPlan, ContentStrategy as ContentStrategyType } from '../lib/types';
-import { Loader, Plus, X, Calendar } from 'lucide-react';
-import {useScheduledPosts} from '../hooks/useScheduledPosts'
-import { getContentPlans, getSocialMediaAccountInfo } from '../lib/api';
-import { BACKEND_APIPATH } from '../constants';
-import { useProfile } from '../hooks/useProfile';
-import { useAuth } from '../context/AuthContext';
-import { useNavigate } from 'react-router-dom';
-import { useSocialAccounts } from '../hooks/useSocialAccounts';
+import React, { useEffect, useState } from "react";
+import { useContentStrategy } from "../hooks/useContentStrategy";
+import { useContentPlan } from "../hooks/useContentPlan";
+import { generateContentStrategy } from "../lib/openai";
+import { PostGenerator } from "../components/PostGenerator";
+import { ScheduleModal } from "../components/ScheduleModal";
+import { supabase } from "../lib/supabase";
+import type {
+  ContentPlan,
+  ContentStrategy as ContentStrategyType,
+} from "../lib/types";
+import { Loader, Plus, X, Calendar } from "lucide-react";
+import { useScheduledPosts } from "../hooks/useScheduledPosts";
+import {
+  getContentPlans,
+  getContentPlansWithSpecificStrategyId,
+  getContentStrategies,
+  getSocialMediaAccountInfo,
+} from "../lib/api";
+import { BACKEND_APIPATH } from "../constants";
+import { useProfile } from "../hooks/useProfile";
+import { useAuth } from "../context/AuthContext";
+import { useNavigate } from "react-router-dom";
+import { useSocialAccounts } from "../hooks/useSocialAccounts";
+import { useCustomModel } from "../hooks/useCustomModel";
 
 interface ContentPlanCardProps {
   plan: ContentPlan;
   onSave: (planId: string, updates: Partial<ContentPlan>) => Promise<void>;
   onSchedule: (plan: ContentPlan) => void;
-  setSelectedPlan : (action: any) => void
+  setSelectedPlan: (action: any) => void;
 }
 
-function ContentPlanCard({ plan, onSave, onSchedule , setSelectedPlan  }: ContentPlanCardProps) {
+function ContentPlanCard({
+  plan,
+  onSave,
+  onSchedule,
+  setSelectedPlan,
+}: ContentPlanCardProps) {
   return (
     <div className="bg-gray-800 rounded-lg p-4 flex flex-col justify-between">
       <h3 className="text-lg font-medium text-white mb-2">{plan.topic}</h3>
@@ -30,55 +44,120 @@ function ContentPlanCard({ plan, onSave, onSchedule , setSelectedPlan  }: Conten
         plan={plan}
         onSave={(updates) => onSave(plan.id, updates)}
         onSchedule={() => onSchedule(plan)}
-        setSelectedPlan = {setSelectedPlan}
+        setSelectedPlan={setSelectedPlan}
       />
     </div>
   );
 }
 interface Success {
-  state : boolean ; 
-  message : string 
+  state: boolean;
+  message: string;
 }
 export function ContentStrategy() {
-  const { strategies, loading: strategiesLoading, error: strategiesError, createStrategy } = useContentStrategy();
-  const { loading: plansLoading, error: plansError, createPlan, updatePlan } = useContentPlan();
-  const [niche, setNiche] = useState('');
-  const [plans , setPlans ] = useState<any>([]) ;
+  const {
+    strategies,
+    loading: strategiesLoading,
+    error: strategiesError,
+    createStrategy,
+  } = useContentStrategy();
+  const {
+    loading: plansLoading,
+    error: plansError,
+    createPlan,
+    updatePlan,
+  } = useContentPlan();
+  const [niche, setNiche] = useState("");
+  const [plans, setPlans] = useState<any>([]);
   const [goals, setGoals] = useState<string[]>([]);
-  const [newGoal, setNewGoal] = useState('');
+  const [newGoal, setNewGoal] = useState("");
   const [generating, setGenerating] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [selectedPlan, setSelectedPlan] = useState<ContentPlan | null>(null);
   const [showScheduleModal, setShowScheduleModal] = useState(false);
-  const {profile , updateProfile } = useProfile() ; 
-  const [success , setSuccess] = useState<Success>({state : false , message : ''})    ;
-  const navigateTo = useNavigate() ; 
-  const {accounts } = useSocialAccounts() ; 
-  const [refreshPlans , setRefreshPlans ] = useState<boolean>(false) ; 
+  const { profile, updateProfile } = useProfile();
+  const [success, setSuccess] = useState<Success>({
+    state: false,
+    message: "",
+  });
+  const navigateTo = useNavigate();
+  const { accounts } = useSocialAccounts();
+  const [refreshPlanss, setRefreshPlanss] = useState<boolean>(false);
 
+  const [allStrategies, setAllStrategies] = useState([]);
+  const [selectedStrategy, setSelectedStrategy] = useState("");
+
+  const [loader, setLoader] = useState(false);
+
+  const { loadCustomModels } = useCustomModel();
+  // const [models, setModels] = useState(["grok", "openai"]);
+  // const [selectedModel, setSelectedModel] = useState<string>(models?.[0]);
+
+  const { models, setSelectedModel, selectedModel } = useAuth();
+
+  const onChangeStrategyHandler = async (e: any) => {
+    console.log("function triggered ... ");
+    console.log("value ===== ", e.target.value);
+    const id = e.target.value;
+    if (!id) return;
+    setLoader(true);
+    let newPlans = [];
+    try {
+      const strategy = allStrategies.find((strategy) => strategy?.id === id);
+
+      newPlans = await getContentPlansWithSpecificStrategyId(id);
+      setPlans(newPlans);
+      // console.log("nicheeeeeeeeeeeeeee => " , strategy?.niche)
+      setSelectedStrategy(strategy?.niche);
+      console.log("new plans = ", newPlans);
+    } catch (err: any) {
+      setError(err.message);
+    } finally {
+      setLoader(false);
+    }
+  };
 
   useEffect(() => {
-    ;(async () => {
-       try {
-            const data = await getContentPlans();
-            setPlans(data);
-            console.log('plans = ' , plans ) ; 
-          } catch (err: any) {
-            setError(err.message);
-          } 
-    })()
-  } , [refreshPlans] ) ; 
+    // ;(async () => {
+    //   const customModels = await loadCustomModels() ;
+    //   console.log("custom models  = " , customModels ) ;
+    //   if(customModels && customModels?.length > 0 )
+    //   {
+    //     setModels((prev) => {
+    //     return [
+    //       ...prev , ...customModels
+    //     ]
+    //   })
+    //   }
+    // })() ;
+    (async () => {
+      try {
+        const response = await getContentStrategies();
 
-  
-  const {setRefreshHeader }  = useAuth() ; 
+        if (response?.length > 0) {
+          console.log("response = ", response);
+          setAllStrategies(response);
+          const data = await getContentPlansWithSpecificStrategyId(
+            response[0]?.id
+          );
+          setPlans(data);
+          // setSelectedStrategy(response[0]?.niche)
+        }
+      } catch (err: any) {
+        console.log("error = ", err);
+        setError(err?.message);
+      }
+    })();
+  }, [refreshPlanss]);
 
-  const {createPost} = useScheduledPosts() ; 
+  const { setRefreshHeader } = useAuth();
+
+  const { createPost } = useScheduledPosts();
 
   const handleAddGoal = (e: React.FormEvent) => {
     e.preventDefault();
     if (newGoal.trim()) {
       setGoals([...goals, newGoal.trim()]);
-      setNewGoal('');
+      setNewGoal("");
     }
   };
 
@@ -87,19 +166,17 @@ export function ContentStrategy() {
   };
 
   const handleGenerateStrategy = async () => {
-    if(accounts?.length == 0 ) 
-    {
-      setError("Please connect atleast one account first ....")
-      return  ;
+    if (accounts?.length == 0) {
+      setError("Please connect atleast one account first ....");
+      return;
     }
-    if((profile?.tokens - 10 ) < 0 ) 
-      {
-      setError("You do not have enough tokens for strategy generation ..") ; 
-      navigateTo("/pricing") ;
-       return ; 
-      } 
+    if (profile?.tokens - 10 < 0) {
+      setError("You do not have enough tokens for strategy generation ..");
+      navigateTo("/pricing");
+      return;
+    }
     if (!niche || goals.length === 0) {
-      setError('Please provide a niche and at least one goal');
+      setError("Please provide a niche and at least one goal");
       return;
     }
 
@@ -107,18 +184,22 @@ export function ContentStrategy() {
     setError(null);
 
     try {
-      const platforms = accounts.map((account) => account.platform ) ; 
-      const { data: { user } } = await supabase.auth.getUser();
-      if (!user) throw new Error('No authenticated user found');
-      console.log("accounts = " , accounts ) ; 
-      const strategy = await generateContentStrategy(niche, goals , platforms  );
+      const platforms = accounts.map((account) => account.platform);
+      const {
+        data: { user },
+      } = await supabase.auth.getUser();
+      if (!user) throw new Error("No authenticated user found");
+      console.log("accounts = ", accounts);
+      const strategy = await generateContentStrategy(niche, goals, platforms);
       const savedStrategy = await createStrategy({
         profile_id: user.id,
         niche,
         goals,
         monthly_theme: strategy.monthly_theme,
-        weekly_plans: strategy.weekly_plans
+        weekly_plans: strategy.weekly_plans,
       });
+
+      console.log("strategy = ", savedStrategy);
 
       // Create content plans for each post
       for (const week of strategy.weekly_plans) {
@@ -131,108 +212,135 @@ export function ContentStrategy() {
               format: post.format,
               topic: post.topic,
               suggestion: post.suggestion,
-              status: 'pending',
-              scheduled_for: null
+              status: "pending",
+              scheduled_for: null,
             });
           }
         }
       }
-      setRefreshPlans((prev) => !prev) ; 
+
       // Reset form
-      setNiche('');
+      setNiche("");
       setGoals([]);
-      if((profile?.tokens - 10 ) >= 0 ) 
-        {
-          await updateProfile({tokens : profile?.tokens - 10 })
-          setRefreshHeader((prev) => !prev) ; 
-        } 
+      if (profile?.tokens - 10 >= 0) {
+        await updateProfile({ tokens: profile?.tokens - 10 });
+        setRefreshHeader((prev) => !prev);
+      }
     } catch (err: any) {
       setError(err.message);
     } finally {
+      setRefreshPlanss((prev) => !prev);
       setGenerating(false);
     }
   };
 
-  const handleSchedule = async (strategyId  : string , platform : string , format : string , topic  :string  , suggestion : string , status : string ,  scheduled_for : string    ) => {
+  const handleSchedule = async (
+    strategyId: string,
+    platform: string,
+    format: string,
+    topic: string,
+    suggestion: string,
+    status: string,
+    scheduled_for: string
+  ) => {
     if (!selectedPlan) return;
-    // console.log("scheduling for date = "  , date ) ; 
-    const { data: { user } } = await supabase.auth.getUser();
-    if (!user) throw new Error('No authenticated user found');
+    // console.log("scheduling for date = "  , date ) ;
+    const {
+      data: { user },
+    } = await supabase.auth.getUser();
+    if (!user) throw new Error("No authenticated user found");
 
     //creating a schedule
     try {
       const response = await createPost({
         profile_id: user.id,
-        platform : platform,
-        content : suggestion ,
-        media_urls : [] , 
+        platform: platform,
+        content: suggestion,
+        media_urls: [],
         scheduled_for,
-        status  , 
+        status,
       });
-      console.log("response  = " , response ) ; 
-      const jobId = response?.id ;
-      if(platform == "instagram") 
-            {
-              const accountInfo = await getSocialMediaAccountInfo("instagram") ; 
-              const {access_token , userId } = accountInfo  ; 
-              const response  = await fetch(`${BACKEND_APIPATH.BASEURL}/schedule/post/instagram` , {
-                method : "POST" ,
-                headers: {
-                  'Authorization': `Bearer ${access_token}`, 
-                  "Content-Type" : "application/json" ,
-                } , 
-                body : JSON.stringify({ IG_USER_ID  : userId , date : scheduled_for ,  caption : suggestion, jobId })
-        
-              })
-              const data = await response.json() 
-              console.log("scheduled insta post api " , data ) ;  
-              setSuccess({state : true , message : "Content Scheduled Successfully"}) ;
-               
-      
-            }
-            else if (platform == "linkedin") 
-            {
-               const accountInfo = await getSocialMediaAccountInfo("linkedin") ; 
-              const {access_token , userId  } = accountInfo  ;
-              const response = await fetch(`${BACKEND_APIPATH.BASEURL}/schedule/post/linkedin`,
-                {
-                  method: 'POST',
-                  headers: {
-                    'Authorization': `Bearer ${access_token}`,
-                    'Content-Type': 'application/json',
-                  },
-                  body: JSON.stringify({ id :userId,  text: suggestion  , date : scheduled_for  , jobId }),
-                }
-              );
-          
-              const data = await response.json() ; 
-              console.log(data)
-              setSuccess({state : true , message : "Content Scheduled Successfully"}) ;
+      console.log("response  = ", response);
+      const jobId = response?.id;
+      if (platform == "instagram") {
+        const accountInfo = await getSocialMediaAccountInfo("instagram");
+        const { access_token, userId } = accountInfo;
+        const response = await fetch(
+          `${BACKEND_APIPATH.BASEURL}/schedule/post/instagram`,
+          {
+            method: "POST",
+            headers: {
+              Authorization: `Bearer ${access_token}`,
+              "Content-Type": "application/json",
+            },
+            body: JSON.stringify({
+              IG_USER_ID: userId,
+              date: scheduled_for,
+              caption: suggestion,
+              jobId,
+            }),
+          }
+        );
+        const data = await response.json();
+        console.log("scheduled insta post api ", data);
+        setSuccess({ state: true, message: "Content Scheduled Successfully" });
+      } else if (platform == "linkedin") {
+        const accountInfo = await getSocialMediaAccountInfo("linkedin");
+        const { access_token, userId } = accountInfo;
+        const response = await fetch(
+          `${BACKEND_APIPATH.BASEURL}/schedule/post/linkedin`,
+          {
+            method: "POST",
+            headers: {
+              Authorization: `Bearer ${access_token}`,
+              "Content-Type": "application/json",
+            },
+            body: JSON.stringify({
+              id: userId,
+              text: suggestion,
+              date: scheduled_for,
+              jobId,
+            }),
+          }
+        );
 
-      
-            }
-            else if(platform == "twitter") 
-            {
-                
-                const scheduledResponse = await fetch(`${BACKEND_APIPATH.BASEURL}/schedule/post/api` , {method : "POST"   , headers: {
-                'Content-Type': 'application/json',
-              } , body : JSON.stringify({data : suggestion , date  : scheduled_for , jobId})})
-              const data =  await scheduledResponse.json()  ;
-              console.log("scheduled response from API  =  "  , data ) ;
-              setSuccess({state : true , message : "Content Scheduled Successfully"}) ;
-            }
-            else{
-              console.warn("Invalid platform selected") ;
-            }
+        const data = await response.json();
+        console.log(data);
+        setSuccess({ state: true, message: "Content Scheduled Successfully" });
+      } else if (platform == "twitter") {
+        const scheduledResponse = await fetch(
+          `${BACKEND_APIPATH.BASEURL}/schedule/post/api`,
+          {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+            },
+            body: JSON.stringify({
+              data: suggestion,
+              date: scheduled_for,
+              jobId,
+            }),
+          }
+        );
+        const data = await scheduledResponse.json();
+        console.log("scheduled response from API  =  ", data);
+        setSuccess({ state: true, message: "Content Scheduled Successfully" });
+      } else {
+        console.warn("Invalid platform selected");
+      }
     } catch (err: any) {
       setError(err.message);
-    }
-    finally{
+    } finally {
       setShowScheduleModal(false);
       setSelectedPlan(null);
     }
   };
-  
+
+  const handleModelChange = (e) => {
+    const model = e.target.value;
+    setSelectedModel(model);
+    console.log("selected model = ", model);
+  };
 
   if (strategiesLoading || plansLoading) {
     return (
@@ -241,24 +349,26 @@ export function ContentStrategy() {
       </div>
     );
   }
-  
+  if (loader) {
+    return (
+      <div className="flex items-center justify-center min-h-screen">
+        <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-purple-500"></div>
+      </div>
+    );
+  }
+
   return (
     <div className="space-y-8">
       <div className="flex justify-between items-center">
-        <h1 className="text-3xl font-bold text-white">Content Strategy</h1>
-        <button
-          onClick={() => window.scrollTo({ top: 0, behavior: 'smooth' })}
-          className="bg-purple-600 hover:bg-purple-700 text-white px-4 py-2 rounded-lg flex items-center space-x-2"
-        >
-          <Plus className="h-5 w-5" />
-          <span>New Strategy</span>
-        </button>
+        <h1 className="text-3xl font-bold text-white">
+          AI Post Strategy and Content Generator
+        </h1>
       </div>
 
       {/* Strategy Generator */}
       <div className="bg-gray-800 rounded-xl p-6">
-        <h2 className="text-xl font-bold text-white mb-4">Generate New Strategy</h2>
-        
+        {/* <h2 className="text-xl font-bold text-white mb-4">Generate New Strategy</h2> */}
+
         {error && (
           <div className="bg-red-900 text-white px-4 py-2 rounded-md text-sm mb-4">
             {error}
@@ -266,14 +376,17 @@ export function ContentStrategy() {
         )}
 
         {success.state && (
-              <div className="bg-green-600 text-white px-3 py-2 my-3 sm:px-4 rounded-md text-sm">
-                {success.message}
-              </div>
+          <div className="bg-green-600 text-white px-3 py-2 my-3 sm:px-4 rounded-md text-sm">
+            {success.message}
+          </div>
         )}
 
         <div className="space-y-4">
           <div>
-            <label htmlFor="niche" className="block text-sm font-medium text-gray-300 mb-1">
+            <label
+              htmlFor="niche"
+              className="block text-sm font-medium text-gray-300 mb-1"
+            >
               Business Niche
             </label>
             <input
@@ -345,6 +458,71 @@ export function ContentStrategy() {
         </div>
       </div>
 
+      <div className="flex gap-4 ">
+
+        {allStrategies?.length > 0 && (
+          <div className="flex-1 relative">
+            <select
+              // value ={selectedStrategy}
+              onChange={onChangeStrategyHandler}
+              className="block w-full px-4 py-3 pr-8 leading-tight bg-gray-700  border-gray-300 text-gray-200 rounded-md shadow-sm appearance-none focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+            >
+              <option value="" disabled selected>
+                Select a strategy
+              </option>
+              {allStrategies.map((strategy) => (
+                <option
+                  className="capitalize "
+                  key={strategy?.id}
+                  value={strategy?.id}
+                >
+                  {strategy?.niche}
+                </option>
+              ))}
+            </select>
+            <div className="absolute inset-y-0 right-0 flex items-center px-2 pointer-events-none">
+              <svg
+                className="w-4 h-4 text-gray-200"
+                fill="currentColor"
+                viewBox="0 0 20 20"
+              >
+                <path
+                  fillRule="evenodd"
+                  d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z"
+                  clipRule="evenodd"
+                />
+              </svg>
+            </div>
+          </div>
+        )}
+        {models && models?.length > 0 && (
+          <div className=" flex-1 relative">
+            <select
+              onChange={handleModelChange}
+              className="block  appearance-none w-full  bg-gray-700 border border-gray-300 hover:border-gray-400 px-4 py-2 pr-8 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-gray-200"
+            >
+              <option className="capitalize" value="" disabled selected>
+                Select a model
+              </option>
+              {models.map((model) => (
+                <option key={model} value={model} className="py-1 capitalize">
+                  {model}
+                </option>
+              ))}
+            </select>
+            <div className="pointer-events-none absolute inset-y-0 right-0 flex items-center px-2 text-gray-200">
+              <svg
+                className="h-4 w-4 fill-current"
+                xmlns="http://www.w3.org/2000/svg"
+                viewBox="0 0 20 20"
+              >
+                <path d="M9.293 12.95l.707.707L15.657 8l-1.414-1.414L10 10.828 5.757 6.586 4.343 8z" />
+              </svg>
+            </div>
+          </div>
+        )}
+        
+      </div>
       {/* Content Plans */}
       {plans.length > 0 && (
         <div className="space-y-4">
@@ -355,12 +533,11 @@ export function ContentStrategy() {
                 key={plan.id}
                 plan={plan}
                 onSave={updatePlan}
-            
                 onSchedule={(plan) => {
-                  console.log("scheduling plan = " , plan ) ;
+                  console.log("scheduling plan = ", plan);
                   setSelectedPlan(plan);
                   setShowScheduleModal(true);
-                  // add logic to schedule post 
+                  // add logic to schedule post
                 }}
                 setSelectedPlan={setSelectedPlan}
               />
@@ -373,7 +550,17 @@ export function ContentStrategy() {
       {showScheduleModal && selectedPlan && (
         <ScheduleModal
           plan={selectedPlan}
-          onSchedule={(scheduled_for : string ) => {handleSchedule(selectedPlan?.strategy_id , selectedPlan?.platform , selectedPlan?.format , selectedPlan?.topic , selectedPlan?.suggestion , selectedPlan?.status , scheduled_for)}}
+          onSchedule={(scheduled_for: string) => {
+            handleSchedule(
+              selectedPlan?.strategy_id,
+              selectedPlan?.platform,
+              selectedPlan?.format,
+              selectedPlan?.topic,
+              selectedPlan?.suggestion,
+              selectedPlan?.status,
+              scheduled_for
+            );
+          }}
           onClose={() => {
             setShowScheduleModal(false);
             setSelectedPlan(null);

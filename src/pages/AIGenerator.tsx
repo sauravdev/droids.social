@@ -97,7 +97,7 @@ export function AIGenerator() {
         'Accept': 'application/json',
         'Content-Type': 'application/json'
       }, method :  "POST" ,body : JSON.stringify({access_token , refresh_token , data  :generatedContent} )} )
-      const data = await response.json() ; 
+      const data = await response.json() ;  
       console.log(data ) ;
       if(response?.status >= 400  ) 
       {
@@ -343,9 +343,10 @@ async function uploadToSupabase(imageData: File | Blob, fileName: string): Promi
       if(selectedModel == "grok" )
       {
         const response = await generatePostUsingGrok(topic , selectedPlatforms[0]) ;
-        const data = await response.json() ;  
-        content = data?.message ; 
-        console.log("content = " , data  ) ;
+        // const data = await response.json() ;  
+        // content = data?.message ; 
+        console.log("content = " , response  ) ;
+        content = response ;
         
       }
       else if(selectedModel == "openai")

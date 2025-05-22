@@ -5,20 +5,27 @@ import { supabase, checkSupabaseConnection } from '../lib/supabase';
 import { getProfile } from '../lib/api';
 import { useSocialAccounts } from '../hooks/useSocialAccounts';
 import { getProfileData } from '../utils/profile';
+import { useCustomModel } from '../hooks/useCustomModel';
 
 interface AuthContextType {
   session: Session | null;
   loading: boolean;
   isFirstLogin: boolean;
   connectionError: string | null;
-  refreshHeader: boolean ,
-  setRefreshHeader: React.Dispatch<React.SetStateAction<boolean>> 
-  paymentStatus : boolean , 
-  setPaymentStatus: React.Dispatch<React.SetStateAction<boolean>> 
-  tokens  : number , 
-  setTokens :  React.Dispatch<React.SetStateAction<number>> 
-  isUsingGoogleAuth  : boolean , 
-  setIsUsingGoogleAuth :React.Dispatch<React.SetStateAction<boolean>> 
+  refreshHeader: boolean;
+  setRefreshHeader: React.Dispatch<React.SetStateAction<boolean>>;
+  paymentStatus: boolean;
+  setPaymentStatus: React.Dispatch<React.SetStateAction<boolean>>;
+  tokens: number;
+  setTokens: React.Dispatch<React.SetStateAction<number>>;
+  isUsingGoogleAuth: boolean;
+  setIsUsingGoogleAuth: React.Dispatch<React.SetStateAction<boolean>>;
+  models: string[];
+  setModels: React.Dispatch<React.SetStateAction<string[]>>;
+  selectedModel: string;
+  setSelectedModel: React.Dispatch<React.SetStateAction<string>>;
+  customModels  : any[] , 
+  setCustomModels : React.Dispatch<React.SetStateAction<any[]>>;
 }
 
 const AuthContext = createContext<AuthContextType>({
@@ -46,12 +53,36 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [paymentStatus , setPaymentStatus ] = useState<boolean>(false) ; 
   const [tokens , setTokens ] = useState(0) ;
   const [isUsingGoogleAuth , setIsUsingGoogleAuth] = useState(false) ;
-  
+  const [models, setModels] =  useState<string[]>(["grok", "openai"]);
+  const [selectedModel, setSelectedModel] =  useState<string>(models[0] || "");
+  const {loadCustomModels } = useCustomModel() ; 
+  const {customModels , setCustomModels} = useState<any>([]);
+
+  // models, setModels , selectedModel, setSelectedModel
   const navigate = useNavigate();
 
   useEffect(() => {
     console.log("use effect  tokens = " , tokens ) ; 
   } , [tokens ]  )   ;  
+
+
+  useEffect(() => {
+
+    ;(async () => {
+      const customs = await loadCustomModels() ;
+      console.log("models = " , customs ) ; 
+      if(customs && customs?.length  > 0 )
+      {
+        console.log("customs = " , customs) ; 
+        const customModelsName = customs.map(custom   => custom?.custom_model) 
+        console.log("custom models only names = > " , customModelsName)
+        setModels(prev => [
+          ...prev , ...customModelsName 
+        ])
+      }
+    })()
+
+  } , [] ); 
   
 
 
@@ -72,7 +103,6 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         return false;
     }
     console.log("data from the is month record present (instagram) = " , data)  ;
-
     if(data.length == 0 ) 
     {
     const { data: { user } } = await supabase.auth.getUser();
@@ -101,6 +131,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
 
 async function isThisMonthRecordPresentForTwitter(tableName: string): Promise<boolean> {
+  console.log("is this month record present ? ")
   const now = new Date();
   const todayDate = now.toISOString().split('T')[0];
   const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1).toISOString().split('T')[0]; 
@@ -122,14 +153,15 @@ async function isThisMonthRecordPresentForTwitter(tableName: string): Promise<bo
   {
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) throw new Error('No authenticated user found');
+  console.log("inserting one month record ----------------")
   const { error: insertError } = await supabase.from(tableName).insert([
     {
-        reach : 100,
-        engagement : 63.5,
-        post : 5,
+        reach : 1,
+        engagement : 2,
+        post : 35,
         followers : 1,
         date: todayDate,
-        platform : "instagram" ,
+        platform : "twitter" ,
         profileid : user?.id , 
     }
 ]);
@@ -244,6 +276,8 @@ useEffect(() => {
             setRefreshHeader((prev)=> !prev) ; 
             
           }
+
+          await isThisMonthRecordPresentForTwitter("account_analytics")
           
           if (!mounted) return;
  
@@ -327,7 +361,7 @@ useEffect(() => {
   // }, [session]);
 
   return (
-    <AuthContext.Provider value={{ session, loading, isFirstLogin, connectionError , refreshHeader , setRefreshHeader  , paymentStatus , setPaymentStatus  , tokens , setTokens , isUsingGoogleAuth , setIsUsingGoogleAuth }}>
+    <AuthContext.Provider value={{ session, loading, isFirstLogin, connectionError , refreshHeader , setRefreshHeader  , paymentStatus , setPaymentStatus  , tokens , setTokens , isUsingGoogleAuth , setIsUsingGoogleAuth ,  models, setModels , selectedModel, setSelectedModel}}>
       {connectionError ? (
         <div className="min-h-screen bg-gray-900 flex items-center justify-center p-4">
           <div className="bg-red-900 text-white px-6 py-4 rounded-lg max-w-md text-center">

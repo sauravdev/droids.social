@@ -291,7 +291,7 @@ export function ProfileSettings() {
 
       <div className="space-y-6">
         {/* Profile Images */}
-        <div className="bg-gray-800 rounded-xl overflow-hidden">
+        <div className="bg-gray-800 rounded-xl ">
           <ProfileImageUpload
             type="banner"
             currentUrl={settings?.banner_image_url || null}
@@ -456,9 +456,9 @@ export function ProfileSettings() {
         </form>
 
         {/* Social Accounts Section */}
-        <div className="bg-gray-800 rounded-xl p-6">
+        {/* <div className="bg-gray-800 rounded-xl p-6">
           <SocialAccountsManager selectedPlatform = {selectedPlatform}  setSelectedPlatform = {setSelectedPlatform} handleFetchProfileInfo = {handleFetchProfileInfo} />
-        </div>
+        </div> */}
       </div>
     </div>
     

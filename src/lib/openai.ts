@@ -1,12 +1,11 @@
-import OpenAI from 'openai';
-import type { ContentStrategy } from './types';
-import { getCustomModels } from './api';
-import Groq from 'groq-sdk';
+import OpenAI from "openai";
+import type { ContentStrategy } from "./types";
+import { getCustomModels } from "./api";
+import Groq from "groq-sdk";
 // import { encode } from 'tiktoken';
-import { PYTHON_SERVER_URI  , GROK_API_KEY, BACKEND_APIPATH } from '../constants';
+import { PYTHON_SERVER_URI, GROK_API_KEY, BACKEND_APIPATH } from "../constants";
 
 // Initialize OpenAI client
-
 
 // const countTokens = (text: string, model: string = "gpt-4o-mini") => {
 //   try {
@@ -18,13 +17,10 @@ import { PYTHON_SERVER_URI  , GROK_API_KEY, BACKEND_APIPATH } from '../constants
 //   }
 // };
 
-
-
 const openai = new OpenAI({
   apiKey: import.meta.env.VITE_OPENAI_API_KEY,
-  dangerouslyAllowBrowser: true // Note: In production, API calls should be made through a backend
+  dangerouslyAllowBrowser: true, // Note: In production, API calls should be made through a backend
 });
-
 
 interface ProcessRequest {
   keyword: string;
@@ -33,7 +29,6 @@ interface ProcessRequest {
   converted_source?: string[];
   content_types?: string[];
 }
-
 
 // async function processContent(data: ProcessRequest): Promise<void> {
 //   try {
@@ -48,14 +43,13 @@ interface ProcessRequest {
 //     if (!response.ok) {
 //       throw new Error(`HTTP error! status: ${response.status}`);
 //     }
-    
+
 //     const result = await response.json();
 //     console.log('API response:', result);
 //   } catch (error) {
 //     console.error('Error processing content:', error);
 //   }
 // }
-
 
 // const sample  = "in sarcastic mannar"
 
@@ -70,7 +64,9 @@ async function rateLimit() {
   const now = Date.now();
   const timeSinceLastRequest = now - lastRequestTime;
   if (timeSinceLastRequest < RATE_LIMIT_DURATION) {
-    await new Promise(resolve => setTimeout(resolve, RATE_LIMIT_DURATION - timeSinceLastRequest));
+    await new Promise((resolve) =>
+      setTimeout(resolve, RATE_LIMIT_DURATION - timeSinceLastRequest)
+    );
   }
   lastRequestTime = Date.now();
 }
@@ -89,33 +85,40 @@ function setCache<T>(key: string, data: T) {
   cache.set(key, { data, timestamp: Date.now() });
 }
 
-export async function generateContentStrategy(niche: string, goals: string[] , platforms  : any   ): Promise<ContentStrategy> {
-  let allowedPlatforms  = '';
-  for  (const  platform of platforms) {
-    allowedPlatforms = allowedPlatforms + platform + " | " ; 
+export async function generateContentStrategy(
+  niche: string,
+  goals: string[],
+  platforms: any
+): Promise<ContentStrategy> {
+  let allowedPlatforms = "";
+  for (const platform of platforms) {
+    allowedPlatforms = allowedPlatforms + platform + " | ";
   }
 
-  console.log("allowed platforms = " ,allowedPlatforms) ; 
+  console.log("allowed platforms = ", allowedPlatforms);
 
-  const cacheKey = `strategy:${niche}:${goals.join(',')}`;
+  const cacheKey = `strategy:${niche}:${goals.join(",")}`;
   const cached = checkCache<ContentStrategy>(cacheKey);
   if (cached) return cached;
   await rateLimit();
   try {
-    const prompt = `Create a monthly social media content strategy for a ${niche} topic designed to maximize reach, engagement, and virality, with the following goals: ${goals.join(', ')}. Craft posts that feel authentic, human-like, and resonate with the target audience, using trending tactics and platform-specific best practices.
+    const prompt = `You are an expert social media strategist.Create a weekly social media content strategy for a ${niche} topic designed to maximize reach, engagement, and virality, with the following goals: ${goals.join(
+      ", "
+    )}. Craft posts that feel authentic, human-like, and resonate with the target audience, using trending tactics and platform-specific best practices.
 
 Include:
-1. *Monthly Theme*: A compelling, overarching theme that ties the strategy together and aligns with the niche and goals.
-2. *Weekly Themes*: Four distinct, engaging weekly themes that build on the monthly theme and keep content fresh and varied.
-3. *Daily Content Suggestions*: Realistic, platform-optimized post ideas for ${allowedPlatforms} , covering all days of a 4-week month (28 days total).
-4. *Mix of Content Formats*: A balanced blend of formats (text, image, video, carousel, poll) with clear, actionable suggestions to spark engagement (e.g., questions, CTAs, relatable hooks).
+Daily Content Suggestions: Realistic, platform-optimized post ideas for ${allowedPlatforms} , covering all days of a week
+Mix of Content Formats: A balanced blend of formats (text, image, video, carousel, poll) with clear, actionable suggestions to spark engagement (e.g., questions, CTAs, relatable hooks).
+search internet and X, find latest trends and discussions in the domain: ${niche} , make sure the content ideas are based on those trends
 
-*Guidelines*:
+Guidelines:
 - Design posts to feel conversational, human-like, and authentic—no robotic or generic phrasing.
 - Incorporate viral elements like storytelling, humor, trending hashtags, or emotional hooks where relevant.
 - Tailor content to each platform’s audience and style (e.g., visual for Instagram, professional for LinkedIn, concise for Twitter).
 - Include at least 1 CTA per post (e.g., "Comment below," "Tag a friend," "Save this") to boost interaction.
 - Ensure variety: mix educational, promotional, entertaining, and community-building posts.
+- Post ideas should be detailed , niche and specialised in the domain of ${niche}
+- Posts ideas should also include informative posts
 
 Format the response as a structured JSON object with this schema:
 {
@@ -134,84 +137,96 @@ Format the response as a structured JSON object with this schema:
       }]
     }]
   }]
-}`;
+`;
 
     const completion = await openai.chat.completions.create({
       messages: [
         {
           role: "system",
-          content: "You are an expert social media strategist who creates detailed content plans."
+          content:
+            "You are an expert social media strategist who creates detailed content plans.",
         },
         {
           role: "user",
-          content: prompt
-        }
+          content: prompt,
+        },
       ],
       // model: "gpt-4-turbo-preview",
-      model  :"gpt-4o-mini",
-      response_format: { type: "json_object" }
+      model: "gpt-4o-mini",
+      response_format: { type: "json_object" },
     });
 
     const response = completion.choices[0].message.content;
-    if (!response) throw new Error('Failed to generate content strategy');
+    if (!response) throw new Error("Failed to generate content strategy");
     const strategy = JSON.parse(response);
     setCache(cacheKey, strategy);
     return strategy;
   } catch (error: any) {
-    console.error('OpenAI API Error:', error);
-    throw new Error(error.message || 'Failed to generate content strategy');
+    console.error("OpenAI API Error:", error);
+    throw new Error(error.message || "Failed to generate content strategy");
   }
 }
 
 export async function generatePost(
   topic: string,
-  platform: 'twitter' | 'linkedin' | 'instagram',
+  platform: "twitter" | "linkedin" | "instagram",
   tone?: string
 ): Promise<string> {
-  const cacheKey = `post:${topic}:${platform}:${tone || 'default'}`;
+  const cacheKey = `post:${topic}:${platform}:${tone || "default"}`;
   const cached = checkCache<string>(cacheKey);
-  if (cached) return cached;  
+  if (cached) return cached;
 
   await rateLimit();
 
   try {
     const platformGuide = {
-      twitter: 'short, engaging, under 280 characters',
-      linkedin: 'professional tone, business-focused',
-      instagram: 'visual, engaging, with emojis and hashtags'
+      twitter: "short, engaging, under 280 characters",
+      linkedin: "professional tone, business-focused",
+      instagram: "visual, engaging, with emojis and hashtags",
     };
-
-    const prompt = `Create a ${platform} post about "${topic}". 
-Make it ${platformGuide[platform]}${tone ? ` with a ${tone} tone` : ''}. 
-Avoid using any markdown formatting like **, *, or __. Just return plain text without styling symbols.`;
+    const goals = ["reach", "followers", "engagement"];
+    const prompt = `You are an expert social media . Create a niche post for topic : "${topic}".  designed to maximize reach, engagement, and virality, with the following goals: ${goals.join(
+      ", "
+    )}. Craft posts that feel authentic, human-like, and resonate with the target audience, using trending tactics and platform-specific best practices
+Guidelines:
+- the content should be based on the following content startegy : $strategy
+- the content should be tailored for  ${platform} platform
+- Make it ${platformGuide[platform]}${tone ? ` with a ${tone} tone` : ""}. 
+- search internet and X, find latest trends and discussions in the domain: ${topic} , make sure the content is based on those trends
+- Design posts to feel conversational, human-like, and authentic—no robotic or generic phrasing.
+- Incorporate viral elements like storytelling, humor, trending hashtags, or emotional hooks where relevant.
+- Include at least 1 CTA per post (e.g., "Comment below," "Tag a friend," "Save this") to boost interaction.
+- Make the content informative and useful
+- Post should be detailed , niche and specialised in the domain of ${topic}
+- Avoid using any markdown formatting like **, *, or __. Just return plain text without styling symbols.`;
 
     const completion = await openai.chat.completions.create({
       messages: [
         {
           role: "system",
-          content: "You are an expert social media copywriter."
+          content: "You are an expert social media copywriter.",
         },
         {
           role: "user",
-          content: prompt
-        }
+          content: prompt,
+        },
       ],
-      model  :"gpt-4o-mini",
+      model: "gpt-4o-mini",
       // model: "gpt-4-turbo-preview"
     });
-    // console.log("tokens in prompt = " , countTokens(prompt)) ; 
+    // console.log("tokens in prompt = " , countTokens(prompt)) ;
     const response = completion.choices[0].message.content;
-    console.log("response from handle generate " , response) ; 
-    // console.log("tokens in response = " , countTokens(response) ) ; 
+    console.log("response from handle generate ", response);
+    // console.log("tokens in response = " , countTokens(response) ) ;
 
     // const data = await generatePostFromCustomModel(prompt) ;
-    if (!response) throw new Error('Failed to generate post');
+    if (!response) throw new Error("Failed to generate post");
 
     setCache(cacheKey, response);
     return response;
   } catch (error: any) {
-    console.error('OpenAI API Error:', error);
-    throw new Error(error.message || 'Failed to generate post');
+    console.error("OpenAI API Error:", error);
+    throw new Error(error.message || "Failed to generate post");
   }
 }
 
@@ -228,47 +243,48 @@ export async function generateProfileContent(name: string, niche: string) {
     messages: [
       {
         role: "system",
-        content: "You are an expert at creating engaging professional profiles."
+        content:
+          "You are an expert at creating engaging professional profiles.",
       },
       {
         role: "user",
-        content: prompt
-      }
+        content: prompt,
+      },
     ],
-    model  :"gpt-4o-mini",
-    response_format: { type: "json_object" }
+    model: "gpt-4o-mini",
+    response_format: { type: "json_object" },
   });
 
   const response = completion.choices[0].message.content;
-  if (!response) throw new Error('Failed to generate profile content')
+  if (!response) throw new Error("Failed to generate profile content");
   // const response = await generatePostFromCustomModel(prompt) ;
-  return JSON.parse(response) ;
+  return JSON.parse(response);
 }
 
-
-
 export async function generateAIContentSuggestion() {
-const prompt = "Generate a JSON object containing social media growth tips for Instagram and Twitter. The object should have a key named \"tips\" with an array of at least 5 unique growth strategies. Each item in the array must follow this structure:\n\n{\n  \"type\": \"Category of the tip (e.g., Engagement, Hashtags, Content Strategy, Posting Time, Algorithm Optimization, etc.)\",\n  \"title\": \"A short and catchy title summarizing the tip\",\n  \"description\": \"A detailed explanation, including actionable advice on how to use this strategy effectively.\"\n}\n\nRequirements:\n- Include a mix of strategies such as engagement techniques, content optimization, posting frequency, audience interaction, and algorithm insights.\n- Ensure the response is a valid JSON object, properly formatted for direct use in a frontend application.";
+  const prompt =
+    'Generate a JSON object containing social media growth tips for Instagram and Twitter. The object should have a key named "tips" with an array of at least 5 unique growth strategies. Each item in the array must follow this structure:\n\n{\n  "type": "Category of the tip (e.g., Engagement, Hashtags, Content Strategy, Posting Time, Algorithm Optimization, etc.)",\n  "title": "A short and catchy title summarizing the tip",\n  "description": "A detailed explanation, including actionable advice on how to use this strategy effectively."\n}\n\nRequirements:\n- Include a mix of strategies such as engagement techniques, content optimization, posting frequency, audience interaction, and algorithm insights.\n- Ensure the response is a valid JSON object, properly formatted for direct use in a frontend application.';
 
-  // await postGenerationApi(prompt) ; 
+  // await postGenerationApi(prompt) ;
 
   const completion = await openai.chat.completions.create({
     messages: [
       {
         role: "system",
-        content: "You are an expert at creating engaging professional profiles."
+        content:
+          "You are an expert at creating engaging professional profiles.",
       },
       {
         role: "user",
-        content: prompt
-      }
+        content: prompt,
+      },
     ],
-    model  :"gpt-4o-mini",
-    response_format: { type: "json_object" }
+    model: "gpt-4o-mini",
+    response_format: { type: "json_object" },
   });
 
   const response = completion.choices[0].message.content;
-  if (!response) throw new Error('Failed to generate profile content');
+  if (!response) throw new Error("Failed to generate profile content");
   return JSON.parse(response);
 }
 
@@ -283,73 +299,94 @@ export async function generateImage(prompt: string) {
   return response.data[0].url;
 }
 
-export async function generatePostFromCustomModel(prompt : string , model : any   )
-{
+export async function generatePostFromCustomModel(topic : string, selectedPlatform : string ,  model: any) {
   try {
-    console.log("selected model found = " ,model )
-   
-      const response = await openai.chat.completions.create({
-        model : model?.custom_model,
-        messages: [{ "role": "system", "content": "Marv is a factual chatbot that is also sarcastic." } , { role: "user", content: prompt  }],
-        temperature: 0.8
-      });
+    console.log("selected model found = ", model);
+    const response = await openai.chat.completions.create({
+      model: model?.custom_model,
+      messages: [
+        {
+          role: "system",
+          content: "Marv is a factual chatbot that is also sarcastic.",
+        },
+        { role: "user", content: topic },
+      ],
+      temperature: 0.8,
+    });
 
-      console.log("Response:", response.choices[0].message.content);
-      
-      return response.choices[0].message.content ;
+    console.log("Response:", response.choices[0].message.content);
+
+    return response.choices[0].message.content;
   } catch (error) {
     console.error("Error using fine-tuned model:", error);
   }
 }
 
-export async function postGenerationApi(prompt:string) {
+export async function postGenerationApi(prompt: string) {
   const response = await fetch(`${PYTHON_SERVER_URI.BASEURL}/api/process`, {
-    method: 'POST',
+    method: "POST",
     headers: {
-      'Content-Type': 'application/json'
+      "Content-Type": "application/json",
     },
-    body: JSON.stringify(
-      {
-        "keyword": prompt,
-        "source": ["arxiv"],
-        "converted_source": ["instagram"],
-        "content_types": ["text"]
-      }
-    )
+    body: JSON.stringify({
+      keyword: prompt,
+      source: ["arxiv"],
+      converted_source: ["instagram"],
+      content_types: ["text"],
+    }),
   });
-  const data = await response.json() ; 
-  console.log("response from the server post generation api " , data ) ; 
+  const data = await response.json();
+  console.log("response from the server post generation api ", data);
   console.log("Response:", data.results[0].text[0]);
-return data?.results[0]?.text[0] ;  
+  return data?.results[0]?.text[0];
 }
-
-
 
 export async function generatePostUsingGrok(
-  
   topic: string,
-  platform: 'twitter' | 'linkedin' | 'instagram',
+  platform: "twitter" | "linkedin" | "instagram",
   tone?: string
-): any  {
+): any {
+  console.log("inside generate post using grok api");
 
-
-  console.log("inside generate post using grok api") ;
-  
-  
   try {
-    const response = await fetch(`${BACKEND_APIPATH.BASEURL}/generate-content` , {
-      method : 'POST',
-      headers : {
-        'Content-Type': 'application/json',
-       
-    } , 
-    body : JSON.stringify({topic  , platform })
-  })
-    return response ;
+    const response = await fetch(
+      `${BACKEND_APIPATH.BASEURL}/generate-content`,
+      {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ topic, platform }),
+      }
+    );
+    const data = await response.json() ;  
+    const content = data?.message ; 
+    return content;
     // return chatCompletion.choices[0]?.message?.content;
-} catch (error) {
-     console.error("Error calling Groq API:", error);
-     throw error ; 
-     
+  } catch (error) {
+    console.error("Error calling Groq API:", error);
+    throw error;
+  }
 }
+
+
+export async  function generatePostGeneric(topic : string , selectedPlatform : string  , model : string   ,  isCustomModel:boolean= false , selectedModel:string = '') 
+{
+  console.log("model used for generation   = " , model )
+  if(model == 'grok') 
+  {
+    const content = await generatePostUsingGrok(topic , selectedPlatform) ;
+    return content; 
+  }
+  else if(model == "openai") 
+  {
+    const content = await generatePost(topic , selectedPlatform );
+    return content ;
+  }
+  else {
+    if(model == "") return ;
+    // pass custom model to the api 
+    const content = await generatePostFromCustomModel(topic , selectedPlatform , selectedModel ) ;
+    return content ;
+  }
 }

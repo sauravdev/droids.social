@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { Loader, RefreshCw, Calendar, Save ,Twitter, Linkedin, Instagram } from 'lucide-react';
-import { generatePost } from '../lib/openai';
+import { generatePost, generatePostGeneric } from '../lib/openai';
 import type { ContentPlan } from '../lib/types';
 import Editor from './Editor';
 import { getSocialMediaAccountInfo } from '../lib/api';
@@ -8,6 +8,7 @@ import { BACKEND_APIPATH } from '../constants';
 import { initializeTwitterAuth } from '../lib/twitter';
 import aiMagic from '../assets/ai.png';
 import { useContentPlan } from '../hooks/useContentPlan';
+import { useAuth } from '../context/AuthContext';
 interface PostGeneratorProps {
   plan: ContentPlan;
   onSave: (updates: Partial<ContentPlan>) => Promise<void>;
@@ -29,6 +30,8 @@ export function PostGenerator({ plan, onSave, onSchedule,setSelectedPlan }: Post
   const [posting , setPosting ] = useState<boolean | null>(false);
   const [success  , setSuccess ] = useState<Success>({state : false , message : ''}) ; 
   const { updatePlan } = useContentPlan()  ;
+
+  const {selectedModel } = useAuth() 
 
   // useEffect(() => {
   //   console.log("----------------------selected plan =--------------------------- " , plan) ; 
@@ -155,7 +158,7 @@ export function PostGenerator({ plan, onSave, onSchedule,setSelectedPlan }: Post
     setLoading(true);
     setError(null);
     try {
-      const generated = await generatePost(plan.topic, plan.platform, tone);
+      const generated = await generatePostGeneric(plan.topic, plan.platform, selectedModel);
       const newPlan = {
         ...plan , 
         suggestion : generated 

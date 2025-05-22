@@ -1,10 +1,12 @@
 import { useEffect, useState } from 'react';
 import { Session } from '@supabase/supabase-js';
 import { supabase } from '../lib/supabase';
+import { useCustomModel } from './useCustomModel';
 
 export function useAuth() {
   const [session, setSession] = useState<Session | null>(null);
   const [loading, setLoading] = useState(true);
+ 
 
   useEffect(() => {
     // Get initial session
