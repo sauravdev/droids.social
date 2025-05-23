@@ -76,11 +76,14 @@ const getUserInfo = async (req, res) => {
 
   try {
     const userResponse = await fetch(
-      `https://graph.instagram.com/me?fields=id,username,account_type,media_count&access_token=${access_token}`
+      `https://graph.instagram.com/me?fields=id&access_token=${access_token}`
     );
 
     const userData = await userResponse.json();
     console.log("userData = " , userData )
+
+    console.log("Response status:", userResponse.status);
+    console.log("Response headers:", [...userResponse.headers]);
 
     if (userData.error) {
       return res.status(400).json({ error: userData.error.message });
