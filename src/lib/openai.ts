@@ -303,7 +303,7 @@ export async function generatePostFromCustomModel(topic : string, selectedPlatfo
   try {
     console.log("selected model found = ", model);
     const response = await openai.chat.completions.create({
-      model: model?.custom_model,
+      model , 
       messages: [
         {
           role: "system",
@@ -370,7 +370,7 @@ export async function generatePostUsingGrok(
 }
 
 
-export async  function generatePostGeneric(topic : string , selectedPlatform : string  , model : string   ,  isCustomModel:boolean= false , selectedModel:string = '') 
+export async  function generatePostGeneric(topic : string , selectedPlatform : string  , model : string  ) 
 {
   console.log("model used for generation   = " , model )
   if(model == 'grok') 
@@ -385,8 +385,9 @@ export async  function generatePostGeneric(topic : string , selectedPlatform : s
   }
   else {
     if(model == "") return ;
+    console.log("custom model used for generation => " , model ) ; 
     // pass custom model to the api 
-    const content = await generatePostFromCustomModel(topic , selectedPlatform , selectedModel ) ;
+    const content = await generatePostFromCustomModel(topic , selectedPlatform , model ) ;
     return content ;
   }
 }

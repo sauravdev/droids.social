@@ -45,20 +45,20 @@ const generateAccessToken = async (req, res) => {
       return res.status(500).json({error :  "Something went wrong : while fetching token"}) ;
     }
     const { access_token, user_id } = tokenData;
-    const longLivedTokenResponse = await fetch(
-      `https://graph.instagram.com/access_token?grant_type=ig_exchange_token&client_secret=${INSTAGRAM_APP_SECRET}&access_token=${access_token}`
-    );
+    // const longLivedTokenResponse = await fetch(
+    //   `https://graph.instagram.com/access_token?grant_type=ig_exchange_token&client_secret=${INSTAGRAM_APP_SECRET}&access_token=${access_token}`
+    // );
 
-    const longLivedTokenData = await longLivedTokenResponse.json();
-    console.log("Long-lived tokenData:", longLivedTokenData);
+    // const longLivedTokenData = await longLivedTokenResponse.json();
+    // console.log("Long-lived tokenData:", longLivedTokenData);
 
-    if (!longLivedTokenData.access_token) {
-      return res
-        .status(500)
-        .json({ error: "Something went wrong while fetching long-lived token" });
-    }
+    // if (!longLivedTokenData.access_token) {
+    //   return res
+    //     .status(500)
+    //     .json({ error: "Something went wrong while fetching long-lived token" });
+    // }
     res.status(200).json({
-      access_token: longLivedTokenData.access_token,
+      access_token: access_token,
       user_id , 
     });
   } catch (error) {

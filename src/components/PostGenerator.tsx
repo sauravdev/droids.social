@@ -159,6 +159,7 @@ export function PostGenerator({ plan, onSave, onSchedule,setSelectedPlan }: Post
     setError(null);
     try {
       const generated = await generatePostGeneric(plan.topic, plan.platform, selectedModel);
+      console.log("generated content = " , generated ) ; 
       const newPlan = {
         ...plan , 
         suggestion : generated 
