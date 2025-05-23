@@ -4,7 +4,7 @@ import { generateAccessToken , getUserInfo, scheduleContentHandler, uploadConten
 
 
 instagramRouter.post("/auth/instagram/token", generateAccessToken);
-instagramRouter.get("/auth/instagram/user/:access_token", getUserInfo );
+instagramRouter.post("/auth/instagram/user/:access_token", getUserInfo );
 instagramRouter.post("/upload/post/instagram" , uploadContentHandler)
 instagramRouter.post("/schedule/post/instagram" , scheduleContentHandler) ;
 instagramRouter.post("/publish/carousel/instagram" , publishInstagramCarousel) ;

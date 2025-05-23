@@ -6,6 +6,7 @@ import { BACKEND_APIPATH, REDIRECT_URIS , INSTAGRAM_CREDENTIALS } from "../const
 const loginWithInstagram = () => {
   localStorage.removeItem("code");
   localStorage.removeItem("instagram_access_token") ;
+  localStorage.removeItem("instagram_user_id") ;
   const authUrl = `https://www.instagram.com/oauth/authorize?enable_fb_login=0&force_authentication=1&client_id=${INSTAGRAM_CREDENTIALS.INSTAGRAM_CLIENT_ID}&redirect_uri=${REDIRECT_URIS.INSTAGRAM}&response_type=code&scope=instagram_business_basic%2Cinstagram_business_manage_messages%2Cinstagram_business_manage_comments%2Cinstagram_business_content_publish%2Cinstagram_business_manage_insights`;
   window.location.href = authUrl;
 };
@@ -22,11 +23,13 @@ const InstagramAuth: React.FC = () => {
         { headers: { 'Content-Type': 'application/json' }, method: "POST" , body  : JSON.stringify({code}) }
       );
       
-      const {access_token} = await response.json();
+      const {access_token , user_id} = await response.json();
       console.log("access_token = " , access_token); 
       console.log("token response (instagram ) " , access_token ) ;
       setUserAccessToken(access_token);
       localStorage.setItem("instagram_access_token", access_token);
+      localStorage.setItem("instagram_user_id", user_id);
+
     } catch (error) {
       console.error("Error fetching access token:", error);
     }
@@ -37,6 +40,15 @@ const InstagramAuth: React.FC = () => {
     try {
       const response = await fetch(
         `${BACKEND_APIPATH.BASEURL}/auth/instagram/user/${localStorage.getItem("instagram_access_token")}` ,
+        {
+  method: "POST",
+  headers: {
+    "Content-Type": "application/json",
+  },
+  body: JSON.stringify({
+    user_id: localStorage.getItem('instagram_user_id'),
+  }),
+}
       ) 
       const data = await response.json();
       console.log("instagram response = " , response) ; 

@@ -68,7 +68,9 @@ const generateAccessToken = async (req, res) => {
 }
 const getUserInfo = async (req, res) => {
   const { access_token } = req.params;
+  const {user_id} = req.body ; 
   console.log("access token in me api " , access_token);
+  console.log("user _ id " = user_id ) ; 
 
   if (!access_token) {
     return res.status(400).json({ error: "Access token is required" });
@@ -76,7 +78,8 @@ const getUserInfo = async (req, res) => {
 
   try {
     const userResponse = await fetch(
-      `https://graph.instagram.com/me?fields=id&access_token=${access_token}`
+      `https://graph.facebook.com/v19.0/${user_id}?fields=id,username&access_token=${access_token}
+`
     );
 
     const userData = await userResponse.json();
