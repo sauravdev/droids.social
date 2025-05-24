@@ -30,6 +30,21 @@ const InstagramAuth: React.FC = () => {
       localStorage.setItem("instagram_access_token", access_token);
       localStorage.setItem("instagram_user_id", user_id);
 
+      if(access_token && user_id ) 
+      {
+        const { data: { user } } = await supabase.auth.getUser();
+      console.log("data = "  , user ) ;  
+      //  Save instagram  connection to database
+      const { error: dbError } = await supabase.from('social_accounts').insert({
+      profile_id: user?.id,
+      platform: 'instagram',
+      username: "",
+      access_token: localStorage.getItem("instagram_access_token"),
+      refresh_token:localStorage.getItem("instagram_access_token") , 
+      userId : user_id 
+    });
+
+      }
     } catch (error) {
       console.error("Error fetching access token:", error);
     }
