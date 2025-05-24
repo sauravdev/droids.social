@@ -104,7 +104,7 @@ const uploadContent =async (ACCESS_TOKEN , IG_USER_ID , generatedContent  = "Thi
   const caption = generatedContent
   try{
 
-    let response = await fetch(`https://graph.instagram.com/v19.0/${IG_USER_ID}/media`, {
+    let response = await fetch(`https://graph.instagram.com/v21.0/${IG_USER_ID}/media`, {
       method: "POST",
       body: new URLSearchParams({
         image_url: imageUrl || "https://zkzdqldpzvjeftxbzgvh.supabase.co/storage/v1/object/public/profile-images/uploads/Dalle-slide-20250228155509783-1.png" ,
@@ -112,11 +112,12 @@ const uploadContent =async (ACCESS_TOKEN , IG_USER_ID , generatedContent  = "Thi
         access_token: ACCESS_TOKEN,
       }),
     });
+    console.log("response  = " , response)  ;
     let data = await response.json();
     const creationId = data.id;
     console.log("creation id ", creationId);
     // Step 2: Publish Media
-    const response2 = await fetch(`https://graph.instagram.com/v19.0/${IG_USER_ID}/media_publish`, {
+    const response2 = await fetch(`https://graph.instagram.com/v21.0/${IG_USER_ID}/media_publish`, {
       method: "POST",
       body: new URLSearchParams({
         creation_id: creationId,
