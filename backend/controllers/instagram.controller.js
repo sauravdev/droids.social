@@ -27,10 +27,10 @@ const generateAccessToken = async (req, res) => {
         method: "POST",
         headers: { "Content-Type": "application/x-www-form-urlencoded" },
         body: new URLSearchParams({
-          client_id: INSTAGRAM_APP_ID,
-          client_secret: INSTAGRAM_APP_SECRET,
+          client_id: process.env.INSTAGRAM_APP_ID,
+          client_secret: process.env.INSTAGRAM_APP_SECRET,
           grant_type: "authorization_code",
-          redirect_uri: INSTAGRAM_REDIRECT_URI,
+          redirect_uri: process.env.INSTAGRAM_REDIRECT_URI,
           code: code,
         }),
       }
