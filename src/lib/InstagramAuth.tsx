@@ -7,7 +7,11 @@ const loginWithInstagram = () => {
   localStorage.removeItem("code");
   localStorage.removeItem("instagram_access_token") ;
   localStorage.removeItem("instagram_user_id") ;
-  const authUrl =  `https://www.instagram.com/oauth/authorize?enable_fb_login=0&force_authentication=1&client_id=1159961752296752&redirect_uri=https://socialdroids.wisedroids.ai/auth/instagram&response_type=code&scope=instagram_business_basic%2Cinstagram_business_manage_messages%2Cinstagram_business_manage_comments%2Cinstagram_business_content_publish%2Cinstagram_business_manage_insights`;
+  const authUrl =  `https://www.facebook.com/v19.0/dialog/oauth
+  ?client_id=${INSTAGRAM_CREDENTIALS.INSTAGRAM_CLIENT_ID}
+  &redirect_uri=  ${REDIRECT_URIS.INSTAGRAM}
+  &scope=instagram_basic,pages_show_list
+  &response_type=code`;
   window.location.href = authUrl;
 };
 const InstagramAuth: React.FC = () => {

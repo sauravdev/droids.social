@@ -13,59 +13,135 @@ const INSTAGRAM_APP_ID = process.env.INSTAGRAM_APP_ID;
 const INSTAGRAM_APP_SECRET = process.env.INSTAGRAM_APP_SECRET;
 const INSTAGRAM_REDIRECT_URI =  process.env.INSTAGRAM_REDIRECT_URI;
 
+// const generateAccessToken = async (req, res) => {
+//   const { code } = req.body;
+//   console.log("code = " , code)  ;
+//   if (!code) {
+//     return res.status(400).json({ error: "Authorization code is required" });
+//   }
+
+//   try {
+//     const tokenResponse = await fetch(
+//       `https://api.instagram.com/oauth/access_token`,
+//       {
+//         method: "POST",
+//         headers: { "Content-Type": "application/x-www-form-urlencoded" },
+//         body: new URLSearchParams({
+//           client_id: process.env.INSTAGRAM_APP_ID,
+//           client_secret: process.env.INSTAGRAM_APP_SECRET,
+//           grant_type: "authorization_code",
+//           redirect_uri: process.env.INSTAGRAM_REDIRECT_URI,
+//           code: code,
+//         }),
+//       }
+//     );
+
+//     console.log("token response = " , tokenResponse) ; 
+    
+//     const tokenData = await tokenResponse.json();
+//     console.log("tokenData" , tokenData) ; 
+//     if(!tokenData)
+//     {
+//       return res.status(500).json({error :  "Something went wrong : while fetching token"}) ;
+//     }
+//     const { access_token, user_id } = tokenData;
+//     // const longLivedTokenResponse = await fetch(
+//     //   `https://graph.instagram.com/access_token?grant_type=ig_exchange_token&client_secret=${INSTAGRAM_APP_SECRET}&access_token=${access_token}`
+//     // );
+
+//     // const longLivedTokenData = await longLivedTokenResponse.json();
+//     // console.log("Long-lived tokenData:", longLivedTokenData);
+
+//     // if (!longLivedTokenData.access_token) {
+//     //   return res
+//     //     .status(500)
+//     //     .json({ error: "Something went wrong while fetching long-lived token" });
+//     // }
+//     res.status(200).json({
+//       access_token: access_token,
+//       user_id , 
+//     });
+//   } catch (error) {
+//     console.error("Error exchanging Instagram token:", error);
+//     res.status(500).json({ error: "Internal server error" });
+//   }
+// }
+
 const generateAccessToken = async (req, res) => {
   const { code } = req.body;
-  console.log("code = " , code)  ;
+  console.log("Received code:", code);
   if (!code) {
     return res.status(400).json({ error: "Authorization code is required" });
   }
 
   try {
+    // Step 1: Exchange code for Facebook User Access Token
+    console.log("Exchanging code for Facebook User Access Token...");
     const tokenResponse = await fetch(
-      `https://api.instagram.com/oauth/access_token`,
-      {
-        method: "POST",
-        headers: { "Content-Type": "application/x-www-form-urlencoded" },
-        body: new URLSearchParams({
-          client_id: process.env.INSTAGRAM_APP_ID,
-          client_secret: process.env.INSTAGRAM_APP_SECRET,
-          grant_type: "authorization_code",
-          redirect_uri: process.env.INSTAGRAM_REDIRECT_URI,
-          code: code,
-        }),
-      }
+      `https://graph.facebook.com/v19.0/oauth/access_token?` +
+      new URLSearchParams({
+        client_id: process.env.INSTAGRAM_APP_ID,
+        client_secret: process.env.INSTAGRAM_APP_SECRET,
+        redirect_uri: process.env.INSTAGRAM_REDIRECT_URI,
+        code: code,
+      }),
+      { method: "GET" }
     );
-
-    console.log("token response = " , tokenResponse) ; 
-    
     const tokenData = await tokenResponse.json();
-    console.log("tokenData" , tokenData) ; 
-    if(!tokenData)
-    {
-      return res.status(500).json({error :  "Something went wrong : while fetching token"}) ;
+    console.log("Token exchange response:", tokenData);
+
+    if (!tokenData.access_token) {
+      return res.status(500).json({ error: "Failed to get access token", details: tokenData });
     }
-    const { access_token, user_id } = tokenData;
-    // const longLivedTokenResponse = await fetch(
-    //   `https://graph.instagram.com/access_token?grant_type=ig_exchange_token&client_secret=${INSTAGRAM_APP_SECRET}&access_token=${access_token}`
-    // );
 
-    // const longLivedTokenData = await longLivedTokenResponse.json();
-    // console.log("Long-lived tokenData:", longLivedTokenData);
+    const userAccessToken = tokenData.access_token;
 
-    // if (!longLivedTokenData.access_token) {
-    //   return res
-    //     .status(500)
-    //     .json({ error: "Something went wrong while fetching long-lived token" });
-    // }
+    // Step 2: Get user's Facebook Pages
+    console.log("Fetching user's Facebook Pages...");
+    const pagesResponse = await fetch(
+      `https://graph.facebook.com/v19.0/me/accounts?access_token=${userAccessToken}`
+    );
+    const pagesData = await pagesResponse.json();
+    console.log("Pages data response:", pagesData);
+
+    if (!pagesData.data || !pagesData.data.length) {
+      return res.status(500).json({ error: "No Facebook Pages found" });
+    }
+
+    // Step 3: Find the page with an Instagram Business Account connected
+    let igBusinessAccountId = null;
+    for (const page of pagesData.data) {
+      console.log(`Checking page ${page.id} for connected Instagram Business Account...`);
+      const pageDetailsResponse = await fetch(
+        `https://graph.facebook.com/v19.0/${page.id}?fields=instagram_business_account&access_token=${userAccessToken}`
+      );
+      const pageDetails = await pageDetailsResponse.json();
+      console.log(`Page ${page.id} details:`, pageDetails);
+
+      if (pageDetails.instagram_business_account) {
+        igBusinessAccountId = pageDetails.instagram_business_account.id;
+        console.log(`Found Instagram Business Account ID: ${igBusinessAccountId} linked to page ${page.id}`);
+        break;
+      }
+    }
+    if (!igBusinessAccountId) {
+      return res.status(500).json({ error: "No Instagram Business Account linked to any Page" });
+    }
+
+    // Step 4: Return the access token and IG Business Account ID
     res.status(200).json({
-      access_token: access_token,
-      user_id , 
+      access_token: userAccessToken,
+      ig_user_id: igBusinessAccountId,
     });
+    console.log("Access token and Instagram Business Account ID sent to client.");
   } catch (error) {
-    console.error("Error exchanging Instagram token:", error);
+    console.error("Error in Instagram Graph API flow:", error);
     res.status(500).json({ error: "Internal server error" });
   }
-}
+};
+
+
+
 const getUserInfo = async (req, res) => {
   const { access_token } = req.params;
   console.log("access token in me api " , access_token);
