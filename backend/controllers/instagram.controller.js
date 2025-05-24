@@ -13,93 +13,59 @@ const INSTAGRAM_APP_ID = process.env.INSTAGRAM_APP_ID;
 const INSTAGRAM_APP_SECRET = process.env.INSTAGRAM_APP_SECRET;
 const INSTAGRAM_REDIRECT_URI =  process.env.INSTAGRAM_REDIRECT_URI;
 
-
 const generateAccessToken = async (req, res) => {
   const { code } = req.body;
-  console.log("Received code from client:", code);
-
+  console.log("code = " , code)  ;
   if (!code) {
-    console.error("No authorization code provided in request body.");
     return res.status(400).json({ error: "Authorization code is required" });
   }
 
   try {
-    // STEP 1: Exchange code for a Facebook User Access Token
-    console.log("Exchanging code for Facebook User Access Token...");
     const tokenResponse = await fetch(
-      `https://graph.facebook.com/v19.0/oauth/access_token?` +
-      new URLSearchParams({
-        client_id: process.env.INSTAGRAM_APP_ID,
-        client_secret: process.env.INSTAGRAM_APP_SECRET,
-        redirect_uri: process.env.INSTAGRAM_REDIRECT_URI,
-        code: code,
-      }),
-      { method: "GET" }
-    );
-    const tokenData = await tokenResponse.json();
-    console.log("Token exchange response:", tokenData);
-
-    if (!tokenData.access_token) {
-      console.error("Failed to obtain access token:", tokenData);
-      return res.status(500).json({ error: "Failed to get access token", details: tokenData });
-    }
-
-    const userAccessToken = tokenData.access_token;
-    console.log("Obtained Facebook User Access Token:", userAccessToken);
-
-    // STEP 2: Get the user's Facebook Pages (to find the connected IG account)
-    console.log("Fetching user's Facebook Pages...");
-    const pagesResponse = await fetch(
-      `https://graph.facebook.com/v19.0/me/accounts?access_token=${userAccessToken}`
-    );
-    const pagesData = await pagesResponse.json();
-    console.log("Pages data response:", pagesData);
-
-    if (!pagesData.data || !pagesData.data.length) {
-      console.error("No Facebook Pages found for this user.");
-      return res.status(500).json({ error: "No Facebook Pages found" });
-    }
-
-    // Find the page with an Instagram Business Account connected
-    let igBusinessAccountId = null;
-    for (const page of pagesData.data) {
-      console.log(`Checking page ${page.id} for connected Instagram Business Account...`);
-      const pageDetailsResponse = await fetch(
-        `https://graph.facebook.com/v19.0/${page.id}?fields=instagram_business_account&access_token=${userAccessToken}`
-      );
-      const pageDetails = await pageDetailsResponse.json();
-      console.log(`Page ${page.id} details:`, pageDetails);
-
-      if (pageDetails.instagram_business_account) {
-        igBusinessAccountId = pageDetails.instagram_business_account.id;
-        console.log(`Found Instagram Business Account ID: ${igBusinessAccountId} linked to page ${page.id}`);
-        break;
+      `https://api.instagram.com/oauth/access_token`,
+      {
+        method: "POST",
+        headers: { "Content-Type": "application/x-www-form-urlencoded" },
+        body: new URLSearchParams({
+          client_id: INSTAGRAM_APP_ID,
+          client_secret: INSTAGRAM_APP_SECRET,
+          grant_type: "authorization_code",
+          redirect_uri: INSTAGRAM_REDIRECT_URI,
+          code: code,
+        }),
       }
-    }
-    if (!igBusinessAccountId) {
-      console.error("No Instagram Business Account linked to any Facebook Page.");
-      return res.status(500).json({ error: "No Instagram Business Account linked to any Page" });
-    }
-
-    // STEP 3: Use the IG Business Account ID to get user info
-    console.log(`Fetching Instagram user info for IG Business Account ID: ${igBusinessAccountId}...`);
-    const igUserResponse = await fetch(
-      `https://graph.facebook.com/v19.0/${igBusinessAccountId}?fields=id,username,account_type,media_count&access_token=${userAccessToken}`
     );
-    const igUserData = await igUserResponse.json();
-    console.log("Instagram user data response:", igUserData);
 
+    console.log("token response = " , tokenResponse) ; 
+    
+    const tokenData = await tokenResponse.json();
+    console.log("tokenData" , tokenData) ; 
+    if(!tokenData)
+    {
+      return res.status(500).json({error :  "Something went wrong : while fetching token"}) ;
+    }
+    const { access_token, user_id } = tokenData;
+    // const longLivedTokenResponse = await fetch(
+    //   `https://graph.instagram.com/access_token?grant_type=ig_exchange_token&client_secret=${INSTAGRAM_APP_SECRET}&access_token=${access_token}`
+    // );
+
+    // const longLivedTokenData = await longLivedTokenResponse.json();
+    // console.log("Long-lived tokenData:", longLivedTokenData);
+
+    // if (!longLivedTokenData.access_token) {
+    //   return res
+    //     .status(500)
+    //     .json({ error: "Something went wrong while fetching long-lived token" });
+    // }
     res.status(200).json({
-      access_token: userAccessToken,
-      ig_user: igUserData,
+      access_token: access_token,
+      user_id , 
     });
-    console.log("Access token and Instagram user info sent to client.");
   } catch (error) {
-    console.error("Error in Instagram Graph API flow:", error);
+    console.error("Error exchanging Instagram token:", error);
     res.status(500).json({ error: "Internal server error" });
   }
-};
-
+}
 const getUserInfo = async (req, res) => {
   const { access_token } = req.params;
   console.log("access token in me api " , access_token);
