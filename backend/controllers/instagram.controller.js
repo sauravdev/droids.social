@@ -98,7 +98,7 @@ const getUserInfo = async (req, res) => {
   try {
     // Fetch Instagram Business Account info
     const userResponse = await fetch(
-      `https://graph.facebook.com/v19.0/${ig_user_id}?fields=id,username,account_type,media_count&access_token=${access_token}`
+      `https://graph.facebook.com/v19.0/${ig_user_id}?fields=id,username&access_token=${access_token}`
     );
     const userData = await userResponse.json();
     console.log("Instagram user data:", userData);
@@ -124,7 +124,7 @@ const uploadContent =async (ACCESS_TOKEN , IG_USER_ID , generatedContent  = "Thi
   const caption = generatedContent
   try{
 
-    let response = await fetch(`https://graph.instagram.com/v21.0/${IG_USER_ID}/media`, {
+    let response = await fetch(`https://graph.facebook.com/v21.0/${IG_USER_ID}/media`, {
       method: "POST",
       body: new URLSearchParams({
         image_url: imageUrl || "https://zkzdqldpzvjeftxbzgvh.supabase.co/storage/v1/object/public/profile-images/uploads/Dalle-slide-20250228155509783-1.png" ,
@@ -137,7 +137,7 @@ const uploadContent =async (ACCESS_TOKEN , IG_USER_ID , generatedContent  = "Thi
     const creationId = data.id;
     console.log("creation id ", creationId);
     // Step 2: Publish Media
-    const response2 = await fetch(`https://graph.instagram.com/v21.0/${IG_USER_ID}/media_publish`, {
+    const response2 = await fetch(`https://graph.facebook.com/v21.0/${IG_USER_ID}/media_publish`, {
       method: "POST",
       body: new URLSearchParams({
         creation_id: creationId,
@@ -240,7 +240,7 @@ async function publishCarousel(imageUrls , ACCESS_TOKEN , IG_USER_ID , caption ,
     const mediaContainerIds = [];
     for (const imageUrl of imageUrls) {
       const uploadResponse = await axios.post(
-        `https://graph.instagram.com/v19.0/${IG_USER_ID}/media`,
+        `https://graph.facebook.com/v21.0/${IG_USER_ID}/media`,
         {
           image_url: imageUrl,
           caption
@@ -257,7 +257,7 @@ async function publishCarousel(imageUrls , ACCESS_TOKEN , IG_USER_ID , caption ,
       throw new Error("Failed to upload images");
     }
     const carouselResponse = await axios.post(
-      `https://graph.instagram.com/v19.0/${IG_USER_ID}/media`,
+      `https://graph.facebook.com/v21.0/${IG_USER_ID}/media`,
       {
         media_type: "CAROUSEL",
         children: mediaContainerIds,
@@ -268,7 +268,7 @@ async function publishCarousel(imageUrls , ACCESS_TOKEN , IG_USER_ID , caption ,
       }
     );
     const publishResponse = await axios.post(
-      `https://graph.instagram.com/v19.0/${IG_USER_ID}/media_publish`,
+      `https://graph.facebook.com/v21.0/${IG_USER_ID}/media_publish`,
       {
         creation_id: carouselResponse.data.id,
       },

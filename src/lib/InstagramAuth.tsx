@@ -100,7 +100,7 @@ const InstagramAuth: React.FC = () => {
         username: username,
         access_token: localStorage.getItem("instagram_access_token"),
         refresh_token: localStorage.getItem("instagram_access_token"),
-        userId: id,
+        userId: localStorage.getItem("instagram_user_id")
       });
       navigateTo("/dashboard");
       // if (dbError) throw dbError;
