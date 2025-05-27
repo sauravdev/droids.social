@@ -119,6 +119,8 @@ Guidelines:
 - Ensure variety: mix educational, promotional, entertaining, and community-building posts.
 - Post ideas should be detailed , niche and specialised in the domain of ${niche}
 - Posts ideas should also include informative posts
+- no hastags required, just give me detailed content ideas
+- do not generate any ideas with video, image or caraousel content
 
 Format the response as a structured JSON object with this schema:
 {
@@ -178,6 +180,8 @@ export async function generatePost(
 
   await rateLimit();
 
+  console.log("topic = " , topic ) ; 
+
   try {
     const platformGuide = {
       twitter: "short, engaging, under 280 characters",
@@ -187,9 +191,10 @@ export async function generatePost(
     const goals = ["reach", "followers", "engagement"];
     const prompt = `You are an expert social media . Create a niche post for topic : "${topic}".  designed to maximize reach, engagement, and virality, with the following goals: ${goals.join(
       ", "
-    )}. Craft posts that feel authentic, human-like, and resonate with the target audience, using trending tactics and platform-specific best practices
+    )}. Craft posts that feel authentic, human-like, and resonate with the target audience, using trending tactics and platform-specific best practices.
+
 Guidelines:
-- the content should be based on the following content startegy : $strategy
+- the content should be based on the following content strategy : ${topic}
 - the content should be tailored for  ${platform} platform
 - Make it ${platformGuide[platform]}${tone ? ` with a ${tone} tone` : ""}. 
 - search internet and X, find latest trends and discussions in the domain: ${topic} , make sure the content is based on those trends
@@ -299,11 +304,15 @@ export async function generateImage(prompt: string) {
   return response.data[0].url;
 }
 
-export async function generatePostFromCustomModel(topic : string, selectedPlatform : string ,  model: any) {
+export async function generatePostFromCustomModel(
+  topic: string,
+  selectedPlatform: string,
+  model: any
+) {
   try {
     console.log("selected model found = ", model);
     const response = await openai.chat.completions.create({
-      model , 
+      model,
       messages: [
         {
           role: "system",
@@ -343,6 +352,7 @@ export async function postGenerationApi(prompt: string) {
 
 export async function generatePostUsingGrok(
   topic: string,
+
   platform: "twitter" | "linkedin" | "instagram",
   tone?: string
 ): any {
@@ -359,8 +369,8 @@ export async function generatePostUsingGrok(
         body: JSON.stringify({ topic, platform }),
       }
     );
-    const data = await response.json() ;  
-    const content = data?.message ; 
+    const data = await response.json();
+    const content = data?.message;
     return content;
     // return chatCompletion.choices[0]?.message?.content;
   } catch (error) {
@@ -369,25 +379,27 @@ export async function generatePostUsingGrok(
   }
 }
 
-
-export async  function generatePostGeneric(topic : string , selectedPlatform : string  , model : string  ) 
-{
-  console.log("model used for generation   = " , model )
-  if(model == 'grok') 
-  {
-    const content = await generatePostUsingGrok(topic , selectedPlatform) ;
-    return content; 
-  }
-  else if(model == "openai") 
-  {
-    const content = await generatePost(topic , selectedPlatform );
-    return content ;
-  }
-  else {
-    if(model == "") return ;
-    console.log("custom model used for generation => " , model ) ; 
-    // pass custom model to the api 
-    const content = await generatePostFromCustomModel(topic , selectedPlatform , model ) ;
-    return content ;
+export async function generatePostGeneric(
+  topic: string,
+  selectedPlatform: string,
+  model: string
+) {
+  console.log("model used for generation   = ", model);
+  if (model == "grok") {
+    const content = await generatePostUsingGrok(topic, selectedPlatform);
+    return content;
+  } else if (model == "openai") {
+    const content = await generatePost(topic, selectedPlatform);
+    return content;
+  } else {
+    if (model == "") return;
+    console.log("custom model used for generation => ", model);
+    // pass custom model to the api
+    const content = await generatePostFromCustomModel(
+      topic,
+      selectedPlatform,
+      model
+    );
+    return content;
   }
 }

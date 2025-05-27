@@ -627,7 +627,7 @@ async function uploadToSupabase(imageData: File | Blob, fileName: string): Promi
   }
   return (
     <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
-      <h1 className="text-2xl sm:text-3xl font-bold text-white mb-4 sm:mb-8">AI Content Generator</h1>
+      <h1 className="text-2xl sm:text-3xl font-bold text-white mb-4 sm:mb-8">Custom Post generator</h1>
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 sm:gap-6">
         {/* Form Section */}
@@ -719,7 +719,7 @@ async function uploadToSupabase(imageData: File | Blob, fileName: string): Promi
 
 
               <div>
-                <label className="block text-sm font-medium text-gray-300 mb-2">
+                <label className="block text-sm font-medium text-gray-300 mb-4">
                   Model
                 </label>
                 <div className="flex flex-wrap gap-2">
@@ -748,7 +748,7 @@ async function uploadToSupabase(imageData: File | Blob, fileName: string): Promi
                   </select>}
                 </div>
               </div>
-
+{/* 
               <div>
                 <label className="block text-sm font-medium text-gray-300 mb-2">
                   Source
@@ -768,9 +768,8 @@ async function uploadToSupabase(imageData: File | Blob, fileName: string): Promi
                     </button>
                   ))}
                 </div>
-              </div>
-
-              <div>
+              </div> */}
+              <div className='mt-4'>
                 <button
                   onClick={handleGenerate}
                   disabled={loading}

@@ -31,6 +31,9 @@ import { BACKEND_APIPATH } from "../constants";
 import Editor from "../components/Editor";
 import { useAuth } from "../context/AuthContext";
 import { useNavigate } from "react-router-dom";
+import { nonWhiteSpace } from "html2canvas/dist/types/css/syntax/parser";
+import { overflowWrap } from "html2canvas/dist/types/css/property-descriptors/overflow-wrap";
+import { textAlign } from "html2canvas/dist/types/css/property-descriptors/text-align";
 
 interface CarouselSlide {
   id: string;
@@ -363,8 +366,8 @@ emoji: A single, relevant emoji as a string (e.g., "🚀")`;
           backgroundColor: slides[i].backgroundColor,
           logging: false,
           useCORS: true,
-          height: slide.clientHeight,
-          width: slide.clientWidth,
+          // height: slide.clientHeight,
+          // width: slide.clientWidth,
           // width: 1080,
           // height: 1350
         });
@@ -610,36 +613,35 @@ emoji: A single, relevant emoji as a string (e.g., "🚀")`;
             </div>
           </div>
 
-           <div>
-                        <label className="block text-sm font-medium text-gray-300 mb-2">
-                          Brand Logo
-                        </label>
-                        <div className="flex items-center space-x-4">
-                          <input
-                            type="file"
-                            accept="image/*"
-                            onChange={handleBrandLogoUpload}
-                            className="hidden"
-                            id="brand-logo"
-                          />
-                          <label
-                            htmlFor="brand-logo"
-                            className="px-4 py-2 bg-gray-700 hover:bg-gray-600 text-white rounded-lg cursor-pointer flex items-center space-x-2"
-                          >
-                            <Upload className="h-5 w-5" />
-                            <span>Upload Logo</span>
-                          </label>
-                          {brandLogo && (
-                            <button
-                              onClick={() => setBrandLogo(null)}
-                              className="text-red-400 hover:text-red-300"
-                            >
-                              Remove
-                            </button>
-                          )}
-                        </div>
-                      </div>
-
+          <div>
+            <label className="block text-sm font-medium text-gray-300 mb-2">
+              Brand Logo
+            </label>
+            <div className="flex items-center space-x-4">
+              <input
+                type="file"
+                accept="image/*"
+                onChange={handleBrandLogoUpload}
+                className="hidden"
+                id="brand-logo"
+              />
+              <label
+                htmlFor="brand-logo"
+                className="px-4 py-2 bg-gray-700 hover:bg-gray-600 text-white rounded-lg cursor-pointer flex items-center space-x-2"
+              >
+                <Upload className="h-5 w-5" />
+                <span>Upload Logo</span>
+              </label>
+              {brandLogo && (
+                <button
+                  onClick={() => setBrandLogo(null)}
+                  className="text-red-400 hover:text-red-300"
+                >
+                  Remove
+                </button>
+              )}
+            </div>
+          </div>
 
           {platform == "linkedin" && (
             <div>
@@ -782,8 +784,6 @@ emoji: A single, relevant emoji as a string (e.g., "🚀")`;
                   paddingBottom: "20px",
                 }}
               >
-               
-
                 <input
                   type="file"
                   accept="image/*"
@@ -842,7 +842,7 @@ emoji: A single, relevant emoji as a string (e.g., "🚀")`;
                     <span>{slide.emoji}</span>
                     <div
                       contentEditable="true"
-                      className="text-center bg-transparent  outline-none w-full tracking-wider"
+                      className="text-center bg-transparent  outline-none w-full tracking-widest "
                       onChange={(e: any) =>
                         updateSlide(slide.id, { header: e.target.value })
                       }
@@ -851,7 +851,7 @@ emoji: A single, relevant emoji as a string (e.g., "🚀")`;
                     </div>
                   </h2>
 
-                  <div
+                  {/* <div
                     contentEditable="true"
                     suppressContentEditableWarning={true}
                     style={{
@@ -873,32 +873,70 @@ emoji: A single, relevant emoji as a string (e.g., "🚀")`;
                     } // Updates state on change
                   >
                     {slide.content}
+                  </div> */}
+
+                  <div
+                    contentEditable
+                    suppressContentEditableWarning
+                     style={{
+                    minHeight: "60px",
+                    maxWidth: "100%",
+                    wordBreak: "break-word",
+                    overflowWrap: "break-word",
+                    textAlign  : "center",
+                    outline: "none",
+                    padding: "10px",
+                    
+                    }}
+                    className="editable-text tracking-widest bg-transparent text-white text-2xl font-medium"
+                    onBlur={(e) =>
+                      updateSlide(slide.id, {
+                        content: e.currentTarget.innerText,
+                      })
+                    }
+                  >
+                    {slide.content}
                   </div>
                 </div>
 
                 {/* Footer */}
-                <div className="w-full flex items-center justify-between text-sm opacity-75">
-                  <div>Created by {profile?.full_name || "User"}</div>
-                  <div className="flex  gap-2 items-center ">
-                    {linkedinProfile && (
-                    <>
-                      {brandLogo && (
-                      <img
-                        src={brandLogo}
-                        alt="Brand logo"
-                        className="h-16 object-contain mb-4"
-                      />
-                      )}
-                      <div>
-                        {linkedinProfile.replace(
-                          "https://linkedin.com/in/",
-                          "@"
-                        )}
-                      </div>
-                    </>
-                  )}
-                  </div>
-                </div>
+               <div className="w-full flex items-center justify-between text-sm opacity-75">
+  <div className="capitalize tracking-widest flex-shrink-0">
+    Created by {profile?.full_name || "User"}
+  </div>
+
+  <div className="flex gap-2 items-center">
+    <div className="flex items-center gap-2 max-w-[300px]">
+      {/* Fixed wrapper with dimensions */}
+      <div
+        style={{
+          width: "100px",
+          height: "64px",
+          flexShrink: 0,
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "center",
+          background: "transparent",
+        }}
+      >
+        <img
+          src={brandLogo}
+          alt="Brand logo"
+          style={{
+            maxWidth: "100%",
+            maxHeight: "100%",
+            objectFit: "contain",
+          }}
+        />
+      </div>
+
+      <div className="text-md text-white break-all tracking-wider max-w-auto">
+        {linkedinProfile.replace("https://linkedin.com/in/", "@")}
+      </div>
+    </div>
+  </div>
+</div>
+
               </div>
             ))}
           </div>

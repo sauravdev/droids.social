@@ -111,7 +111,7 @@ export function ProfileSettings() {
       
       if(publicBannarUrl) 
       {
-        console.log("public url after uploading to supabase = " , publicBannarUrl) ; 
+        console.log("bannar url after uploading to supabase = " , publicBannarUrl) ; 
         setPublicBannarTwitterUrl(publicBannarUrl)
       }
     

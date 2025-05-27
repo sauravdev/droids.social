@@ -13,17 +13,16 @@ async function generatePost(req, res) {
       linkedin: "professional tone, business-focused",
       instagram: "visual, engaging, with emojis and hashtags",
     };
-  //   const prompt = `Create a ${
-  //     platform || "social media"
-  //   } post about "${topic}". 
-  // Make it ${platformGuide[platform]}${tone ? ` with a ${tone} tone` : ""}. 
-  // Avoid using any markdown formatting like **, *, or __. Just return plain text without styling symbols.`;
+
   const goals = ['reach'  , 'followers' , 'engagement']
-  const prompt = `You are an expert social media . Create a niche post for topic : "${topic}".  designed to maximize reach, engagement, and virality, with the following goals: ${goals.join(', ')}. Craft posts that feel authentic, human-like, and resonate with the target audience, using trending tactics and platform-specific best practices
-  Guidelines:
-- the content should be based on the following content startegy : $strategy
+  const prompt = `You are an expert social media . Create a niche post for topic : "${topic}".  designed to maximize reach, engagement, and virality, with the following goals: ${goals.join(
+      ", "
+    )}. Craft posts that feel authentic, human-like, and resonate with the target audience, using trending tactics and platform-specific best practices.
+
+Guidelines:
+- the content should be based on the following content strategy : ${topic}
 - the content should be tailored for  ${platform} platform
-- Make it ${platformGuide[platform]}${tone ? ` with a ${tone} tone` : ''}. 
+- Make it ${platformGuide[platform]}${tone ? ` with a ${tone} tone` : ""}. 
 - search internet and X, find latest trends and discussions in the domain: ${topic} , make sure the content is based on those trends
 - Design posts to feel conversational, human-like, and authentic—no robotic or generic phrasing.
 - Incorporate viral elements like storytelling, humor, trending hashtags, or emotional hooks where relevant.

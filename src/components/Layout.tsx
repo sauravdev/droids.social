@@ -15,7 +15,7 @@ export function Layout({ children }: LayoutProps) {
   const navItems = [
     { to: "/dashboard", icon: <LayoutDashboard />, label: "Dashboard" },
     { to: "/strategy", icon: <Lightbulb />, label: "AI Post generator" },
-    { to: "/generator", icon: <Sparkles />, label: "AI Generator" },
+    { to: "/generator", icon: <Sparkles />, label: "Custom generator" },
     { to: "/carousel", icon: <Image />, label: "Carousel Generator" },
     { to: "/calendar", icon: <Calendar />, label: "Content Calendar" },
     // { to: "/engage", icon: <MessageSquare />, label: "Engagement" },
