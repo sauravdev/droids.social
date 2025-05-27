@@ -35,14 +35,13 @@ const InstagramAuth: React.FC = () => {
         }
       );
 
-      const { access_token, user_id } = await response.json();
+      const { access_token, ig_user_id } = await response.json();
       console.log("access_token = ", access_token);
       console.log("token response (instagram ) ", access_token);
-      setUserAccessToken(access_token);
       localStorage.setItem("instagram_access_token", access_token);
-      localStorage.setItem("instagram_user_id", user_id);
+      localStorage.setItem("instagram_user_id", ig_user_id);
 
-      if (access_token && user_id) {
+      if (access_token && ig_user_id) {
         const {
           data: { user },
         } = await supabase.auth.getUser();
@@ -56,8 +55,10 @@ const InstagramAuth: React.FC = () => {
             username: "",
             access_token: localStorage.getItem("instagram_access_token"),
             refresh_token: localStorage.getItem("instagram_access_token"),
-            userId: user_id,
+            userId: ig_user_id,
           });
+
+           setUserAccessToken(access_token);
       }
     } catch (error) {
       console.error("Error fetching access token:", error);
@@ -77,7 +78,9 @@ const InstagramAuth: React.FC = () => {
             "Content-Type": "application/json",
           },
           body: JSON.stringify({
-            user_id: localStorage.getItem("instagram_user_id"),
+            access_token : localStorage.getItem(
+              "instagram_access_token") ,
+            ig_user_id: localStorage.getItem("instagram_user_id"),
           }),
         }
       );
