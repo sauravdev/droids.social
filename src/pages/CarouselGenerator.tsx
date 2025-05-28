@@ -286,7 +286,7 @@ emoji: A single, relevant emoji as a string (e.g., "🚀")`;
         .upload(fileName, imageData, {
           cacheControl: "3600",
           upsert: true,
-          contentType: imageData.type || "image/png",
+          contentType: imageData.type || "image/jpeg",
         });
 
       if (error) {
@@ -328,7 +328,7 @@ emoji: A single, relevant emoji as a string (e.g., "🚀")`;
       const imgData = canvas.toDataURL("image/png");
       const imgBlob = await (await fetch(imgData)).blob();
       const timestamp = new Date().toISOString().replace(/[-:.TZ]/g, "");
-      const fileName = `uploads/Dalle-slide-${timestamp}-${i}.png`;
+      const fileName = `uploads/Dalle-slide-${timestamp}-${i}.jpeg`;
       const publicUrl = await uploadToSupabase(imgBlob, fileName);
       if (publicUrl) {
         console.log(
