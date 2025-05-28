@@ -140,7 +140,7 @@ export function ContentStrategy() {
             response[0]?.id
           );
           setPlans(data);
-          // setSelectedStrategy(response[0]?.niche)
+          setSelectedStrategy(response[0]?.niche)
         }
       } catch (err: any) {
         console.log("error = ", err);
@@ -462,13 +462,14 @@ export function ContentStrategy() {
 
         {allStrategies?.length > 0 && (
           <div className="flex-1 relative">
+            <p className = "capitalize text-gray-200 my-2">Select a Strategy</p>
             <select
               // value ={selectedStrategy}
               onChange={onChangeStrategyHandler}
               className="block w-full px-4 py-3 pr-8 leading-tight bg-gray-700  border-gray-300 text-gray-200 rounded-md shadow-sm appearance-none focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
             >
-              <option value="" disabled selected>
-                Select a strategy
+              <option className="capitalize" value="" disabled selected>
+                {selectedStrategy}
               </option>
               {allStrategies.map((strategy) => (
                 <option
@@ -480,7 +481,7 @@ export function ContentStrategy() {
                 </option>
               ))}
             </select>
-            <div className="absolute inset-y-0 right-0 flex items-center px-2 pointer-events-none">
+            <div className="absolute top-[3.2rem] right-0 flex items-center px-2 pointer-events-none">
               <svg
                 className="w-4 h-4 text-gray-200"
                 fill="currentColor"
@@ -497,12 +498,13 @@ export function ContentStrategy() {
         )}
         {models && models?.length > 0 && (
           <div className=" flex-1 relative">
+            <p className = "capitalize text-gray-200 my-2">Select a model</p>
             <select
               onChange={handleModelChange}
               className="block  appearance-none w-full  bg-gray-700 border border-gray-300 hover:border-gray-400 px-4 py-2 pr-8 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-gray-200"
             >
               <option className="capitalize" value="" disabled selected>
-                Select a model
+                {selectedModel}
               </option>
               {models.map((model) => (
                 <option key={model} value={model} className="py-1 capitalize">
@@ -510,7 +512,7 @@ export function ContentStrategy() {
                 </option>
               ))}
             </select>
-            <div className="pointer-events-none absolute inset-y-0 right-0 flex items-center px-2 text-gray-200">
+            <div className="pointer-events-none absolute  top-[3.2rem] right-0 flex items-center px-2 text-gray-200">
               <svg
                 className="h-4 w-4 fill-current"
                 xmlns="http://www.w3.org/2000/svg"
