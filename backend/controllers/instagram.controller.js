@@ -237,52 +237,67 @@ async function publishCarousel(imageUrls , ACCESS_TOKEN , IG_USER_ID , caption ,
       await updateScheduledPost(postId , {status : 'published'})
     }
   try {
-    const mediaContainerIds = [];
-    for (const imageUrl of imageUrls) {
-      const uploadResponse = await axios.post(
-        `https://graph.facebook.com/v21.0/${IG_USER_ID}/media`,
-        {
-          image_url: imageUrl,
-          caption
-        },
-        {
-          headers: { Authorization: `Bearer ${ACCESS_TOKEN}` },
-        }
-      );
-      if (uploadResponse.data.id) {
-        mediaContainerIds.push(uploadResponse.data.id);
-      }
-    }
-    if (mediaContainerIds.length === 0) {
-      throw new Error("Failed to upload images");
-    }
-    const carouselResponse = await axios.post(
+  console.log("Starting image uploads...");
+
+  const uploadResponses = await Promise.all(imageUrls.map(async (imageUrl, index) => {
+    console.log(`Uploading image ${index + 1}: ${imageUrl}`);
+    const response = await axios.post(
       `https://graph.facebook.com/v21.0/${IG_USER_ID}/media`,
       {
-        media_type: "CAROUSEL",
-        children: mediaContainerIds,
-        caption 
+        image_url: imageUrl,
       },
       {
         headers: { Authorization: `Bearer ${ACCESS_TOKEN}` },
       }
     );
-    const publishResponse = await axios.post(
-      `https://graph.facebook.com/v21.0/${IG_USER_ID}/media_publish`,
-      {
-        creation_id: carouselResponse.data.id,
-      },
-      {
-        headers: { Authorization: `Bearer ${ACCESS_TOKEN}` },
-      }
-    );
+    console.log(`Upload response for image ${index + 1}:`, response.data);
+    return response;
+  }));
 
-    console.log("Carousel published successfully! Post ID:", publishResponse.data.id);
- 
-    return publishResponse.data.id;
-  } catch (error) {
-    console.error("Error publishing carousel:", error.message || error.response?.data || error.message);
+  const mediaContainerIds = uploadResponses.map(res => res.data.id).filter(Boolean);
+  console.log("Media container IDs:", mediaContainerIds);
+
+  if (mediaContainerIds.length === 0) {
+    console.error("No media container IDs were returned.");
+    throw new Error("Failed to upload images");
   }
+
+  console.log("Creating carousel with media_container_ids...");
+
+  const carouselResponse = await axios.post(
+    `https://graph.facebook.com/v21.0/${IG_USER_ID}/media`,
+    {
+      media_type: "CAROUSEL",
+      children: mediaContainerIds,
+      caption
+    },
+    {
+      headers: { Authorization: `Bearer ${ACCESS_TOKEN}` },
+    }
+  );
+
+  console.log("Carousel creation response:", carouselResponse.data);
+
+  const publishResponse = await axios.post(
+    `https://graph.facebook.com/v21.0/${IG_USER_ID}/media_publish`,
+    {
+      creation_id: carouselResponse.data.id,
+    },
+    {
+      headers: { Authorization: `Bearer ${ACCESS_TOKEN}` },
+    }
+  );
+
+  console.log("Publish response:", publishResponse.data);
+  console.log("Carousel published successfully! Post ID:", publishResponse.data.id);
+
+  return publishResponse.data.id;
+
+} catch (error) {
+  console.error("Error publishing carousel:", error.response?.data || error.message);
+}
+
+
 }
 
 const publishInstagramCarousel = async (req, res) => {
