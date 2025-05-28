@@ -322,10 +322,10 @@ emoji: A single, relevant emoji as a string (e.g., "🚀")`;
         viewport: viewport,
       };
       await page.render(renderContext).promise;
-      images.push(canvas.toDataURL("image/png"));
+      images.push(canvas.toDataURL("image/jpeg"));
 
       // Convert canvas to image data URL
-      const imgData = canvas.toDataURL("image/png");
+      const imgData = canvas.toDataURL("image/jpeg");
       const imgBlob = await (await fetch(imgData)).blob();
       const timestamp = new Date().toISOString().replace(/[-:.TZ]/g, "");
       const fileName = `uploads/Dalle-slide-${timestamp}-${i}.jpeg`;
@@ -375,7 +375,7 @@ emoji: A single, relevant emoji as a string (e.g., "🚀")`;
         const imgData = canvas.toDataURL("image/jpeg", 0.92); 
         pdfPages.push(imgData);
         if (i > 0) pdf.addPage([1080, 1350], "p");
-        pdf.addImage(imgData, "PNG", 0, 0, 1080, 1350);
+        pdf.addImage(imgData, "JPEG", 0, 0, 1080, 1350);
       }
 
       const pdfBlob = pdf.output("blob");
@@ -495,10 +495,10 @@ emoji: A single, relevant emoji as a string (e.g., "🚀")`;
           width: slide.clientWidth,
         });
 
-        const imgData = canvas.toDataURL("image/png");
+        const imgData = canvas.toDataURL("image/jpeg");
         pdfPages.push(imgData);
         if (i > 0) pdf.addPage([1080, 1350], "p");
-        pdf.addImage(imgData, "PNG", 0, 0, 1080, 1350);
+        pdf.addImage(imgData, "JPEG", 0, 0, 1080, 1350);
       }
 
       const pdfBlob = pdf.output("blob");
