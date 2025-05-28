@@ -372,7 +372,7 @@ emoji: A single, relevant emoji as a string (e.g., "🚀")`;
           // height: 1350
         });
 
-        const imgData = canvas.toDataURL("image/png");
+        const imgData = canvas.toDataURL("image/jpeg", 0.92); 
         pdfPages.push(imgData);
         if (i > 0) pdf.addPage([1080, 1350], "p");
         pdf.addImage(imgData, "PNG", 0, 0, 1080, 1350);
@@ -422,10 +422,10 @@ emoji: A single, relevant emoji as a string (e.g., "🚀")`;
           width: slide.clientWidth,
         });
 
-        const imgData = canvas.toDataURL("image/png");
+        const imgData = canvas.toDataURL("image/jpeg");
         pdfPages.push(imgData);
         if (i > 0) pdf.addPage([1080, 1350], "p");
-        pdf.addImage(imgData, "PNG", 0, 0, 1080, 1350);
+        pdf.addImage(imgData, "JPEG", 0, 0, 1080, 1350);
       }
 
       const pdfBlob = pdf.output("blob");
