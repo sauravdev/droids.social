@@ -7,8 +7,15 @@ import {
   Twitter,
   Linkedin,
   Instagram,
+  Download,
+  X,
+  Image,
 } from "lucide-react";
-import { generatePost, generatePostGeneric } from "../lib/openai";
+import {
+  generateImage,
+  generatePost,
+  generatePostGeneric,
+} from "../lib/openai";
 import type { ContentPlan } from "../lib/types";
 import Editor from "./Editor";
 import { getSocialMediaAccountInfo } from "../lib/api";
@@ -17,11 +24,13 @@ import { initializeTwitterAuth } from "../lib/twitter";
 import aiMagic from "../assets/ai.png";
 import { useContentPlan } from "../hooks/useContentPlan";
 import { useAuth } from "../context/AuthContext";
+import { supabase } from "../lib/supabase";
 interface PostGeneratorProps {
   plan: ContentPlan;
   onSave: (updates: Partial<ContentPlan>) => Promise<void>;
   onSchedule: () => void;
   setSelectedPlan: (action: any) => void;
+  selectedPlan: any;
 }
 interface Success {
   state: boolean;
@@ -33,27 +42,41 @@ export function PostGenerator({
   onSave,
   onSchedule,
   setSelectedPlan,
+  selectedPlan,
 }: PostGeneratorProps) {
   const [loading, setLoading] = useState(false);
   const [saving, setSaving] = useState(false);
   // const [deleting , setDeleting] = useState(false) ;
   const [error, setError] = useState<string | null>(null);
-  const [content, setContent] = useState(plan.suggestion);
+  const [content, setContent] = useState(plan.suggestion || "");
   const [tone, setTone] = useState<string>("");
   const [posting, setPosting] = useState<boolean | null>(false);
   const [success, setSuccess] = useState<Success>({
     state: false,
     message: "",
   });
+  const [generatedImage, setGeneratedImage] = useState(plan?.media || "");
   const { updatePlan } = useContentPlan();
+  const [showVideoPopup, setShowVideoPopup] = useState(false);
+  const [showPopup, setShowPopup] = useState(false);
 
   const { selectedModel } = useAuth();
 
-  // useEffect(() => {
-  //   console.log("----------------------selected plan =--------------------------- " , plan) ;
-  // } , [plan ] )
+  useEffect(() => {
+    console.log("current plan = ", plan);
+    setGeneratedImage(plan?.media || "");
+  }, []);
+
+  useEffect(() => {
+    console.log(
+      "-----------------------change in plan detected ---------------------"
+    );
+  }, [plan]);
 
   async function handlePostTweet() {
+    console.log("plan suggestion = ", plan?.suggestion);
+    console.log("content  = ", content);
+
     setPosting(true);
     setSuccess({ state: false, message: "" });
     try {
@@ -101,11 +124,24 @@ export function PostGenerator({
     setPosting(false);
   }
   const handlePostInstagram = async () => {
-    setPosting(true);
-    setSuccess({ state: false, message: "" });
+    console.log("plan suggestion = ", plan?.suggestion);
+    console.log("content  = ", content);
+    console.log("plan media = " , plan.media) ;
+    if (!plan?.media || plan?.media == 'NULL') {
+      setError("Please generate an image first !");
+      return;
+    }
+
     try {
       const accountInfo = await getSocialMediaAccountInfo("instagram");
       const { access_token, userId } = accountInfo;
+      if (!userId || !access_token) {
+        setError("Something went wrong while fetching user information");
+        return;
+      }
+
+      setPosting(true);
+      setSuccess({ state: false, message: "" });
 
       const response = await fetch(
         `${BACKEND_APIPATH.BASEURL}/upload/post/instagram`,
@@ -115,7 +151,11 @@ export function PostGenerator({
             Authorization: `Bearer ${access_token}`,
             "Content-Type": "application/json",
           },
-          body: JSON.stringify({ IG_USER_ID: userId, caption: content }),
+          body: JSON.stringify({
+            IG_USER_ID: userId,
+            caption: content,
+            imageUrl: plan?.media,
+          }),
         }
       );
       const data = await response.json();
@@ -130,6 +170,9 @@ export function PostGenerator({
     }
   };
   const handlePostLinkedin = async () => {
+    console.log("plan suggestion = ", plan?.suggestion);
+    console.log("content  = ", content);
+
     setPosting(true);
     setSuccess({ state: false, message: "" });
 
@@ -168,22 +211,122 @@ export function PostGenerator({
       handlePostLinkedin();
     }
   };
+
+  const handleImageClick = () => {
+    console.log("plan media  = ", plan?.media);
+    console.log("generated image = ", generatedImage);
+    setShowPopup(true);
+  };
+  const handleCancel = () => {
+    setShowPopup(false);
+  };
+
+  const handleVideoPrevieClick = () => {
+    setShowVideoPopup(true);
+  };
+  const handleCloseVideoPopUp = () => {
+    setShowVideoPopup(false);
+  };
+
+  const handleImageGeneration = async (prompt: string) => {
+    try {
+      const imageURI = await generateImage(prompt);
+      const response = await fetch(
+        `${BACKEND_APIPATH.BASEURL}/fetch-image?url=${encodeURIComponent(
+          imageURI
+        )}`
+      );
+      const imageBlob = await response.blob();
+      const fileName = `uploads/generations-${Date.now()}.jpeg`;
+      const { data, error } = await supabase.storage
+        .from("profile-images")
+        .upload(fileName, imageBlob, { contentType: "image/jpeg" });
+      if (error) throw error;
+      // Get the public URL of the uploaded image
+      const { data: urlData } = supabase.storage
+        .from("profile-images")
+        .getPublicUrl(fileName);
+      setGeneratedImage(urlData?.publicUrl);
+      return urlData?.publicUrl;
+    } catch (error: any) {
+      console.log("Something went wrong while handling the image ", error);
+      setError(error?.message);
+      return null;
+    }
+  };
+
+  const handleDownload = async () => {
+    try {
+      // Fetch the image
+      const response = await fetch(generatedImage);
+      const blob = await response.blob();
+
+      // Create a temporary URL for the blob
+      const url = window.URL.createObjectURL(blob);
+
+      // Create a temporary anchor element and trigger download
+      const link = document.createElement("a");
+      link.href = url;
+      link.download = `generated-image-${Date.now()}.jpg`; // You can customize the filename
+      document.body.appendChild(link);
+      link.click();
+
+      // Clean up
+      document.body.removeChild(link);
+      window.URL.revokeObjectURL(url);
+
+      setShowPopup(false);
+    } catch (error) {
+      console.error("Download failed:", error);
+      alert("Download failed. Please try again.");
+    }
+  };
+
   const handleGenerate = async () => {
     setLoading(true);
     setError(null);
+    let publicUrl = "";
+    if (plan?.format === "image") {
+      console.log("image ..... ");
+      publicUrl = await handleImageGeneration(plan?.topic);
+    }
+    // console.log("image ..... ");
+    // await handleImageGeneration(plan?.topic);
     try {
       const generated = await generatePostGeneric(
         plan?.suggestion,
         plan?.platform,
         selectedModel
       );
-      console.log("generated content = ", generated);
       const newPlan = {
         ...plan,
         suggestion: generated,
       };
-      await updatePlan(newPlan.id, { suggestion: generated });
-      setSelectedPlan(newPlan);
+      console.log("generated content = ", generated);
+
+      if (publicUrl) {
+        await updatePlan(newPlan.id, {
+          suggestion: generated,
+          media: publicUrl,
+        });
+        console.log("media = ", publicUrl);
+        setSelectedPlan((prev) => {
+          return {
+            ...prev,
+            suggestion: generated,
+            media: publicUrl,
+          };
+        });
+      } else {
+        await updatePlan(newPlan.id, { suggestion: generated });
+        setSelectedPlan((prev) => {
+          return {
+            ...prev,
+            suggestion: generated,
+          };
+        });
+      }
+
       setContent(generated);
     } catch (err: any) {
       setError(err.message);
@@ -212,7 +355,7 @@ export function PostGenerator({
   };
 
   return (
-    <div className="bg-gray-700  rounded-lg px-2 py-4 space-y-4 flex flex-col justify-between">
+    <div className="bg-gray-700 h-full  rounded-lg px-2 py-4 space-y-4 flex flex-col justify-between">
       <div className="flex items-center justify-between">
         <span className="text-purple-400 text-sm">
           {plan.platform} • {plan.format}
@@ -226,14 +369,14 @@ export function PostGenerator({
             <Calendar className="h-4 w-4" />
           </button> */}
 
-           <button
+          <button
             onClick={onSchedule}
             className="bg-blue-600 hover:bg-blue-700 text-white  px-2 py-2 rounded-md flex items-center justify-center space-x-2 text-sm sm:text-sm"
             title="Schedule post"
-              >
-                <Calendar className="h-4 w-4 sm:h-5 sm:w-5" />
-                <span>Schedule</span>
-              </button>
+          >
+            <Calendar className="h-4 w-4 sm:h-5 sm:w-5" />
+            <span>Schedule</span>
+          </button>
         </div>
       </div>
 
@@ -261,10 +404,103 @@ export function PostGenerator({
         </select>
       </div>
 
-      <div>
+      <div className="relative">
         <label className="block text-sm font-medium text-gray-300 mb-1">
           Generated Cotent
         </label>
+        {plan?.format === "image" &&
+          plan?.media !== "NULL" &&
+          generatedImage && (
+            <button
+              onClick={handleImageClick}
+              className="px-3 py-1 my-2 bg-purple-500 text-white rounded-lg hover:bg-purple-600 transition-colors flex items-center gap-2"
+            >
+              <Image size={20} /> Preview Image
+            </button>
+          )}
+
+        {plan?.format === "video" && (
+          <button
+            onClick={handleVideoPrevieClick}
+            className="px-3 py-1 my-2 bg-purple-500 text-white rounded-lg hover:bg-purple-600 transition-colors flex items-center gap-2"
+          >
+            <Image size={20} /> Preview Video
+          </button>
+        )}
+
+        {showVideoPopup && (
+          <div className="fixed inset-0 bg-black bg-opacity-75 flex items-center justify-center z-50 p-4">
+            <div className="bg-white rounded-lg max-w-4xl w-full max-h-[90vh] overflow-hidden">
+              {/* Header */}
+              <div className="flex items-center justify-between p-4 border-b">
+                <h2 className="text-xl font-bold">Video Preview</h2>
+                <button
+                  onClick={handleCloseVideoPopUp}
+                  className="p-2 hover:bg-gray-100 rounded-full transition-colors"
+                >
+                  <X size={20} />
+                </button>
+              </div>
+
+              {/* Video Container */}
+              <div className="p-4">
+                <video
+                  controls
+                  className="w-full h-auto rounded-lg shadow-md max-h-[70vh]"
+                  preload="metadata"
+                  autoPlay
+                >
+                  <source
+                    src="https://zkzdqldpzvjeftxbzgvh.supabase.co/storage/v1/object/public/generated-videos//8ac022e5-fcc8-4d5b-b3f3-61928f723fc0_raw_video.mp4"
+                    type="video/mp4"
+                  />
+                  Your browser does not support the video tag.
+                </video>
+              </div>
+            </div>
+          </div>
+        )}
+        {showPopup && (
+          <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+            <img
+              className="h-[400px] w-[400px] rounded-md object-center"
+              src={generatedImage}
+            />
+            <div className="bg-white rounded-lg p-6 max-w-sm mx-4 shadow-xl">
+              <div className="flex items-center justify-between mb-4">
+                <h3 className="text-lg font-semibold text-gray-800">
+                  Download Image
+                </h3>
+                <button
+                  onClick={handleCancel}
+                  className="text-gray-400 hover:text-gray-600 transition-colors"
+                >
+                  <X size={20} />
+                </button>
+              </div>
+
+              <p className="text-gray-600 mb-6">
+                Would you like to download this image to your device?
+              </p>
+
+              <div className="flex gap-3 justify-end">
+                <button
+                  onClick={handleCancel}
+                  className="px-4 py-2 text-gray-600 bg-gray-100 rounded-lg hover:bg-gray-200 transition-colors"
+                >
+                  Cancel
+                </button>
+                <button
+                  onClick={handleDownload}
+                  className="px-4 py-2 bg-purple-500 text-white rounded-lg hover:bg-purple-600 transition-colors flex items-center gap-2"
+                >
+                  <Download size={16} />
+                  Download
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
         {/* <textarea
           value={content}
           onChange={(e) => setContent(e.target.value)}

@@ -29,6 +29,7 @@ interface ContentPlanCardProps {
   onSave: (planId: string, updates: Partial<ContentPlan>) => Promise<void>;
   onSchedule: (plan: ContentPlan) => void;
   setSelectedPlan: (action: any) => void;
+  selectedPlan : any 
 }
 
 function ContentPlanCard({
@@ -36,15 +37,17 @@ function ContentPlanCard({
   onSave,
   onSchedule,
   setSelectedPlan,
+  selectedPlan,
 }: ContentPlanCardProps) {
   return (
-    <div className="bg-gray-800 rounded-lg p-2 flex flex-col justify-between">
+    <div className="bg-gray-800 h-full  rounded-lg p-2 flex flex-col justify-between">
       <h3 className="text-lg font-medium text-white mb-2">{plan.topic}</h3>
       <PostGenerator
         plan={plan}
         onSave={(updates) => onSave(plan.id, updates)}
         onSchedule={() => onSchedule(plan)}
         setSelectedPlan={setSelectedPlan}
+        selectedPlan = {selectedPlan} 
       />
     </div>
   );
@@ -75,6 +78,7 @@ export function ContentStrategy() {
   const [selectedPlan, setSelectedPlan] = useState<ContentPlan | null>(null);
   const [showScheduleModal, setShowScheduleModal] = useState(false);
   const { profile, updateProfile } = useProfile();
+  const [selectedStrategyId , setSelectedStrategyId] = useState('');
   const [success, setSuccess] = useState<Success>({
     state: false,
     message: "",
@@ -94,6 +98,19 @@ export function ContentStrategy() {
 
   const { models, setSelectedModel, selectedModel } = useAuth();
 
+  useEffect(() => {
+    ;(async () => {
+      console.log("change spotted in selected plan = " , selectedPlan) ; 
+      if(selectedStrategyId )
+      {
+        const data = await getContentPlansWithSpecificStrategyId(
+            selectedStrategyId 
+          );
+        setPlans(data);
+      }
+    })()
+  } , [selectedPlan]  )  
+
   const onChangeStrategyHandler = async (e: any) => {
     console.log("function triggered ... ");
     console.log("value ===== ", e.target.value);
@@ -108,6 +125,8 @@ export function ContentStrategy() {
       setPlans(newPlans);
       // console.log("nicheeeeeeeeeeeeeee => " , strategy?.niche)
       setSelectedStrategy(strategy?.niche);
+      setSelectedStrategyId(strategy?.id || '') ; 
+      
       console.log("new plans = ", newPlans);
     } catch (err: any) {
       setError(err.message);
@@ -141,6 +160,7 @@ export function ContentStrategy() {
           );
           setPlans(data);
           setSelectedStrategy(response[0]?.niche)
+          setSelectedStrategyId(response[0]?.id || '') ; 
         }
       } catch (err: any) {
         console.log("error = ", err);
@@ -243,6 +263,8 @@ export function ContentStrategy() {
     status: string,
     scheduled_for: string
   ) => {
+
+    console.log("selected plan suggestion ====== " , selectedPlan?.suggestion) ; 
     if (!selectedPlan) return;
     // console.log("scheduling for date = "  , date ) ;
     const {
@@ -542,6 +564,7 @@ export function ContentStrategy() {
                   // add logic to schedule post
                 }}
                 setSelectedPlan={setSelectedPlan}
+                selectedPlan = {selectedPlan} 
               />
             ))}
           </div>

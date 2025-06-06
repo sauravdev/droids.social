@@ -16,6 +16,7 @@ import querystring from 'querystring' ;
 import OAuth from 'oauth-1.0a';
 import { googleOAuthRouter } from './routes/googleOAuth.route.js';
 import { grokApiRouter } from './routes/grok-api.route.js';
+import jwt from 'jsonwebtoken' ;
 dotenv.config() 
 
 
@@ -61,6 +62,31 @@ app.get("/fetch-image", async (req, res) => {
     res.status(500).json({ error: "Failed to fetch image" });
   }
 });
+
+
+
+const AK = "ATg988yrLBTLgPnB83mBGG8fLfKMLana"; 
+const SK = "Lp4BLyYfk8bHJCH3pQG9JKyJ9YmPtGTd";
+
+function encodeJwtToken(ak, sk) {
+  const headers = {
+    alg: 'HS256',
+    typ: 'JWT'
+  };
+
+  const payload = {
+    iss: ak,
+    exp: Math.floor(Date.now() / 1000) + 1800, // Current time + 1800s (30min)
+    nbf: Math.floor(Date.now() / 1000) - 5    // Current time - 5s
+  };
+  
+  const token = jwt.sign(payload, sk, { header: headers });
+  return token;
+}
+
+const authorization = encodeJwtToken(AK, SK);
+console.log(authorization);
+
 
 
 

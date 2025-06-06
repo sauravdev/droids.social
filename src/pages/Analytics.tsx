@@ -998,7 +998,8 @@ function MetricCard({
         {title.toLowerCase() === "engagement rate" ? `${value}%` : value}
       </p>
       <p className="text-sm text-gray-400 mt-2">
-        Last{" "}
+        LifeTime
+        {/* Last{" "}
         {timeRange === "1week"
           ? "week"
           : timeRange === "1month"
@@ -1007,7 +1008,7 @@ function MetricCard({
           ? "3 months"
           : timeRange === "6months"
           ? "6 months"
-          : "year"}
+          : "year"} */}
       </p>
     </div>
   );

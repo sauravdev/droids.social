@@ -102,9 +102,7 @@ export async function generateContentStrategy(
   if (cached) return cached;
   await rateLimit();
   try {
-    const prompt = `You are an expert social media strategist.Create a weekly social media content strategy for a ${niche} topic designed to maximize reach, engagement, and virality, with the following goals: ${goals.join(
-      ", "
-    )}. Craft posts that feel authentic, human-like, and resonate with the target audience, using trending tactics and platform-specific best practices.
+    const prompt = `You are an expert social media strategist.Create a weekly social media content strategy for a ${niche} topic designed to maximize reach, engagement, and virality, with the following goals: ${goals.join(', ')}. Craft posts that feel authentic, human-like, and resonate with the target audience, using trending tactics and platform-specific best practices.
 
 Include:
 Daily Content Suggestions: Realistic, platform-optimized post ideas for ${allowedPlatforms} , covering all days of a week
@@ -119,8 +117,6 @@ Guidelines:
 - Ensure variety: mix educational, promotional, entertaining, and community-building posts.
 - Post ideas should be detailed , niche and specialised in the domain of ${niche}
 - Posts ideas should also include informative posts
-- no hastags required, just give me detailed content ideas
-- do not generate any ideas with video, image or caraousel content
 
 Format the response as a structured JSON object with this schema:
 {
@@ -132,7 +128,7 @@ Format the response as a structured JSON object with this schema:
       "date": string (ISO format, e.g., "2025-05-01"),
       "posts": [{
         "platform": string (${allowedPlatforms}),
-        "format": "text" | "image" | "video" | "carousel" | "poll",
+        "format": "text" | "image" | "video" ,
         "topic": string,
         "suggestion": string (concise, max 30 words, with CTA and viral hook),
         "status": "pending"

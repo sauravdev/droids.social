@@ -103,35 +103,52 @@ const postContent = async (
   refresh_token,
   postId = null
 ) => {
+  console.log("postContent called with data:", data);
+  console.log("access_token:", access_token ? "Present" : "Missing");
+  console.log("refresh_token:", refresh_token ? "Present" : "Missing");
+  console.log("postId:", postId);
+
   const twitterClient = new TwitterApi({
     appKey: process.env.Twitter_APP_KEY,
     appSecret: process.env.Twitter_APP_SECRET,
-    // user
     accessToken: access_token,
     accessSecret: refresh_token,
   });
+
   try {
     const tweetText = data;
     const rwClient = twitterClient.readWrite;
+
+    console.log("Attempting to post tweet:", tweetText);
     const response = await rwClient.v2.tweet(tweetText);
-    console.log("response = ", response);
-    console.log("Tweet posted successfully:", tweetText);
+
+    console.log("Tweet posted successfully!");
+    console.log("Twitter API response:", response);
+
     if (postId) {
+      console.log(`Updating post status to 'published' for postId: ${postId}`);
       await updateScheduledPost(postId, { status: "published" });
     }
+
     return { status: 201, state: true };
   } catch (error) {
-    if (error?.code == 403) {
-      return { status: 403, state: false };
-    } else if (error?.code == 401) {
-      return { status: 401, state: false };
+    console.error("Error occurred while posting tweet:", error);
+
+    if (error?.code === 403) {
+      console.warn("Forbidden: Possibly due to duplicate content or write permissions.");
+      return { status: 403, state: false, message: "Forbidden - Check permissions or duplicate content." };
+    } else if (error?.code === 401) {
+      console.warn("Unauthorized: Invalid or expired access tokens.");
+      return { status: 401, state: false, message: "Unauthorized - Invalid tokens." };
+    } else if (error?.code === 429) {
+      console.warn("Rate limit exceeded.");
+      return { status: 429, state: false, message: "Rate limit exceeded. Try again later." };
     }
-    console.error("Error posting tweet:", error);
-    console.log("error status = ", error?.code);
-    return { status: 500, state: false };
+
+    console.log("Unhandled error code:", error?.code || "unknown");
+    return { status: 500, state: false, message: "Internal Server Error - Could not post tweet." };
   }
 };
-
 const schedulePostContent = async (
   data = "sample text",
   access_token,

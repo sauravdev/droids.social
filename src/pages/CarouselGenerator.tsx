@@ -343,7 +343,61 @@ emoji: A single, relevant emoji as a string (e.g., "🚀")`;
     return { imageUrls };
   };
 
-  const exportToPDF = async () => {
+  // const exportToPDF = async () => {
+  //   setSuccess({ state: false, message: "" });
+  //   if (slides.length === 0) {
+  //     setError("No slides to export");
+  //     return;
+  //   }
+
+  //   setExporting(true);
+  //   setError(null);
+
+  //   try {
+  //     const pdf = new jsPDF("p", "px", [1080, 1350]);
+  //     const pdfPages = [];
+
+  //     for (let i = 0; i < slides.length; i++) {
+  //       const slide = document.getElementById(`slide-${i}`);
+  //       if (!slide) continue;
+
+  //       const canvas = await html2canvas(slide, {
+  //         scale: 2,
+  //         backgroundColor: slides[i].backgroundColor,
+  //         logging: false,
+  //         useCORS: true,
+  //         // height: slide.clientHeight,
+  //         // width: slide.clientWidth,
+  //         // width: 1080,
+  //         // height: 1350
+  //       });
+
+  //       const imgData = canvas.toDataURL("image/jpeg", 0.92);
+  //       pdfPages.push(imgData);
+  //       if (i > 0) pdf.addPage([1080, 1350], "p");
+  //       pdf.addImage(imgData, "JPEG", 0, 0, 1080, 1350);
+  //     }
+
+  //     const pdfBlob = pdf.output("blob");
+  //     console.log("pdf blob", pdfBlob);
+  //     const pdfUrl = URL.createObjectURL(pdfBlob);
+  //     const downloadLink = document.createElement("a");
+  //     downloadLink.href = pdfUrl;
+  //     downloadLink.download = "generated.pdf";
+  //     downloadLink.textContent = "Download PDF";
+  //     document.body.appendChild(downloadLink);
+  //     downloadLink.click();
+  //     setSuccess({ state: true, message: "PDF Downloaded successfully !!" });
+
+  //     removeToast();
+  //   } catch (err: any) {
+  //     setError("Error exporting to PDF: " + (err?.message || "Unknown error"));
+  //   } finally {
+  //     setExporting(false);
+  //   }
+  // };
+
+    const exportToPDF = async () => {
     setSuccess({ state: false, message: "" });
     if (slides.length === 0) {
       setError("No slides to export");
@@ -366,16 +420,28 @@ emoji: A single, relevant emoji as a string (e.g., "🚀")`;
           backgroundColor: slides[i].backgroundColor,
           logging: false,
           useCORS: true,
-          // height: slide.clientHeight,
-          // width: slide.clientWidth,
-          // width: 1080,
-          // height: 1350
         });
 
-        const imgData = canvas.toDataURL("image/jpeg", 0.92); 
+        const imgData = canvas.toDataURL("image/jpeg", 0.92);
         pdfPages.push(imgData);
         if (i > 0) pdf.addPage([1080, 1350], "p");
         pdf.addImage(imgData, "JPEG", 0, 0, 1080, 1350);
+
+        // Add clickable link overlay
+        const links = slide.querySelectorAll('a[href]');
+        links.forEach(link => {
+          const rect = link.getBoundingClientRect();
+          const slideRect = slide.getBoundingClientRect();
+
+          // Calculate relative position within the slide
+          const x = (rect.left - slideRect.left) * (1080 / slideRect.width);
+          const y = (rect.top - slideRect.top) * (1350 / slideRect.height);
+          const width = rect.width * (1080 / slideRect.width);
+          const height = rect.height * (1350 / slideRect.height);
+
+          // Add clickable area to PDF
+          pdf.link(x, y, width, height, { url: link.href });
+        });
       }
 
       const pdfBlob = pdf.output("blob");
@@ -390,13 +456,14 @@ emoji: A single, relevant emoji as a string (e.g., "🚀")`;
       setSuccess({ state: true, message: "PDF Downloaded successfully !!" });
 
       removeToast();
-    } catch (err: any) {
+    } catch (err) {
       setError("Error exporting to PDF: " + (err?.message || "Unknown error"));
     } finally {
       setExporting(false);
     }
   };
 
+  
   const handleInstagramExport = async () => {
     setSuccess({ state: false, message: "" });
     if (slides.length === 0) {
@@ -878,15 +945,14 @@ emoji: A single, relevant emoji as a string (e.g., "🚀")`;
                   <div
                     contentEditable
                     suppressContentEditableWarning
-                     style={{
-                    minHeight: "60px",
-                    maxWidth: "100%",
-                    wordBreak: "break-word",
-                    overflowWrap: "break-word",
-                    textAlign  : "center",
-                    outline: "none",
-                    padding: "10px",
-                    
+                    style={{
+                      minHeight: "60px",
+                      maxWidth: "100%",
+                      wordBreak: "break-word",
+                      overflowWrap: "break-word",
+                      textAlign: "center",
+                      outline: "none",
+                      padding: "10px",
                     }}
                     className="editable-text tracking-widest bg-transparent text-white text-2xl font-medium"
                     onBlur={(e) =>
@@ -900,43 +966,51 @@ emoji: A single, relevant emoji as a string (e.g., "🚀")`;
                 </div>
 
                 {/* Footer */}
-               <div className="w-full flex items-center justify-between text-sm opacity-75">
-  <div className="capitalize tracking-widest flex-shrink-0">
-    Created by {profile?.full_name || "User"}
-  </div>
+                <div className="w-full flex items-center justify-between text-sm opacity-75">
+                  {/* Logo - Extreme Left */}
+                  <div className="flex items-center gap-2">
+                    <div
+                      style={{
+                        width: "100px",
+                        height: "64px",
+                        flexShrink: 0,
+                        display: "flex",
+                        alignItems: "center",
+                        justifyContent: "center",
+                        background: "transparent",
+                      }}
+                    >
+                      <img
+                        src={brandLogo}
+                        alt="Brand logo"
+                        style={{
+                          maxWidth: "100%",
+                          maxHeight: "100%",
+                          objectFit: "contain",
+                        }}
+                      />
+                    </div>
+                  </div>
 
-  <div className="flex gap-2 items-center">
-    <div className="flex items-center gap-2 max-w-[300px]">
-      {/* Fixed wrapper with dimensions */}
-      <div
-        style={{
-          width: "100px",
-          height: "64px",
-          flexShrink: 0,
-          display: "flex",
-          alignItems: "center",
-          justifyContent: "center",
-          background: "transparent",
-        }}
-      >
-        <img
-          src={brandLogo}
-          alt="Brand logo"
-          style={{
-            maxWidth: "100%",
-            maxHeight: "100%",
-            objectFit: "contain",
-          }}
-        />
-      </div>
-
-      <div className="text-md text-white break-all tracking-wider max-w-auto">
-        {linkedinProfile.replace("https://linkedin.com/in/", "@")}
-      </div>
-    </div>
-  </div>
-</div>
-
+                  {/* Created by - Extreme Right */}
+                  <div className="capitalize tracking-widest flex-shrink-0">
+                    Created by{" "}
+                    <a
+                      href={linkedinProfile}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="text-blue-600 hover:text-blue-800 underline cursor-pointer"
+                      style={{
+                        color: "#2563eb",
+                        textDecoration: "underline",
+                        WebkitPrintColorAdjust: "exact",
+                        colorAdjust: "exact",
+                      }}
+                    >
+                      {profile?.full_name || "User"}
+                    </a>
+                  </div>
+                </div>
               </div>
             ))}
           </div>
