@@ -101,7 +101,7 @@ export function PostGenerator({
           initializeTwitterAuth();
           return;
         } else if (response?.status == 403) {
-          setError("Content already posted");
+          setError("Your daily limit is exceeded please try again later !");
           setTimeout(() => {
             setError("");
           }, 1500);
@@ -127,7 +127,15 @@ export function PostGenerator({
     console.log("plan suggestion = ", plan?.suggestion);
     console.log("content  = ", content);
     console.log("plan media = " , plan.media) ;
-    if (!plan?.media || plan?.media == 'NULL') {
+    if(plan?.format === "video" ) 
+    {
+      setError("Video posting on instagram is currently not supported !");
+        setTimeout(() => {
+            setError("");
+          }, 1500);
+      return;
+    }
+    if ((plan?.format == "image") && (!plan?.media || plan?.media == 'NULL')) {
       setError("Please generate an image first !");
       return;
     }
@@ -353,6 +361,7 @@ export function PostGenerator({
       setSuccess({ state: false, message: "" });
     }, 1500);
   };
+  
 
   return (
     <div className="bg-gray-700 h-full  rounded-lg px-2 py-4 space-y-4 flex flex-col justify-between">
@@ -380,7 +389,7 @@ export function PostGenerator({
         </div>
       </div>
 
-      {error && <div className="text-red-500 text-sm">{error}</div>}
+      {error && <div className="bg-red-950 px-3 py-2 rounded-lg text-white text-sm">{error}</div>}
       {success.state && (
         <div className="bg-green-600 text-white px-3 py-2 sm:px-4 rounded-md text-sm">
           {success.message}

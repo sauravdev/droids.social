@@ -5,6 +5,7 @@ import { generateContentStrategy } from "../lib/openai";
 import { PostGenerator } from "../components/PostGenerator";
 import { ScheduleModal } from "../components/ScheduleModal";
 import { supabase } from "../lib/supabase";
+
 import type {
   ContentPlan,
   ContentStrategy as ContentStrategyType,
@@ -254,6 +255,8 @@ export function ContentStrategy() {
     }
   };
 
+
+
   const handleSchedule = async (
     strategyId: string,
     platform: string,
@@ -274,6 +277,23 @@ export function ContentStrategy() {
 
     //creating a schedule
     try {
+
+       if((format === "video" ) && platform == "instagram") 
+        {
+          setError("Video posting on instagram is currently not supported !");
+           setTimeout(() => {
+            setError("");
+          }, 1500);
+          return ; 
+        }
+        if((format === "carousel" ) && platform == "instagram") 
+        {
+          setError("Carousel posting on instagram is currently not supported !");
+           setTimeout(() => {
+            setError("");
+          }, 1500);
+          return ; 
+        }
       const response = await createPost({
         profile_id: user.id,
         platform: platform,
@@ -285,6 +305,8 @@ export function ContentStrategy() {
       console.log("response  = ", response);
       const jobId = response?.id;
       if (platform == "instagram") {
+
+       
         const accountInfo = await getSocialMediaAccountInfo("instagram");
         const { access_token, userId } = accountInfo;
         const response = await fetch(
@@ -552,8 +574,8 @@ export function ContentStrategy() {
         <div className="space-y-4">
           <h2 className="text-xl font-bold text-white">Content Plans</h2>
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-            {plans.map((plan) => (
-              <ContentPlanCard
+            { plans.map((plan) => (
+               accounts.some((account) => account.platform === plan.platform) && <ContentPlanCard
                 key={plan.id}
                 plan={plan}
                 onSave={updatePlan}

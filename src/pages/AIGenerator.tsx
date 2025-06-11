@@ -168,7 +168,7 @@ export function AIGenerator() {
       console.log(data);
       if (response?.status >= 400) {
         if (response?.status == 403) {
-          setError("Content already posted");
+          setError("Your daily limit is exceeded please try again later !");
           setTopic("");
           setGeneratedContent("");
           setGeneratedImage("");
