@@ -15,6 +15,6 @@ export default defineConfig({
       origin: ['https://socialdroids.wisedroids.ai', 'https://your-ngrok-url.ngrok-free.app'],
       credentials: true, // Allow cookies if needed
     },
-    allowedHosts: ['socialdroids.wisedroids.ai', 'your-ngrok-url.ngrok-free.app'], // Explicitly allow these hosts
+    allowedHosts: ['socialdroids.wisedroids.ai', 'your-ngrok-url.ngrok-free.app' , "droids.social"],
   }
 });
