@@ -13,7 +13,7 @@ const loginWithInstagram = () => {
   localStorage.removeItem("instagram_user_id");
   const authUrl = `https://www.facebook.com/v22.0/dialog/oauth
 ?client_id=1118799103324944
-&redirect_uri=https://socialdroids.wisedroids.ai/auth/instagram
+&redirect_uri=https://droids.social/auth/instagram
 &scope=instagram_basic,instagram_content_publish,instagram_manage_insights
 &response_type=code`;
   window.location.href = authUrl;
