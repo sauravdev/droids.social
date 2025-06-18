@@ -51,6 +51,7 @@ export function PostGenerator({
   const [content, setContent] = useState(plan.suggestion || "");
   const [tone, setTone] = useState<string>("");
   const [posting, setPosting] = useState<boolean | null>(false);
+  const [videoUrl , setVideoUrl] = useState(''); 
   const [success, setSuccess] = useState<Success>({
     state: false,
     message: "",
@@ -59,8 +60,15 @@ export function PostGenerator({
   const { updatePlan } = useContentPlan();
   const [showVideoPopup, setShowVideoPopup] = useState(false);
   const [showPopup, setShowPopup] = useState(false);
+  const [isVideoGenerated , setIsVideoGenerated ] = useState(false) ;
 
   const { selectedModel } = useAuth();
+
+  const videos = ['https://zkzdqldpzvjeftxbzgvh.supabase.co/storage/v1/object/public/generated-videos//2aeb4f6f-75fc-48a1-b4aa-9e21c75aa5b3_raw_video.mp4' , 
+    'https://zkzdqldpzvjeftxbzgvh.supabase.co/storage/v1/object/public/generated-videos//8ac022e5-fcc8-4d5b-b3f3-61928f723fc0_raw_video.mp4',
+    "https://zkzdqldpzvjeftxbzgvh.supabase.co/storage/v1/object/public/generated-videos//2568d3a0-6fbc-41f4-b007-0fdefca8c12b_raw_video.mp4",
+    "https://zkzdqldpzvjeftxbzgvh.supabase.co/storage/v1/object/public/generated-videos//8ac022e5-fcc8-4d5b-b3f3-61928f723fc0_raw_video.mp4"
+  ]
 
   useEffect(() => {
     console.log("current plan = ", plan);
@@ -294,6 +302,18 @@ export function PostGenerator({
     setLoading(true);
     setError(null);
     let publicUrl = "";
+    if(plan?.format === "video")
+    {
+      await new Promise((resolve , reject) => {
+        setTimeout(() => {
+        console.log("video generated !")
+        setIsVideoGenerated(true) ;
+        setLoading(false);
+        const url = videos[Math.floor(Math.random() * videos.length)]
+        setVideoUrl(url)
+      } , 300000); // 300000
+      })
+    }
     if (plan?.format === "image") {
       console.log("image ..... ");
       publicUrl = await handleImageGeneration(plan?.topic);
@@ -428,7 +448,7 @@ export function PostGenerator({
             </button>
           )}
 
-        {plan?.format === "video" && (
+        {plan?.format === "video" && isVideoGenerated &&  (
           <button
             onClick={handleVideoPrevieClick}
             className="px-3 py-1 my-2 bg-purple-500 text-white rounded-lg hover:bg-purple-600 transition-colors flex items-center gap-2"
@@ -460,7 +480,7 @@ export function PostGenerator({
                   autoPlay
                 >
                   <source
-                    src="https://zkzdqldpzvjeftxbzgvh.supabase.co/storage/v1/object/public/generated-videos//8ac022e5-fcc8-4d5b-b3f3-61928f723fc0_raw_video.mp4"
+                    src={videoUrl}
                     type="video/mp4"
                   />
                   Your browser does not support the video tag.
@@ -535,7 +555,7 @@ export function PostGenerator({
           ) : (
             <>
               <img className="h-4 w-4 flex-shrink-0" src={aiMagic} alt="" />
-              <span>Generate</span>
+              <span>Generate Post</span>
             </>
           )}
         </button>
