@@ -20,7 +20,7 @@ export function Login() {
       const { error } = await supabase.auth.signInWithOAuth({
         provider: 'google',
         options: {
-          redirectTo: 'https://socialdroids.wisedroids.ai/' // change this to your desired redirect URL
+          redirectTo: 'https://droids.social/' // change this to your desired redirect URL
         }
       });
     
