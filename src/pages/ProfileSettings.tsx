@@ -299,24 +299,24 @@ export function ProfileSettings() {
 
   // Create Profile Popup Component
   const CreateProfilePopup = () => (
-    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-      <div className="bg-gray-800 rounded-xl p-6 max-w-md w-full mx-4">
+    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+      <div className="bg-gray-800 rounded-xl p-4 sm:p-6 max-w-md w-full mx-4">
         <div className="flex justify-between items-center mb-4">
-          <h2 className="text-xl font-bold text-white">Create Your Profile</h2>
+          <h2 className="text-lg sm:text-xl font-bold text-white">Create Your Profile</h2>
           <button
             onClick={() => setShowCreateProfilePopup(false)}
-            className="text-gray-400 hover:text-white"
+            className="text-gray-400 hover:text-white p-1"
           >
-            <X className="h-5 w-5" />
+            <X className="h-4 w-4 sm:h-5 sm:w-5" />
           </button>
         </div>
         
-        <p className="text-gray-300 mb-4">
+        <p className="text-gray-300 mb-4 text-sm sm:text-base">
           Let's create your professional profile! Please enter your niche to get started.
         </p>
 
         {error && (
-          <div className="bg-red-900 text-white px-4 py-2 rounded-md text-sm mb-4">
+          <div className="bg-red-900 text-white px-3 sm:px-4 py-2 rounded-md text-xs sm:text-sm mb-4">
             {error}
           </div>
         )}
@@ -325,7 +325,7 @@ export function ProfileSettings() {
           <div>
             <label
               htmlFor="popupNiche"
-              className="block text-sm font-medium text-gray-300 mb-2"
+              className="block text-xs sm:text-sm font-medium text-gray-300 mb-2"
             >
               Professional Niche *
             </label>
@@ -335,33 +335,35 @@ export function ProfileSettings() {
               value={popupNiche}
               onChange={(e) => setPopupNiche(e.target.value)}
               placeholder="e.g., Tech Entrepreneur, Digital Marketing Expert"
-              className="block w-full bg-gray-700 border border-gray-600 rounded-md shadow-sm py-2 px-3 text-white focus:ring-purple-500 focus:border-purple-500"
+              className="block w-full bg-gray-700 border border-gray-600 rounded-md shadow-sm py-2 px-3 text-white focus:ring-purple-500 focus:border-purple-500 text-sm sm:text-base"
               required
               autoFocus
             />
           </div>
 
-          <div className="flex gap-3">
+          <div className="flex flex-col sm:flex-row gap-3">
             <button
               onClick={() => setShowCreateProfilePopup(false)}
-              className="flex-1 px-4 py-2 border border-gray-600 rounded-md text-gray-300 hover:bg-gray-700"
+              className="flex-1 px-4 py-2 border border-gray-600 rounded-md text-gray-300 hover:bg-gray-700 text-sm sm:text-base transition-colors"
             >
               Skip for now
             </button>
             <button
               onClick={() => handleGenerateProfile(true)}
               disabled={generating || !popupNiche.trim() || !fullName}
-              className="flex-1 flex justify-center items-center px-4 py-2 bg-purple-600 hover:bg-purple-700 text-white rounded-md disabled:opacity-50"
+              className="flex-1 flex justify-center items-center px-4 py-2 bg-purple-600 hover:bg-purple-700 text-white rounded-md disabled:opacity-50 text-sm sm:text-base transition-colors"
             >
               {generating ? (
                 <>
-                  <Loader className="animate-spin h-4 w-4 mr-2" />
-                  Creating...
+                  <Loader className="animate-spin h-3 w-3 sm:h-4 sm:w-4 mr-2 flex-shrink-0" />
+                  <span className="hidden xs:inline">Creating...</span>
+                  <span className="xs:hidden">...</span>
                 </>
               ) : (
                 <>
-                  <Sparkles className="h-4 w-4 mr-2" />
-                  Create Profile
+                  <Sparkles className="h-3 w-3 sm:h-4 sm:w-4 mr-2 flex-shrink-0" />
+                  <span className="hidden xs:inline">Create Profile</span>
+                  <span className="xs:hidden">Create</span>
                 </>
               )}
             </button>
@@ -372,23 +374,23 @@ export function ProfileSettings() {
   );
 
   return (
-    <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
+    <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-4 sm:py-6">
       {/* Create Profile Popup */}
       {showCreateProfilePopup && !settings?.bio && <CreateProfilePopup />}
 
       {/* Success Popup */}
       {showPopup && (
-        <div className="absolute top-10 right-5 p-3 bg-green-500 text-white rounded-lg shadow-lg">
+        <div className="fixed top-4 right-4 sm:top-10 sm:right-5 p-3 bg-green-500 text-white rounded-lg shadow-lg z-50 text-sm sm:text-base max-w-xs sm:max-w-none">
           ✅ Twitter Profile Updated Successfully!
         </div>
       )}
 
-      <div className="mb-8">
-        <h1 className="text-3xl font-bold text-white">
+      <div className="mb-6 sm:mb-8">
+        <h1 className="text-2xl sm:text-3xl font-bold text-white">
           {isFirstLogin ? "Complete Your Profile" : "Profile Settings"}
         </h1>
         {isFirstLogin && (
-          <p className="mt-2 text-gray-400">
+          <p className="mt-2 text-gray-400 text-sm sm:text-base">
             Let's set up your profile to get started. You can always update
             these details later.
           </p>
@@ -396,24 +398,85 @@ export function ProfileSettings() {
       </div>
 
       {(error || profileError || settingsError) && (
-        <div className="bg-red-900 text-white px-4 py-2 rounded-md text-sm mb-6">
+        <div className="bg-red-900 text-white px-3 sm:px-4 py-2 rounded-md text-xs sm:text-sm mb-4 sm:mb-6">
           {error || profileError || settingsError}
         </div>
       )}
 
       {/* Only show the main form if user has bio or has dismissed the popup */}
       {(bio && bio.trim() !== "") || !showCreateProfilePopup ? (
-        <div className="space-y-6">
+        <div className="space-y-4 sm:space-y-6">
           {/* Profile Images */}
-          <div className="bg-gray-800 rounded-xl ">
+
+          <div className="relative">
+              <label
+                htmlFor="niche"
+                className="block text-xs sm:text-sm font-medium text-gray-300 flex items-center gap-2 mb-1 sm:mb-2"
+              >
+                Professional Niche
+                <div className="relative group">
+                  <svg
+                    className="w-3 h-3 sm:w-4 sm:h-4 text-gray-400 hover:text-gray-300 cursor-help"
+                    fill="currentColor"
+                    viewBox="0 0 20 20"
+                  >
+                    <path
+                      fillRule="evenodd"
+                      d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-8-3a1 1 0 00-.867.5 1 1 0 11-1.731-1A3 3 0 0113 8a3.001 3.001 0 01-2 2.83V11a1 1 0 11-2 0v-1a1 1 0 011-1 1 1 0 100-2zm0 8a1 1 0 100-2 1 1 0 000 2z"
+                      clipRule="evenodd"
+                    />
+                  </svg>
+                  {/* Tooltip */}
+                  <div className="absolute bottom-full left-1/2 transform -translate-x-1/2 mb-2 px-2 sm:px-3 py-1 sm:py-2 bg-gray-800 text-white text-xs rounded-lg shadow-lg opacity-0 group-hover:opacity-100 transition-opacity duration-200 pointer-events-none whitespace-nowrap z-10 max-w-xs sm:max-w-none">
+                    <span className="hidden sm:inline">This field is editable - manually enter your professional specialty</span>
+                    <span className="sm:hidden">Manually enter your specialty</span>
+                    <div className="absolute top-full left-1/2 transform -translate-x-1/2 w-0 h-0 border-l-4 border-r-4 border-t-4 border-transparent border-t-gray-800"></div>
+                  </div>
+                </div>
+              </label>
+              <input
+                type="text"
+                id="niche"
+                value={niche}
+                onChange={(e) => setNiche(e.target.value)}
+                placeholder="e.g., Tech Entrepreneur, Digital Marketing Expert"
+                className="block w-full bg-gray-700 border border-gray-600 rounded-md shadow-sm py-2 px-3 text-white focus:ring-purple-500 focus:border-purple-500 text-sm sm:text-base"
+              />
+            </div>
+
+
+           <button
+                type="button"
+                onClick={() => handleGenerateProfile(false)}
+                disabled={generating || !fullName || !niche}
+                className="w-full flex justify-center items-center px-3 sm:px-4 py-2 border border-transparent rounded-md shadow-sm text-xs sm:text-sm font-medium text-white bg-purple-600 hover:bg-purple-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-purple-500 disabled:opacity-50 transition-colors min-h-[44px]"
+              >
+                {generating ? (
+                  <>
+                    <Loader className="animate-spin h-4 w-4 sm:h-5 sm:w-5 mr-2 flex-shrink-0" />
+                    <span className="hidden xs:inline">Generating...</span>
+                    <span className="xs:hidden">Generating...</span>
+                  </>
+                ) : (
+                  <>
+                    <Sparkles className="h-4 w-4 sm:h-5 sm:w-5 mr-2 flex-shrink-0" />
+                    <span className="hidden xs:inline">Generate Profile</span>
+                    <span className="xs:hidden">Generate</span>
+                  </>
+                )}
+              </button>
+
+               
+
+          <div className="bg-gray-800 rounded-xl overflow-hidden">
             <ProfileImageUpload
               type="banner"
               currentUrl={settings?.banner_image_url || null}
               onUpload={(url) => updateSettings({ banner_image_url: url })}
             />
-            <div className="p-6">
-              <div className="flex items-end -mt-16 mb-4">
-                <div className="w-32 h-32 relative">
+            <div className="p-4 sm:p-6">
+              <div className="flex items-end -mt-12 sm:-mt-16 mb-4">
+                <div className="w-24 h-24 sm:w-32 sm:h-32 relative">
                   <ProfileImageUpload
                     type="avatar"
                     currentUrl={profile?.avatar_url || null}
@@ -427,12 +490,12 @@ export function ProfileSettings() {
           {/* Profile Form */}
           <form
             onSubmit={handleSubmit}
-            className="bg-gray-800 rounded-xl p-6 space-y-6"
+            className="bg-gray-800 rounded-xl p-4 sm:p-6 space-y-4 sm:space-y-6"
           >
             <div>
               <label
                 htmlFor="fullName"
-                className="block text-sm font-medium text-gray-300"
+                className="block text-xs sm:text-sm font-medium text-gray-300 mb-1 sm:mb-2"
               >
                 Full Name
               </label>
@@ -441,50 +504,16 @@ export function ProfileSettings() {
                 id="fullName"
                 value={fullName}
                 onChange={(e) => setFullName(e.target.value)}
-                className="mt-1 block w-full bg-gray-700 border border-gray-600 rounded-md shadow-sm py-2 px-3 text-white focus:ring-purple-500 focus:border-purple-500"
+                className="block w-full bg-gray-700 border border-gray-600 rounded-md shadow-sm py-2 px-3 text-white focus:ring-purple-500 focus:border-purple-500 text-sm sm:text-base"
                 required
               />
             </div>
 
-            <div className="relative">
-              <label
-                htmlFor="niche"
-                className="block text-sm font-medium text-gray-300 flex items-center gap-2"
-              >
-                Professional Niche
-                <div className="relative group">
-                  <svg
-                    className="w-4 h-4 text-gray-400 hover:text-gray-300 cursor-help"
-                    fill="currentColor"
-                    viewBox="0 0 20 20"
-                  >
-                    <path
-                      fillRule="evenodd"
-                      d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-8-3a1 1 0 00-.867.5 1 1 0 11-1.731-1A3 3 0 0113 8a3.001 3.001 0 01-2 2.83V11a1 1 0 11-2 0v-1a1 1 0 011-1 1 1 0 100-2zm0 8a1 1 0 100-2 1 1 0 000 2z"
-                      clipRule="evenodd"
-                    />
-                  </svg>
-                  {/* Tooltip */}
-                  <div className="absolute bottom-full left-1/2 transform -translate-x-1/2 mb-2 px-3 py-2 bg-gray-800 text-white text-xs rounded-lg shadow-lg opacity-0 group-hover:opacity-100 transition-opacity duration-200 pointer-events-none whitespace-nowrap z-10">
-                    This field is editable - manually enter your professional
-                    specialty
-                    <div className="absolute top-full left-1/2 transform -translate-x-1/2 w-0 h-0 border-l-4 border-r-4 border-t-4 border-transparent border-t-gray-800"></div>
-                  </div>
-                </div>
-              </label>
-              <input
-                type="text"
-                id="niche"
-                value={niche}
-                onChange={(e) => setNiche(e.target.value)}
-                placeholder="e.g., Tech Entrepreneur, Digital Marketing Expert - manually enter your specialty"
-                className="mt-1 block w-full bg-gray-700 border border-gray-600 rounded-md shadow-sm py-2 px-3 text-white focus:ring-purple-500 focus:border-purple-500"
-              />
-            </div>
+           
             <div>
               <label
                 htmlFor="bio"
-                className="block text-sm font-medium text-gray-300"
+                className="block text-xs sm:text-sm font-medium text-gray-300 mb-1 sm:mb-2"
               >
                 Bio
               </label>
@@ -493,14 +522,14 @@ export function ProfileSettings() {
                 value={bio}
                 onChange={(e) => setBio(e.target.value)}
                 rows={4}
-                className="mt-1 block w-full bg-gray-700 border border-gray-600 rounded-md shadow-sm py-2 px-3 text-white focus:ring-purple-500 focus:border-purple-500"
+                className="block w-full bg-gray-700 border border-gray-600 rounded-md shadow-sm py-2 px-3 text-white focus:ring-purple-500 focus:border-purple-500 text-sm sm:text-base resize-vertical"
               />
             </div>
 
             <div>
               <label
                 htmlFor="timezone"
-                className="block text-sm font-medium text-gray-300"
+                className="block text-xs sm:text-sm font-medium text-gray-300 mb-1 sm:mb-2"
               >
                 Timezone
               </label>
@@ -508,7 +537,7 @@ export function ProfileSettings() {
                 id="timezone"
                 value={settings?.timezone || timezone}
                 onChange={(e) => setTimezone(e.target.value)}
-                className="mt-1 block w-full bg-gray-700 border border-gray-600 rounded-md shadow-sm py-2 px-3 text-white focus:ring-purple-500 focus:border-purple-500"
+                className="block w-full bg-gray-700 border border-gray-600 rounded-md shadow-sm py-2 px-3 text-white focus:ring-purple-500 focus:border-purple-500 text-sm sm:text-base"
               >
                 <option value="UTC">UTC</option>
                 <option value="America/New_York">Eastern Time</option>
@@ -519,10 +548,10 @@ export function ProfileSettings() {
             </div>
 
             <div>
-              <h3 className="text-sm font-medium text-gray-300">
+              <h3 className="text-xs sm:text-sm font-medium text-gray-300 mb-2 sm:mb-3">
                 Notification Preferences
               </h3>
-              <div className="mt-2 space-y-2">
+              <div className="space-y-2 sm:space-y-3">
                 <label className="flex items-center">
                   <input
                     type="checkbox"
@@ -533,9 +562,9 @@ export function ProfileSettings() {
                         email: e.target.checked,
                       }))
                     }
-                    className="rounded border-gray-600 text-purple-600 focus:ring-purple-500 bg-gray-700"
+                    className="rounded border-gray-600 text-purple-600 focus:ring-purple-500 bg-gray-700 w-4 h-4 sm:w-5 sm:h-5"
                   />
-                  <span className="ml-2 text-sm text-gray-300">
+                  <span className="ml-2 text-xs sm:text-sm text-gray-300">
                     Email Notifications
                   </span>
                 </label>
@@ -549,68 +578,54 @@ export function ProfileSettings() {
                         push: e.target.checked,
                       }))
                     }
-                    className="rounded border-gray-600 text-purple-600 focus:ring-purple-500 bg-gray-700"
+                    className="rounded border-gray-600 text-purple-600 focus:ring-purple-500 bg-gray-700 w-4 h-4 sm:w-5 sm:h-5"
                   />
-                  <span className="ml-2 text-sm text-gray-300">
+                  <span className="ml-2 text-xs sm:text-sm text-gray-300">
                     Push Notifications
                   </span>
                 </label>
               </div>
             </div>
 
-            <div className="flex flex-col sm:flex-row gap-4">
-              <button
-                type="button"
-                onClick={() => handleGenerateProfile(false)}
-                disabled={generating || !fullName || !niche}
-                className="flex-1 flex justify-center items-center px-4 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-purple-600 hover:bg-purple-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-purple-500 disabled:opacity-50"
-              >
-                {generating ? (
-                  <>
-                    <Loader className="animate-spin h-5 w-5 mr-2" />
-                    Generating...
-                  </>
-                ) : (
-                  <>
-                    <Sparkles className="h-5 w-5 mr-2" />
-                    Generate Profile
-                  </>
-                )}
-              </button>
+            <div className="flex flex-col sm:flex-row gap-3 sm:gap-4">
+              
 
               <button
                 type="submit"
                 disabled={updating}
-                className="flex-1 flex justify-center items-center px-4 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-green-600 hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500 disabled:opacity-50"
+                className="flex-1 flex justify-center items-center px-3 sm:px-4 py-2 border border-transparent rounded-md shadow-sm text-xs sm:text-sm font-medium text-white bg-green-600 hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500 disabled:opacity-50 transition-colors min-h-[44px]"
               >
                 {updating ? (
                   <>
-                    <Loader className="animate-spin h-5 w-5 mr-2" />
-                    Saving...
+                    <Loader className="animate-spin h-4 w-4 sm:h-5 sm:w-5 mr-2 flex-shrink-0" />
+                    <span className="hidden xs:inline">Saving...</span>
+                    <span className="xs:hidden">Save...</span>
                   </>
                 ) : (
-                  "Save Changes"
+                  <span>Save Changes</span>
                 )}
               </button>
+              
               {selectedPlatform == "twitter" && !generating && bio !== "" && (
                 <button
                   onClick={() => {
                     handleTwitterProfileUpdate();
                   }}
-                  type="submit"
+                  type="button"
                   disabled={updateTwitterProfile}
-                  className="flex-1 flex justify-center capitazlize  items-center px-4 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-green-600 hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500 disabled:opacity-50"
+                  className="flex-1 flex justify-center items-center px-3 sm:px-4 py-2 border border-transparent rounded-md shadow-sm text-xs sm:text-sm font-medium text-white bg-green-600 hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500 disabled:opacity-50 transition-colors min-h-[44px]"
                 >
                   {updateTwitterProfile ? (
                     <>
-                      <Loader className="animate-spin h-5 w-5 mr-2" />
-                      updating...
+                      <Loader className="animate-spin h-4 w-4 sm:h-5 sm:w-5 mr-2 flex-shrink-0" />
+                      <span className="hidden xs:inline">Updating...</span>
+                      <span className="xs:hidden">Update...</span>
                     </>
                   ) : (
                     <>
-                      {" "}
-                      <Twitter className="mr-2 h-4 w-4" />{" "}
-                      <span className="capitalize ">Update profile</span>
+                      <Twitter className="mr-2 h-3 w-3 sm:h-4 sm:w-4 flex-shrink-0" />
+                      <span className="hidden xs:inline">Update Profile</span>
+                      <span className="xs:hidden">Update</span>
                     </>
                   )}
                 </button>
@@ -619,19 +634,19 @@ export function ProfileSettings() {
           </form>
 
           {/* Social Accounts Section */}
-          {/* <div className="bg-gray-800 rounded-xl p-6">
+          {/* <div className="bg-gray-800 rounded-xl p-4 sm:p-6">
             <SocialAccountsManager selectedPlatform = {selectedPlatform}  setSelectedPlatform = {setSelectedPlatform} handleFetchProfileInfo = {handleFetchProfileInfo} />
           </div> */}
         </div>
       ) : (
         // Show a simple message when popup is dismissed but no bio exists
-        <div className="bg-gray-800 rounded-xl p-6 text-center">
-          <p className="text-gray-300 mb-4">
+        <div className="bg-gray-800 rounded-xl p-4 sm:p-6 text-center">
+          <p className="text-gray-300 mb-4 text-sm sm:text-base">
             Create your profile to get started with personalized content generation.
           </p>
           <button
             onClick={() => setShowCreateProfilePopup(true)}
-            className="px-4 py-2 bg-purple-600 hover:bg-purple-700 text-white rounded-md"
+            className="px-4 py-2 bg-purple-600 hover:bg-purple-700 text-white rounded-md text-sm sm:text-base transition-colors"
           >
             Create Profile
           </button>

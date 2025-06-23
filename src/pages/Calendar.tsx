@@ -45,7 +45,6 @@ function PostModal({ refreshCalendar, setRefreshCalendar, post, onClose }: PostM
   const [error, setError] = useState<string | null>(null);
   const { updatePost, deletePost } = useScheduledPosts();
 
-
   const hasContentChanged = content !== post.content;
   const hasScheduleChanged = scheduledFor !== format(new Date(parseISO(post.scheduled_for).getTime() + parseISO(post.scheduled_for).getTimezoneOffset() * 60000), "yyyy-MM-dd'T'HH:mm");
 
@@ -258,91 +257,97 @@ function PostModal({ refreshCalendar, setRefreshCalendar, post, onClose }: PostM
 
   return (
     <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-      <div className="bg-gray-800 rounded-xl p-6 w-full max-w-lg">
+      <div className="bg-gray-800 rounded-xl p-4 sm:p-6 w-full max-w-xs sm:max-w-lg max-h-[90vh] overflow-y-auto">
         <div className="flex justify-between items-center mb-4">
-          <h3 className="text-lg font-semibold text-white">Edit Post for  {post?.platform}</h3>
-          <button onClick={onClose} className="text-gray-400 hover:text-white">
-            <X className="h-5 w-5" />
+          <h3 className="text-base sm:text-lg font-semibold text-white truncate pr-2">
+            <span className="hidden xs:inline">Edit Post for {post?.platform}</span>
+            <span className="xs:hidden">Edit {post?.platform}</span>
+          </h3>
+          <button onClick={onClose} className="text-gray-400 hover:text-white flex-shrink-0">
+            <X className="h-4 w-4 sm:h-5 sm:w-5" />
           </button>
         </div>
 
         {error && (
-          <div className="bg-red-900 text-white px-4 py-2 rounded-md text-sm mb-4 flex items-center space-x-2">
-            <AlertCircle className="h-4 w-4" />
-            <span>{error}</span>
+          <div className="bg-red-900 text-white px-3 sm:px-4 py-2 rounded-md text-xs sm:text-sm mb-4 flex items-center space-x-2">
+            <AlertCircle className="h-3 w-3 sm:h-4 sm:w-4 flex-shrink-0" />
+            <span className="break-words">{error}</span>
           </div>
         )}
 
-        <div className="space-y-4">
+        <div className="space-y-3 sm:space-y-4">
           <div>
-            <label className="block text-sm font-medium text-gray-300 mb-1">
+            <label className="block text-xs sm:text-sm font-medium text-gray-300 mb-1 sm:mb-2">
               Content
             </label>
-
-            <Editor data={content} />
+            <div className="text-sm sm:text-base">
+              <Editor data={content} />
+            </div>
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-gray-300 mb-1">
+            <label className="block text-xs sm:text-sm font-medium text-gray-300 mb-1 sm:mb-2">
               Scheduled For
             </label>
             <input
               type="datetime-local"
               value={scheduledFor}
               onChange={(e) => { setScheduledFor(e.target.value) }}
-              className="w-full bg-gray-700 border border-gray-600 rounded-md shadow-sm py-2 px-3 text-white focus:ring-purple-500 focus:border-purple-500"
+              className="w-full bg-gray-700 border border-gray-600 rounded-md shadow-sm py-2 px-3 text-white focus:ring-purple-500 focus:border-purple-500 text-sm sm:text-base"
             />
           </div>
 
-          <div className="flex flex-wrap gap-2 justify-start">
-
+          <div className="flex flex-col xs:flex-row gap-2 xs:gap-2 sm:gap-3 justify-start">
             <button
               onClick={handleDeletePost}
               disabled={deleting}
-              className={`px-4 py-2 text-white rounded-md flex items-center space-x-2 bg-purple-600 hover:bg-purple-700 disabled:opacity-50`}
+              className="flex-1 xs:flex-none px-3 sm:px-4 py-2 text-white rounded-md flex items-center justify-center space-x-1 sm:space-x-2 bg-purple-600 hover:bg-purple-700 disabled:opacity-50 text-xs sm:text-sm transition-colors min-h-[40px]"
             >
               {deleting ? (
                 <>
-                  <Loader className="h-4 w-4 animate-spin" />
-                  <span>Deleting...</span>
+                  <Loader className="h-3 w-3 sm:h-4 sm:w-4 animate-spin flex-shrink-0" />
+                  <span className="hidden xs:inline">Deleting...</span>
+                  <span className="xs:hidden">Del...</span>
                 </>
               ) : (
                 <>
-                  <Delete className="h-4 w-4" />
-                  <span>Delete Post</span>
+                  <Delete className="h-3 w-3 sm:h-4 sm:w-4 flex-shrink-0" />
+                  <span className="hidden xs:inline">Delete Post</span>
+                  <span className="xs:hidden">Delete</span>
                 </>
               )}
-
             </button>
-
 
             <button
               onClick={handleReschedule}
               disabled={saving || !hasScheduleChanged}
-              className={`px-4 py-2 text-white rounded-md flex items-center space-x-2 ${hasScheduleChanged ? 'bg-blue-600 hover:bg-blue-700' : 'bg-gray-600 cursor-not-allowed'
-                } disabled:opacity-50`}
+              className={`flex-1 xs:flex-none px-3 sm:px-4 py-2 text-white rounded-md flex items-center justify-center space-x-1 sm:space-x-2 text-xs sm:text-sm transition-colors min-h-[40px] ${
+                hasScheduleChanged ? 'bg-blue-600 hover:bg-blue-700' : 'bg-gray-600 cursor-not-allowed'
+              } disabled:opacity-50`}
             >
-              <Clock className="h-4 w-4" />
-              <span>Reschedule</span>
+              <Clock className="h-3 w-3 sm:h-4 sm:w-4 flex-shrink-0" />
+              <span className="hidden xs:inline">Reschedule</span>
+              <span className="xs:hidden">Resched</span>
             </button>
+
             <button
               onClick={handlePostNow}
               disabled={posting}
-              className="px-4 py-2 bg-green-600 hover:bg-green-700 text-white rounded-md flex items-center space-x-2 disabled:opacity-50"
+              className="flex-1 xs:flex-none px-3 sm:px-4 py-2 bg-green-600 hover:bg-green-700 text-white rounded-md flex items-center justify-center space-x-1 sm:space-x-2 disabled:opacity-50 text-xs sm:text-sm transition-colors min-h-[40px]"
             >
               {posting ? (
                 <>
-                  <Loader className="h-4 w-4 animate-spin" />
-                  <span>Posting...</span>
+                  <Loader className="h-3 w-3 sm:h-4 sm:w-4 animate-spin flex-shrink-0" />
+                  <span className="hidden xs:inline">Posting...</span>
+                  <span className="xs:hidden">Post...</span>
                 </>
               ) : (
                 <>
-                  <Send className="h-4 w-4" />
-                  <span>Post Now</span>
+                  <Send className="h-3 w-3 sm:h-4 sm:w-4 flex-shrink-0" />
+                  <span className="hidden xs:inline">Post Now</span>
+                  <span className="xs:hidden">Post</span>
                 </>
               )}
-
-
             </button>
           </div>
         </div>
@@ -350,8 +355,8 @@ function PostModal({ refreshCalendar, setRefreshCalendar, post, onClose }: PostM
     </div>
   );
 }
-export function Calendar() {
 
+export function Calendar() {
   const { loading: scheduledLoading, error: scheduledError, updatePost, createPost, loadPosts } = useScheduledPosts();
   const { plans: contentPlans, loading: plansLoading, updatePlan, refreshPlans } = useContentPlan();
   const [selectedPost, setSelectedPost] = useState<Post | null>(null);
@@ -404,13 +409,15 @@ export function Calendar() {
   // Create a function to generate calendar grid with proper alignment
   const generateCalendarGrid = () => {
     const weekdays = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
+    const weekdaysShort = ['S', 'M', 'T', 'W', 'T', 'F', 'S']; // For mobile
     const grid = [];
     
     // Add weekday headers
-    weekdays.forEach(day => {
+    weekdays.forEach((day, index) => {
       grid.push(
-        <div key={`header-${day}`} className="text-center text-gray-400 text-sm">
-          {day}
+        <div key={`header-${day}`} className="text-center text-gray-400 text-xs sm:text-sm font-medium py-2">
+          <span className="hidden xs:inline">{day}</span>
+          <span className="xs:hidden">{weekdaysShort[index]}</span>
         </div>
       );
     });
@@ -418,8 +425,8 @@ export function Calendar() {
     // Add empty cells for days before the first day of month
     for (let i = 0; i < firstDayOfMonth; i++) {
       grid.push(
-        <div key={`empty-${i}`} className="min-h-[100px] p-2 rounded-lg bg-gray-800 opacity-50">
-          <p className="text-gray-500 text-sm mb-2"></p>
+        <div key={`empty-${i}`} className="min-h-[60px] xs:min-h-[80px] sm:min-h-[100px] p-1 sm:p-2 rounded-lg bg-gray-800 opacity-50">
+          <p className="text-gray-500 text-xs sm:text-sm mb-1 sm:mb-2"></p>
         </div>
       );
     }
@@ -430,11 +437,11 @@ export function Calendar() {
       grid.push(
         <div
           key={`day-${format(date, 'd')}`}
-          className="min-h-[100px] p-2 rounded-lg bg-gray-700"
+          className="min-h-[60px] xs:min-h-[80px] sm:min-h-[100px] p-1 sm:p-2 rounded-lg bg-gray-700"
         >
-          <p className="text-white text-sm mb-2">{format(date, 'd')}</p>
-          <div className="space-y-2">
-            {dayPosts.map((post: Post) => (
+          <p className="text-white text-xs sm:text-sm mb-1 sm:mb-2 font-medium">{format(date, 'd')}</p>
+          <div className="space-y-1 sm:space-y-2">
+            {dayPosts.slice(0, 3).map((post: Post) => ( // Limit posts shown on mobile
               post?.status !== "published" && <div
                 key={post.id}
                 onClick={() => setSelectedPost(post)}
@@ -442,16 +449,22 @@ export function Calendar() {
                   post.type === 'planned'
                     ? 'bg-blue-600 bg-opacity-20 border-blue-500'
                     : 'bg-purple-600 bg-opacity-20 border-purple-500'
-                } border rounded-lg p-2 cursor-pointer hover:bg-opacity-30 transition`}
+                } border rounded-md p-1 sm:p-2 cursor-pointer hover:bg-opacity-30 transition`}
               >
-                <p className="text-white text-xs">
-                  {post.content.slice(0, 20)}...
+                <p className="text-white text-xs line-clamp-2">
+                  <span className="hidden xs:inline">{post.content.slice(0, 30)}...</span>
+                  <span className="xs:hidden">{post.content.slice(0, 15)}...</span>
                 </p>
-                <p className="text-gray-400 text-xs">
-                  {`${parseISO(post?.scheduled_for).getUTCHours()}:${parseISO(post?.scheduled_for).getUTCMinutes() < 10 ? '0' + parseISO(post?.scheduled_for).getUTCMinutes() : parseISO(post?.scheduled_for).getUTCMinutes()}`}
+                <p className="text-gray-400 text-xs mt-1">
+                  {`${parseISO(post?.scheduled_for).getUTCHours().toString().padStart(2, '0')}:${parseISO(post?.scheduled_for).getUTCMinutes().toString().padStart(2, '0')}`}
                 </p>
               </div>
             ))}
+            {dayPosts.length > 3 && (
+              <div className="text-xs text-gray-400 text-center">
+                +{dayPosts.length - 3} more
+              </div>
+            )}
           </div>
         </div>
       );
@@ -463,8 +476,8 @@ export function Calendar() {
     
     for (let i = 0; i < remainingCells; i++) {
       grid.push(
-        <div key={`remaining-${i}`} className="min-h-[100px] p-2 rounded-lg bg-gray-800 opacity-50">
-          <p className="text-gray-500 text-sm mb-2"></p>
+        <div key={`remaining-${i}`} className="min-h-[60px] xs:min-h-[80px] sm:min-h-[100px] p-1 sm:p-2 rounded-lg bg-gray-800 opacity-50">
+          <p className="text-gray-500 text-xs sm:text-sm mb-1 sm:mb-2"></p>
         </div>
       );
     }
@@ -488,47 +501,54 @@ export function Calendar() {
   if (scheduledLoading || plansLoading) {
     return (
       <div className="flex items-center justify-center min-h-screen">
-        <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-purple-500"></div>
+        <div className="animate-spin rounded-full h-8 w-8 sm:h-12 sm:w-12 border-t-2 border-b-2 border-purple-500"></div>
       </div>
     );
   }
 
   return (
-    <div className="space-y-8">
-      <div className="flex justify-between items-center">
-        <div className="flex gap-4 items-center">
-          <h1 className="text-3xl font-bold text-white">Content Calendar</h1>
+    <div className="space-y-4 sm:space-y-6 lg:space-y-8 px-4 sm:px-6 lg:px-8 py-4 sm:py-6">
+      <div className="flex flex-col xs:flex-row justify-between items-start xs:items-center gap-4 xs:gap-0">
+        <div className="flex gap-2 sm:gap-4 items-center min-w-0 flex-1">
+          <h1 className="text-xl sm:text-2xl lg:text-3xl font-bold text-white truncate">
+            <span className="hidden sm:inline">Content Calendar</span>
+            <span className="sm:hidden">Calendar</span>
+          </h1>
           <button
-            className={`${refreshingState ? 'animate-spin' : ""}`}
+            className={`${refreshingState ? 'animate-spin' : ""} flex-shrink-0`}
             onClick={() => { setRefreshingState(true); setRefreshCalender(!refreshCalendar) }}
           >
-            <RefreshCcw className={`h-6 w-6 text-gray-400 ${refreshingState ? 'animate-spin' : ''}`} />
+            <RefreshCcw className={`h-4 w-4 sm:h-5 sm:w-5 lg:h-6 lg:w-6 text-gray-400 ${refreshingState ? 'animate-spin' : ''}`} />
           </button>
         </div>
 
-        <div className="flex space-x-4">
+        <div className="flex items-center space-x-2 sm:space-x-4 flex-shrink-0">
           <button
             onClick={() => setCurrentDate(subMonths(currentDate, 1))}
-            className="text-white"
+            className="text-white p-1 hover:bg-gray-700 rounded transition-colors"
           >
-            <ChevronLeft className="h-6 w-6" />
+            <ChevronLeft className="h-4 w-4 sm:h-5 sm:w-5 lg:h-6 lg:w-6" />
           </button>
-          <span className="text-white font-medium">{format(currentDate, 'MMMM yyyy')}</span>
+          <span className="text-white font-medium text-sm sm:text-base lg:text-lg min-w-0">
+            <span className="hidden sm:inline">{format(currentDate, 'MMMM yyyy')}</span>
+            <span className="sm:hidden">{format(currentDate, 'MMM yyyy')}</span>
+          </span>
           <button
             onClick={() => setCurrentDate(addMonths(currentDate, 1))}
-            className="text-white"
+            className="text-white p-1 hover:bg-gray-700 rounded transition-colors"
           >
-            <ChevronRight className="h-6 w-6" />
+            <ChevronRight className="h-4 w-4 sm:h-5 sm:w-5 lg:h-6 lg:w-6" />
           </button>
         </div>
       </div>
 
-      <div onClick={() => { setRefreshCalender(!refreshCalendar) }} className="space-y-8">
-        <div className="bg-gray-800 rounded-xl p-6">
-          <h2 className="text-xl font-semibold text-white mb-4">
-            {format(currentDate, 'MMMM yyyy')}
+      <div onClick={() => { setRefreshCalender(!refreshCalendar) }} className="space-y-4 sm:space-y-6 lg:space-y-8">
+        <div className="bg-gray-800 rounded-xl p-3 sm:p-4 lg:p-6">
+          <h2 className="text-base sm:text-lg lg:text-xl font-semibold text-white mb-3 sm:mb-4">
+            <span className="hidden sm:inline">{format(currentDate, 'MMMM yyyy')}</span>
+            <span className="sm:hidden">{format(currentDate, 'MMM yyyy')}</span>
           </h2>
-          <div className="grid grid-cols-7 gap-4">
+          <div className="grid grid-cols-7 gap-1 xs:gap-2 sm:gap-3 lg:gap-4">
             {generateCalendarGrid()}
           </div>
         </div>

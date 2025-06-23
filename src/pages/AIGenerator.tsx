@@ -738,8 +738,8 @@ export function AIGenerator() {
     }
   };
   return (
-    <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
-      <h1 className="text-2xl sm:text-3xl font-bold text-white mb-4 sm:mb-8">
+    <div className="max-w-4xl mx-auto p-4 sm:p-6 lg:p-8">
+      <h1 className="text-xl sm:text-2xl md:text-3xl font-bold text-white mb-6 sm:mb-8">
         Custom Post generator
       </h1>
 
@@ -748,12 +748,12 @@ export function AIGenerator() {
         <div className="lg:col-span-2">
           <div className="bg-gray-800 rounded-xl p-4 sm:p-6 space-y-4 sm:space-y-6">
             {error && (
-              <div className="bg-red-900 text-white px-3 py-2 sm:px-4 rounded-md text-sm">
+              <div className="bg-red-900 text-white p-3 sm:p-4 rounded-md text-sm">
                 {error}
               </div>
             )}
             {success.state && (
-              <div className="bg-green-600 text-white px-3 py-2 sm:px-4 rounded-md text-sm">
+              <div className="bg-green-600 text-white p-3 sm:p-4 rounded-md text-sm">
                 {success.message}
               </div>
             )}
@@ -762,7 +762,7 @@ export function AIGenerator() {
               <div>
                 <label
                   htmlFor="topic"
-                  className="block text-sm font-medium text-gray-300 mb-1"
+                  className="block text-sm font-medium text-gray-300 mb-2"
                 >
                   Topic
                 </label>
@@ -776,16 +776,16 @@ export function AIGenerator() {
                 />
               </div>
 
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 w-full ">
+              <div className="grid grid-cols-1 gap-4 w-full">
                 {accounts.length > 0 && (
                   <div>
                     <label
                       htmlFor="platform"
-                      className="block text-sm font-medium text-gray-300 mb-1"
+                      className="block text-sm font-medium text-gray-300 mb-2"
                     >
                       Platform
                     </label>
-                    <div className="flex  gap-2 w-full ">
+                    <div className="flex flex-wrap gap-2">
                       {platforms.map((platform: string, index) => {
                         return (
                           accounts.find(
@@ -799,7 +799,7 @@ export function AIGenerator() {
                                 )
                                   ? "bg-purple-600 text-white"
                                   : "bg-gray-700 text-gray-300 hover:bg-gray-600"
-                              } px-3 py-1 rounded-full text-xs sm:text-sm `}
+                              } px-3 py-1 rounded-full text-xs sm:text-sm transition-colors`}
                               onClick={() => {
                                 setSelectedPlatforms((prev) => {
                                   return [platform];
@@ -807,7 +807,7 @@ export function AIGenerator() {
                               }}
                               key={index}
                             >
-                              {platform}{" "}
+                              {platform}
                             </button>
                           )
                         );
@@ -815,8 +815,6 @@ export function AIGenerator() {
                     </div>
                   </div>
                 )}
-
-                <div></div>
               </div>
 
               <div>
@@ -830,7 +828,7 @@ export function AIGenerator() {
                       onClick={() => {
                         handleFormatToggle(format);
                       }}
-                      className={`px-3 py-1 rounded-full text-xs sm:text-sm ${
+                      className={`px-3 py-1 rounded-full text-xs sm:text-sm transition-colors ${
                         formats.includes(format)
                           ? "bg-purple-600 text-white"
                           : "bg-gray-700 text-gray-300 hover:bg-gray-600"
@@ -843,17 +841,17 @@ export function AIGenerator() {
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-gray-300 mb-4">
+                <label className="block text-sm font-medium text-gray-300 mb-2">
                   Model
                 </label>
-                <div className="flex flex-wrap gap-2">
+                <div className="flex flex-wrap gap-2 items-center">
                   {model.map((mod, index) => (
                     <button
                       key={index}
                       onClick={() => {
                         setSelectedModel(mod);
                       }}
-                      className={`px-3 py-1 rounded-full text-xs sm:text-sm ${
+                      className={`px-3 py-1 rounded-full text-xs sm:text-sm transition-colors ${
                         selectedModel === mod
                           ? "bg-purple-600 text-white"
                           : "bg-gray-700 text-gray-300 hover:bg-gray-600"
@@ -869,7 +867,7 @@ export function AIGenerator() {
                       onChange={(e) => {
                         handleCustomModelChange(e);
                       }}
-                      className="bg-gray-700 text-gray-300 border max-w-44 border-gray-600 rounded-md shadow-sm  text-sm sm:text-base"
+                      className="bg-gray-700 text-gray-300 border border-gray-600 rounded-md shadow-sm py-1 px-2 w-full sm:w-auto sm:max-w-44 text-sm"
                     >
                       <option value="custom-models" disabled>
                         Custom Models
@@ -885,32 +883,12 @@ export function AIGenerator() {
                   )}
                 </div>
               </div>
-              {/* 
-              <div>
-                <label className="block text-sm font-medium text-gray-300 mb-2">
-                  Source
-                </label>
-                <div className="flex flex-wrap gap-2">
-                  {sourceOptions.map((source) => (
-                    <button
-                      key={source}
-                      onClick={() => handleSourceToggle(source)}
-                      className={`px-3 py-1 rounded-full text-xs sm:text-sm ${
-                        sources.includes(source)
-                          ? 'bg-purple-600 text-white'
-                          : 'bg-gray-700 text-gray-300 hover:bg-gray-600'
-                      }`}
-                    >
-                      {source}
-                    </button>
-                  ))}
-                </div>
-              </div> */}
+
               <div className="mt-4">
                 <button
                   onClick={handleGenerate}
                   disabled={loading}
-                  className="w-full bg-purple-600 hover:bg-purple-700 text-white px-4 py-2 rounded-md flex items-center justify-center space-x-2 disabled:opacity-50 text-sm sm:text-base"
+                  className="w-full bg-purple-600 hover:bg-purple-700 text-white px-4 py-2 rounded-md flex items-center justify-center space-x-2 disabled:opacity-50 text-sm sm:text-base transition-colors"
                 >
                   {loading ? (
                     <>
@@ -929,9 +907,9 @@ export function AIGenerator() {
               {generatedContent && (
                 <div className="relative space-y-4">
                   {generatedImage !== "" && (
-                   <div className="w-full cursor-pointer" onClick={handleImageClick}>
+                    <div className="w-full cursor-pointer" onClick={handleImageClick}>
                       <img
-                        className="w-full object-cover rounded-xl hover:opacity-90 transition-opacity"
+                        className="w-full max-h-64 sm:max-h-96 object-cover rounded-xl hover:opacity-90 transition-opacity"
                         src={generatedImage}
                         alt="Generated content"
                       />
@@ -939,8 +917,8 @@ export function AIGenerator() {
                   )}
 
                   {showPopup && (
-                    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-                      <div className="bg-white rounded-lg p-6 max-w-sm mx-4 shadow-xl">
+                    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+                      <div className="bg-white rounded-lg p-4 sm:p-6 max-w-sm w-full mx-4 shadow-xl">
                         <div className="flex items-center justify-between mb-4">
                           <h3 className="text-lg font-semibold text-gray-800">
                             Download Image
@@ -953,20 +931,20 @@ export function AIGenerator() {
                           </button>
                         </div>
 
-                        <p className="text-gray-600 mb-6">
+                        <p className="text-gray-600 mb-6 text-sm sm:text-base">
                           Would you like to download this image to your device?
                         </p>
 
-                        <div className="flex gap-3 justify-end">
+                        <div className="flex flex-col sm:flex-row gap-3 justify-end">
                           <button
                             onClick={handleCancel}
-                            className="px-4 py-2 text-gray-600 bg-gray-100 rounded-lg hover:bg-gray-200 transition-colors"
+                            className="w-full sm:w-auto px-4 py-2 text-gray-600 bg-gray-100 rounded-lg hover:bg-gray-200 transition-colors text-sm sm:text-base"
                           >
                             Cancel
                           </button>
                           <button
                             onClick={handleDownload}
-                            className="px-4 py-2 bg-purple-500 text-white rounded-lg hover:bg-purple-600 transition-colors flex items-center gap-2"
+                            className="w-full sm:w-auto px-4 py-2 bg-purple-500 text-white rounded-lg hover:bg-purple-600 transition-colors flex items-center justify-center gap-2 text-sm sm:text-base"
                           >
                             <Download size={16} />
                             Download
@@ -976,53 +954,51 @@ export function AIGenerator() {
                     </div>
                   )}
                   <div>
-                    <label className="block text-sm font-medium text-gray-300 mb-1">
+                    <label className="block text-sm font-medium text-gray-300 mb-2">
                       Generated Content
                     </label>
                     <Editor data={generatedContent} />
                   </div>
 
-                  <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-2">
+                  <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-3">
                     <button
                       onClick={handleGenerate}
-                      className="bg-purple-600 hover:bg-purple-700 text-white px-4 py-2 rounded-md flex items-center justify-center space-x-2 text-sm sm:text-base"
+                      className="bg-purple-600 hover:bg-purple-700 text-white px-4 py-2 rounded-md flex items-center justify-center space-x-2 text-sm sm:text-base transition-colors"
                     >
                       <RefreshCw className="h-4 w-4 sm:h-5 sm:w-5" />
                       <span>Regenerate</span>
                     </button>
 
-                    {
-                      <button
-                        onClick={() => {
-                          if (selectedPlatforms?.length > 0) {
-                            selectedPlatforms.map(
-                              (selectedPlatform: string) => {
-                                handleSave(selectedPlatform);
-                              }
-                            );
-                          } else {
-                            handleSave("");
-                          }
-                          setTopic("");
-                          setGeneratedContent("");
-                          setGeneratedImage("");
-                        }}
-                        disabled={saving}
-                        className="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-md flex items-center justify-center space-x-2 disabled:opacity-50 text-sm sm:text-base"
-                      >
-                        {saving ? (
-                          <>
-                            <Loader className="h-4 w-4 sm:h-5 sm:w-5 animate-spin" />
-                            <span>Saving...</span>
-                          </>
-                        ) : (
-                          <>
-                            <Save className="h-4 w-4 sm:h-5 sm:w-5" />
-                            <span>Save</span>
-                          </>
-                        )}
-                      </button>
-                    }
+                    <button
+                      onClick={() => {
+                        if (selectedPlatforms?.length > 0) {
+                          selectedPlatforms.map(
+                            (selectedPlatform: string) => {
+                              handleSave(selectedPlatform);
+                            }
+                          );
+                        } else {
+                          handleSave("");
+                        }
+                        setTopic("");
+                        setGeneratedContent("");
+                        setGeneratedImage("");
+                      }}
+                      disabled={saving}
+                      className="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-md flex items-center justify-center space-x-2 disabled:opacity-50 text-sm sm:text-base transition-colors"
+                    >
+                      {saving ? (
+                        <>
+                          <Loader className="h-4 w-4 sm:h-5 sm:w-5 animate-spin" />
+                          <span>Saving...</span>
+                        </>
+                      ) : (
+                        <>
+                          <Save className="h-4 w-4 sm:h-5 sm:w-5" />
+                          <span>Save</span>
+                        </>
+                      )}
+                    </button>
 
                     {selectedPlatforms?.length == 1 &&
                       postButtons.map((postButton) => {
@@ -1035,12 +1011,12 @@ export function AIGenerator() {
                               key={postButton.value}
                               onClick={postButton?.method}
                               disabled={posting}
-                              className="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-md flex items-center justify-center space-x-2 disabled:opacity-50 text-sm sm:text-base"
+                              className="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-md flex items-center justify-center space-x-2 disabled:opacity-50 text-sm sm:text-base transition-colors"
                             >
                               {posting ? (
                                 <>
                                   <Loader className="h-4 w-4 sm:h-5 sm:w-5 animate-spin" />
-                                  <span>posting...</span>
+                                  <span>Posting...</span>
                                 </>
                               ) : (
                                 <>
@@ -1057,16 +1033,16 @@ export function AIGenerator() {
                       <button
                         disabled={posting}
                         onClick={handleMultiPlatformPost}
-                        className="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-md flex items-center justify-center space-x-2 disabled:opacity-50 text-sm sm:text-base"
+                        className="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-md flex items-center justify-center space-x-2 disabled:opacity-50 text-sm sm:text-base transition-colors"
                       >
                         {posting ? (
                           <>
                             <Loader className="h-4 w-4 sm:h-5 sm:w-5 animate-spin" />
-                            <span>posting...</span>
+                            <span>Posting...</span>
                           </>
                         ) : (
                           <>
-                            <span>Post</span>
+                            <span>Post All</span>
                           </>
                         )}
                       </button>
@@ -1075,7 +1051,7 @@ export function AIGenerator() {
                     {selectedPlatforms?.length == 1 && (
                       <button
                         onClick={() => setShowScheduleModal(true)}
-                        className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-md flex items-center justify-center space-x-2 text-sm sm:text-base"
+                        className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-md flex items-center justify-center space-x-2 text-sm sm:text-base transition-colors"
                       >
                         <Calendar className="h-4 w-4 sm:h-5 sm:w-5" />
                         <span>Schedule</span>
@@ -1097,37 +1073,37 @@ export function AIGenerator() {
           <div className="space-y-4">
             {history.map((item) => (
               <div key={item.id} className="bg-gray-700 p-3 sm:p-4 rounded-lg">
-                <h3 className="text-white font-medium mb-2 text-sm sm:text-base">
+                <h3 className="text-white font-medium mb-2 text-sm sm:text-base truncate">
                   {item.topic}
                 </h3>
-                <p className="text-white-400 text-xs sm:text-sm mb-2">
+                <p className="text-gray-400 text-xs sm:text-sm mb-3 line-clamp-3">
                   {item.content.substring(0, 100)}...
                 </p>
-                <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 sm:gap-0">
+                <div className="flex flex-col gap-2">
                   <div className="flex space-x-2">
                     <button
                       onClick={() => loadHistoryItem(item)}
-                      className="text-purple-400 hover:text-purple-300 text-xs sm:text-sm flex items-center"
+                      className="text-purple-400 hover:text-purple-300 text-xs sm:text-sm flex items-center transition-colors"
                     >
                       <Edit2 className="h-3 w-3 sm:h-4 sm:w-4 mr-1" />
                       <span>Edit</span>
                     </button>
                     <button
                       onClick={() => deleteHistoryItem(item.id)}
-                      className="text-red-400 hover:text-red-300 text-xs sm:text-sm flex items-center"
+                      className="text-red-400 hover:text-red-300 text-xs sm:text-sm flex items-center transition-colors"
                     >
                       <X className="h-3 w-3 sm:h-4 sm:w-4 mr-1" />
                       <span>Delete</span>
                     </button>
                   </div>
-                  <span className="text-gray-500 text-xs sm:text-sm">
+                  <span className="text-gray-500 text-xs">
                     {new Date(item.createdAt).toLocaleDateString()}
                   </span>
                 </div>
               </div>
             ))}
             {history.length === 0 && (
-              <p className="text-gray-400 text-xs sm:text-sm">
+              <p className="text-gray-400 text-xs sm:text-sm text-center">
                 No generated content yet
               </p>
             )}

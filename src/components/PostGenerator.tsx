@@ -311,7 +311,7 @@ export function PostGenerator({
         setLoading(false);
         const url = videos[Math.floor(Math.random() * videos.length)]
         setVideoUrl(url)
-      } , 300000); // 300000
+      } , 3000); // 300000
       })
     }
     if (plan?.format === "image") {
@@ -555,7 +555,7 @@ export function PostGenerator({
           ) : (
             <>
               <img className="h-4 w-4 flex-shrink-0" src={aiMagic} alt="" />
-              <span>Generate Post</span>
+              <span>Generate</span>
             </>
           )}
         </button>

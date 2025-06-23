@@ -480,33 +480,11 @@ export function ContentStrategy() {
             </div>
           </div>
 
-          <div>
-            <button
-              onClick={handleGenerateStrategy}
-              disabled={generating}
-              className="w-full bg-purple-600 hover:bg-purple-700 text-white px-4 py-2 rounded-md flex items-center justify-center space-x-2 disabled:opacity-50"
-            >
-              {generating ? (
-                <>
-                  <Loader className="h-5 w-5 animate-spin" />
-                  <span>Generating Strategy...</span>
-                </>
-              ) : (
-                <>
-                  <Calendar className="h-5 w-5" />
-                  <span>Generate Content Strategy</span>
-                </>
-              )}
-            </button>
-          </div>
-        </div>
-      </div>
-
-      <div className="flex gap-4 ">
+          <div className="flex gap-4 ">
 
         {allStrategies?.length > 0 && (
           <div className="flex-1 relative">
-            <p className = "capitalize text-gray-200 my-2">Select a Strategy</p>
+            <p className = "capitalize text-gray-200 ">Select a Strategy</p>
             <select
               // value ={selectedStrategy}
               onChange={onChangeStrategyHandler}
@@ -542,7 +520,7 @@ export function ContentStrategy() {
         )}
         {models && models?.length > 0 && (
           <div className=" flex-1 relative">
-            <p className = "capitalize text-gray-200 my-2">Select a model</p>
+            <p className = "capitalize text-gray-200 ">Select a model</p>
             <select
               onChange={handleModelChange}
               className="block  appearance-none w-full  bg-gray-700 border border-gray-300 hover:border-gray-400 px-4 py-2 pr-8 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-gray-200"
@@ -564,11 +542,35 @@ export function ContentStrategy() {
               >
                 <path d="M9.293 12.95l.707.707L15.657 8l-1.414-1.414L10 10.828 5.757 6.586 4.343 8z" />
               </svg>
-            </div>
+          </div>
           </div>
         )}
         
       </div>
+
+          <div>
+            <button
+              onClick={handleGenerateStrategy}
+              disabled={generating}
+              className="w-full bg-purple-600 hover:bg-purple-700 text-white px-4 py-2 rounded-md flex items-center justify-center space-x-2 disabled:opacity-50"
+            >
+              {generating ? (
+                <>
+                  <Loader className="h-5 w-5 animate-spin" />
+                  <span>Generating Strategy...</span>
+                </>
+              ) : (
+                <>
+                  <Calendar className="h-5 w-5" />
+                  <span>Generate Content Strategy</span>
+                </>
+              )}
+            </button>
+          </div>
+        </div>
+      </div>
+
+      
       {/* Content Plans */}
       {plans.length > 0 && (
         <div className="space-y-4">
