@@ -61,6 +61,7 @@ export function PostGenerator({
   const [showVideoPopup, setShowVideoPopup] = useState(false);
   const [showPopup, setShowPopup] = useState(false);
   const [isVideoGenerated , setIsVideoGenerated ] = useState(false) ;
+  const [generatedVideo , setGeneratedVideo] = useState(null) ;
 
   const { selectedModel } = useAuth();
 
@@ -80,6 +81,40 @@ export function PostGenerator({
       "-----------------------change in plan detected ---------------------"
     );
   }, [plan]);
+
+
+  const generateVideoUsingKling = async (prompt : string)  => {
+    setGeneratedVideo(null) ; 
+    try{
+
+      const response = await fetch(`${BACKEND_APIPATH.BASEURL}/generate-video` , {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          prompt,
+        }),
+      })
+
+      console.log("video generation response status = ", response)
+      const data = await response.json();
+
+      console.log("video generation response = ", data);
+      if (response?.status && response?.status >= 400) {
+        setError("Something went wrong while generating video");
+        return ; 
+      }
+      console.log("generated video url = " , data?.video_url); 
+      setGeneratedVideo(data?.video_url);
+    }
+    catch(err: any) {
+      console.log("Something went wrong while generating video ", err);
+      setError("Something went wrong while generating video");
+      removeErrorToast() ; 
+    } 
+   
+  }
 
   async function handlePostTweet() {
     console.log("plan suggestion = ", plan?.suggestion);
@@ -304,15 +339,19 @@ export function PostGenerator({
     let publicUrl = "";
     if(plan?.format === "video")
     {
-      await new Promise((resolve , reject) => {
-        setTimeout(() => {
-        console.log("video generated !")
-        setIsVideoGenerated(true) ;
-        setLoading(false);
-        const url = videos[Math.floor(Math.random() * videos.length)]
-        setVideoUrl(url)
-      } , 3000); // 300000
-      })
+      // await new Promise((resolve , reject) => {
+      //   setTimeout(() => {
+      //   console.log("video generated !")
+      //   setIsVideoGenerated(true) ;
+      //   setLoading(false);
+      //   // const url = videos[Math.floor(Math.random() * videos.length)]
+      //   setVideoUrl(url)
+      // } , 3000); // 300000
+      // })
+
+      await generateVideoUsingKling(plan?.topic) ;
+      setIsVideoGenerated(true) ;
+      setLoading(false);
     }
     if (plan?.format === "image") {
       console.log("image ..... ");
@@ -381,6 +420,12 @@ export function PostGenerator({
       setSuccess({ state: false, message: "" });
     }, 1500);
   };
+
+  const removeErrorToast = () => {
+    setTimeout(() => {
+      setError(null);
+    }, 1500);
+  }
   
 
   return (
@@ -457,7 +502,7 @@ export function PostGenerator({
           </button>
         )}
 
-        {showVideoPopup && (
+        {showVideoPopup && generatedVideo && (
           <div className="fixed inset-0 bg-black bg-opacity-75 flex items-center justify-center z-50 p-4">
             <div className="bg-white rounded-lg max-w-4xl w-full max-h-[90vh] overflow-hidden">
               {/* Header */}
@@ -480,7 +525,7 @@ export function PostGenerator({
                   autoPlay
                 >
                   <source
-                    src={videoUrl}
+                    src={generatedVideo}
                     type="video/mp4"
                   />
                   Your browser does not support the video tag.

@@ -67,35 +67,56 @@ const generateKlingVideo = async (prompt , authorization) => {
 
 
 
-const get5sVideoUrl = async (prompt) => {
+const get5sVideoUrl = async (req , res ) => {
+
+  const {prompt} =  req.body ; 
+  if(!prompt) 
+  {
+    return  res.status(400).json({error: "Prompt is required"}) ; 
+
+  }
   const authorization = encodeJwtToken();
   console.log("video generation token = " ,  authorization) ;
   const result = await generateKlingVideo(prompt  , authorization);
-
   console.log("response in getvideourl api = " , result) ; 
-
   if (result.video_url) {
-    
-    return result.video_url;
+     return res.status(200).json({
+        video_url: 
+        result.video_url,
+        task_id: result?.task_id
+      });
   } else if (result.task_id) {
       
     let status;
     do {
       await new Promise(r => setTimeout(r, 5000));
       status = await checkStatus(result.task_id , authorization);
-    } while (status?.data?.task_status !== "completed" && status?.data?.task_status !== "failed");
+      if(status?.data?.task_status === "failed")
+      {
+        return res.status(500).json({error : "Video generation failed !"});
+      }
+    } while (status?.data?.task_status !== "succeed");
 
-    if (status?.data?.task_status === "succeed" && status?.data?.task_result?.videos) {
-      return status?.data?.task_result?.videos;
+    if (status?.data?.task_status === "succeed") {
+      console.log("video generation completed successfully") ;
+      console.log("video url = " , status?.data?.task_result?.videos?.[0]?.url) ;
+      return res.status(200).json({
+        video_url: status?.data?.task_result?.videos?.[0]?.url, 
+        task_id: result.task_id
+      });
     } else {
-      throw new Error("Video generation failed.");
+      return res.status(500).json({error: "Video generation failed !"});
     }
   } else {
-    throw new Error("Something went wrong");
+    return res.status(500).json({error: "Video generation failed !"});
   }
 };
 
-// Usage
-get5sVideoUrl("A man driving car in snow")
-  .then(url => console.log("5s Video URL:", url))
-  .catch(err => console.error(err));
+// // Usage
+// get5sVideoUrl("A man driving car in snow")
+//   .then(url => console.log("5s Video URL:", url))
+//   .catch(err => console.error(err));
+
+
+
+export {get5sVideoUrl} ;
