@@ -507,7 +507,7 @@ export function Calendar() {
   }
 
   return (
-    <div className="space-y-4 sm:space-y-6 lg:space-y-8 px-4 sm:px-6 lg:px-8 py-4 sm:py-6">
+    <div className="space-y-4 sm:space-y-6 lg:space-y-8 ">
       <div className="flex flex-col xs:flex-row justify-between items-start xs:items-center gap-4 xs:gap-0">
         <div className="flex gap-2 sm:gap-4 items-center min-w-0 flex-1">
           <h1 className="text-xl sm:text-2xl lg:text-3xl font-bold text-white truncate">

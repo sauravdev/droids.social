@@ -493,7 +493,7 @@ export function PostGenerator({
             </button>
           )}
 
-        {plan?.format === "video" && isVideoGenerated &&  (
+        {plan?.format === "video" && generatedVideo &&  isVideoGenerated &&  (
           <button
             onClick={handleVideoPrevieClick}
             className="px-3 py-1 my-2 bg-purple-500 text-white rounded-lg hover:bg-purple-600 transition-colors flex items-center gap-2"

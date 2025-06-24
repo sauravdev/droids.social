@@ -374,7 +374,7 @@ export function ProfileSettings() {
   );
 
   return (
-    <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-4 sm:py-6">
+    <div className="max-w-4xl mx-auto ">
       {/* Create Profile Popup */}
       {showCreateProfilePopup && !settings?.bio && <CreateProfilePopup />}
 

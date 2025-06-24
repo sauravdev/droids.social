@@ -216,7 +216,7 @@ export function CustomModels() {
   }
 
   return (
-    <div className="space-y-4 sm:space-y-6 lg:space-y-8 px-4 sm:px-6 lg:px-8 py-4 sm:py-6">
+    <div className="space-y-4 sm:space-y-6 lg:space-y-8 ">
       {/* Header Section */}
       <div className="flex flex-col lg:flex-row lg:justify-between lg:items-center gap-4 lg:gap-0">
         <h1 className="text-2xl sm:text-3xl font-bold text-white">Custom Models</h1>

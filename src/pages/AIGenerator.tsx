@@ -13,6 +13,7 @@ import {
   Calendar,
   HardDriveUpload,
   Download,
+  Image,
 } from "lucide-react";
 import {
   generateImage,
@@ -46,7 +47,7 @@ interface Success {
   message: string;
 }
 
-const formatOptions = ["text", "image"];
+const formatOptions = ["text", "image" , "video"];
 const sourceOptions = ["arxiv", "youtube", "twitter", "linkedin", "feedly"];
 
 export function AIGenerator() {
@@ -78,6 +79,11 @@ export function AIGenerator() {
   const handleImageClick = () => {
     setShowPopup(true);
   };
+
+  const [generatedVideo , setGeneratedVideo] = useState(null) ;
+  const [showVideoPopup, setShowVideoPopup] = useState(false);
+
+
   const handleDownload = async () => {
     try {
       // Fetch the image
@@ -113,7 +119,8 @@ export function AIGenerator() {
   const removeToast = () => {
     setTimeout(() => {
       setSuccess({ state: false, message: "" });
-    }, 2000);
+      setError('');
+    }, 1500);
   };
 
   const [model, setModel] = useState(["openai", "grok"]);
@@ -142,6 +149,40 @@ export function AIGenerator() {
       setCustomModels(models);
     })();
   }, []);
+
+
+  const handleVideoGeneration = async (prompt : string ) => {
+     setGeneratedVideo(null) ; 
+        try{
+    
+          const response = await fetch(`${BACKEND_APIPATH.BASEURL}/generate-video` , {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+            },
+            body: JSON.stringify({
+              prompt,
+            }),
+          })
+    
+          console.log("video generation response status = ", response)
+          const data = await response.json();
+    
+          console.log("video generation response = ", data);
+          if (response?.status && response?.status >= 400) {
+            setError("Something went wrong while generating video");
+            return ; 
+          }
+          console.log("generated video url = " , data?.video_url); 
+          setGeneratedVideo(data?.video_url);
+        }
+        catch(err: any) {
+          console.log("Something went wrong while generating video ", err);
+          setError("Something went wrong while generating video");
+          removeToast()
+        } 
+       
+  }
 
   async function handlePostTweet() {
     setSuccess({ state: false, message: "" });
@@ -383,6 +424,11 @@ export function AIGenerator() {
     if (formats.find((format) => format === "image")) {
       await handleImageGeneration();
     }
+
+     if (formats.find((format) => format === "video")) {
+      await handleVideoGeneration(topic);
+    }
+
     try {
       // const content = await generatePost(topic, selectedPlatforms[0] );
       // const content = await generatePostFromCustomModel(topic)
@@ -693,6 +739,13 @@ export function AIGenerator() {
     setHistory((prev) => prev.filter((item) => item.id !== id));
   };
 
+  const handleVideoPrevieClick = () => {
+    setShowVideoPopup(true);
+  };
+  const handleCloseVideoPopUp = () => {
+    setShowVideoPopup(false);
+  };
+
   const handleMultiPlatformPost = async () => {
     setSuccess({ state: false, message: "" });
     setPosting(true);
@@ -738,10 +791,45 @@ export function AIGenerator() {
     }
   };
   return (
-    <div className="max-w-4xl mx-auto p-4 sm:p-6 lg:p-8">
+    <div className="max-w-4xl mx-auto ">
       <h1 className="text-xl sm:text-2xl md:text-3xl font-bold text-white mb-6 sm:mb-8">
         Custom Post generator
       </h1>
+
+      {showVideoPopup && generatedVideo && (
+                <div className="fixed inset-0 bg-black bg-opacity-75 flex items-center justify-center z-50 p-4">
+                  <div className="bg-white rounded-lg max-w-4xl w-full max-h-[90vh] overflow-hidden">
+                    {/* Header */}
+                    <div className="flex items-center justify-between p-4 border-b">
+                      <h2 className="text-xl font-bold">Video Preview</h2>
+                      <button
+                        onClick={handleCloseVideoPopUp}
+                        className="p-2 hover:bg-gray-100 rounded-full transition-colors"
+                      >
+                        <X size={20} />
+                      </button>
+                    </div>
+      
+                    {/* Video Container */}
+                    <div className="p-4">
+                      <video
+                        controls
+                        className="w-full h-auto rounded-lg shadow-md max-h-[70vh]"
+                        preload="metadata"
+                        autoPlay
+                      >
+                        <source
+                          src={generatedVideo}
+                          type="video/mp4"
+                        />
+                        Your browser does not support the video tag.
+                      </video>
+                    </div>
+                  </div>
+                </div>
+              )}
+
+
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 sm:gap-6">
         {/* Form Section */}
@@ -968,6 +1056,15 @@ export function AIGenerator() {
                       <RefreshCw className="h-4 w-4 sm:h-5 sm:w-5" />
                       <span>Regenerate</span>
                     </button>
+
+                      { generatedVideo &&  (
+                      <button
+                        onClick={handleVideoPrevieClick}
+                        className="bg-purple-600 hover:bg-purple-700 text-white px-4 py-2  rounded-md flex items-center justify-center space-x-2  text-sm sm:text-base transition-colors"
+                      >
+                        <Image className="" size={20} /> Preview Video
+                      </button>
+                       )}
 
                     <button
                       onClick={() => {
