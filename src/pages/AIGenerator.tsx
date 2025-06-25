@@ -28,18 +28,20 @@ import { ScheduleModal } from "../components/ScheduleModal";
 import Editor from "../components/Editor.js";
 import { useSocialAccounts } from "../hooks/useSocialAccounts.js";
 import { useScheduledPosts } from "../hooks/useScheduledPosts.js";
-import { getSocialMediaAccountInfo } from "../lib/api.js";
+import { deletePlan, getContentPlansHistory, getSocialMediaAccountInfo, updateContentPlan } from "../lib/api.js";
 import { BACKEND_APIPATH } from "../constants/";
 import { useAuth } from "../context/AuthContext";
 import { useProfile } from "../hooks/useProfile.js";
 import { useNavigate } from "react-router-dom";
 import { initializeTwitterAuth } from "../lib/twitter.js";
 import { useCustomModel } from "../hooks/useCustomModel.js";
+import { set } from "date-fns";
 interface HistoryItem {
   id: string;
   topic: string;
   content: string;
   createdAt: string;
+  media : string | null;
 }
 
 interface Success {
@@ -74,6 +76,8 @@ export function AIGenerator() {
     state: false,
     message: "",
   });
+
+  const [generatedMedia , setGeneratedMedia ] = useState(null)
 
   const [showPopup, setShowPopup] = useState(false);
   const handleImageClick = () => {
@@ -128,6 +132,8 @@ export function AIGenerator() {
   const [customModels, setCustomModels] = useState<any>([]);
   const { loadCustomModels } = useCustomModel();
 
+  const [refreshPage , setRefreshPage] =  useState(false) ; 
+
   const handleCustomModelChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
     const modelId = e.target.value;
     const selectedModel = customModels.find((cm: any) => cm?.id == modelId);
@@ -141,6 +147,33 @@ export function AIGenerator() {
   const { accounts } = useSocialAccounts();
 
   const { createPost } = useScheduledPosts();
+  const [generatingSuggestion, setGeneratingSuggestion] = useState<boolean>(false);
+ 
+  const getHistory = async () => {
+    try{
+      const response = await getContentPlansHistory() ; 
+      console.log("history = " , response) ; 
+      
+      if(Array.isArray(response) && response?.length >  0)
+      {
+        console.log("response = ", response);
+        setGeneratingSuggestion((prev) => {
+          if(response?.[0]?.suggestion === "") return true ;
+          return false;
+        }) ;
+        loadHistoryItem({topic : response?.[0]?.topic || '' , content : response?.[0]?.suggestion || '' , media : response?.[0]?.media} ); 
+        setHistory((prev) => {
+        return response.map((item) => {return {id : item?.id , content : item?.suggestion , topic : item?.topic , createdAt : item?.created_at , media : item?.media  }} ) ;
+      })
+      }
+      
+    }
+    catch(err : any )
+    {
+      setError("Error loading history")
+      
+    }
+  }
 
   useEffect(() => {
     (async () => {
@@ -148,10 +181,26 @@ export function AIGenerator() {
       console.log("models = ", models);
       setCustomModels(models);
     })();
+
+    
   }, []);
 
 
-  const handleVideoGeneration = async (prompt : string ) => {
+  useEffect(() => {
+    getHistory() ; 
+  }, [refreshPage])
+
+  useEffect(() => {
+  const interval = setInterval(() => {
+    setRefreshPage(prev => !prev);
+  }, 120000);
+
+  return () => {
+    clearInterval(interval);
+  };
+}, []);
+
+  const handleVideoGeneration = async (userId , planId , prompt : string ) => {
      setGeneratedVideo(null) ; 
         try{
     
@@ -161,6 +210,7 @@ export function AIGenerator() {
               "Content-Type": "application/json",
             },
             body: JSON.stringify({
+              userId , planId ,
               prompt,
             }),
           })
@@ -333,8 +383,8 @@ export function AIGenerator() {
 
   const handleFormatToggle = (format: string) => {
     setFormats((prev) =>
-      prev.includes(format)
-        ? prev.filter((f) => f !== format)
+      prev.includes(format) && format !== "text"
+        ? (prev.filter((f) => f !== format))
         : [...prev, format]
     );
   };
@@ -400,6 +450,7 @@ export function AIGenerator() {
   };
 
   const handleGenerate = async () => {
+     
     setSuccess({ state: false, message: "" });
     if (profile?.tokens - 10 < 0) {
       setError("You do not have enough tokens for post generation ..");
@@ -416,20 +467,44 @@ export function AIGenerator() {
       setError("Please enter a topic");
       return;
     }
+   
     setLoading(true);
     setError(null);
     setGeneratedImage("");
     setGeneratedContent("");
 
-    if (formats.find((format) => format === "image")) {
+    
+
+
+    
+
+    try {
+
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) throw new Error('No user found');
+    const createdPlan = await createPlan({
+        profile_id: user.id,
+        strategy_id: null ,
+        platform: selectedPlatforms[0],
+        format: formats[0],
+        topic,
+        suggestion: '',
+        status: "pending",
+        scheduled_for: null,
+      });
+      setRefreshPage(prev=>!prev) ;
+      console.log("created plan in ai = " , createdPlan) ;
+      console.log("format = " , formats ) ; 
+
+
+      if (formats.find((format) => format === "image")) {
       await handleImageGeneration();
     }
 
      if (formats.find((format) => format === "video")) {
-      await handleVideoGeneration(topic);
+      await handleVideoGeneration(user?.id , createdPlan?.id , topic);
     }
-
-    try {
+    
       // const content = await generatePost(topic, selectedPlatforms[0] );
       // const content = await generatePostFromCustomModel(topic)
       let content = "";
@@ -438,6 +513,7 @@ export function AIGenerator() {
           topic,
           selectedPlatforms[0]
         );
+      
         // const data = await response.json() ;
         // content = data?.message ;
         console.log("content = ", response);
@@ -447,6 +523,9 @@ export function AIGenerator() {
       } else {
         content = await generatePostFromCustomModel(topic, selectedModel);
       }
+      await updateContentPlan(createdPlan?.id , {suggestion : content } )
+
+
 
       if (selectedPlatforms?.length === 0) {
         setError("Please select platform");
@@ -469,6 +548,7 @@ export function AIGenerator() {
       setError(err.message);
     } finally {
       setLoading(false);
+      setGeneratingSuggestion(false); 
     }
   };
 
@@ -487,9 +567,9 @@ export function AIGenerator() {
       } = await supabase.auth.getUser();
       if (!user) throw new Error("No authenticated user found");
       console.log(user);
-      await createPlan({
+      const createdPlan = await createPlan({
         profile_id: user.id,
-        strategy_id: null,
+        strategy_id: null ,
         platform,
         format: formats[0],
         topic,
@@ -497,6 +577,7 @@ export function AIGenerator() {
         status: "pending",
         scheduled_for: null,
       });
+      console.log("created plan = " , createdPlan ) ; 
       setSuccess({ state: true, message: "Content Saved !" });
       removeToast();
     } catch (err: any) {
@@ -731,12 +812,16 @@ export function AIGenerator() {
     }
   };
   const loadHistoryItem = (item: HistoryItem) => {
-    setTopic(item.topic);
-    setGeneratedContent(item.content);
+    setTopic(item?.topic || '');
+    setGeneratedContent(item?.content || '');
+    console.log("media inside history =- " , typeof ( item?.media ) ) ;
+    setGeneratedMedia(item?.media || null) ;
   };
 
-  const deleteHistoryItem = (id: string) => {
+  const deleteHistoryItem = async (id: string) => {
+    await deletePlan(id);
     setHistory((prev) => prev.filter((item) => item.id !== id));
+    setRefreshPage((prev) => !prev) ; 
   };
 
   const handleVideoPrevieClick = () => {
@@ -796,11 +881,11 @@ export function AIGenerator() {
         Custom Post generator
       </h1>
 
-      {showVideoPopup && generatedVideo && (
+      {showVideoPopup  && (
                 <div className="fixed inset-0 bg-black bg-opacity-75 flex items-center justify-center z-50 p-4">
                   <div className="bg-white rounded-lg max-w-4xl w-full max-h-[90vh] overflow-hidden">
                     {/* Header */}
-                    <div className="flex items-center justify-between p-4 border-b">
+                    { <div className="flex items-center justify-between p-4 border-b">
                       <h2 className="text-xl font-bold">Video Preview</h2>
                       <button
                         onClick={handleCloseVideoPopUp}
@@ -808,7 +893,7 @@ export function AIGenerator() {
                       >
                         <X size={20} />
                       </button>
-                    </div>
+                    </div>}
       
                     {/* Video Container */}
                     <div className="p-4">
@@ -819,7 +904,7 @@ export function AIGenerator() {
                         autoPlay
                       >
                         <source
-                          src={generatedVideo}
+                          src={generatedVideo || generatedMedia}
                           type="video/mp4"
                         />
                         Your browser does not support the video tag.
@@ -937,6 +1022,7 @@ export function AIGenerator() {
                     <button
                       key={index}
                       onClick={() => {
+                        
                         setSelectedModel(mod);
                       }}
                       className={`px-3 py-1 rounded-full text-xs sm:text-sm transition-colors ${
@@ -945,9 +1031,14 @@ export function AIGenerator() {
                           : "bg-gray-700 text-gray-300 hover:bg-gray-600"
                       }`}
                     >
-                      {mod}
+                      {mod} 
+
                     </button>
                   ))}
+
+                  {
+                    formats.includes("video") && <button className="bg-purple-600 text-white px-3 py-1 rounded-full text-xs sm:text-sm transition-colors">Kling AI</button>
+                  }
 
                   {customModels?.length > 0 && (
                     <select
@@ -975,10 +1066,10 @@ export function AIGenerator() {
               <div className="mt-4">
                 <button
                   onClick={handleGenerate}
-                  disabled={loading}
+                  disabled={loading ||  generatingSuggestion}
                   className="w-full bg-purple-600 hover:bg-purple-700 text-white px-4 py-2 rounded-md flex items-center justify-center space-x-2 disabled:opacity-50 text-sm sm:text-base transition-colors"
                 >
-                  {loading ? (
+                  {loading ||  generatingSuggestion ? (
                     <>
                       <Loader className="h-4 w-4 sm:h-5 sm:w-5 animate-spin" />
                       <span>Generating...</span>
@@ -1057,7 +1148,7 @@ export function AIGenerator() {
                       <span>Regenerate</span>
                     </button>
 
-                      { generatedVideo &&  (
+                      { (generatedVideo ||  (generatedMedia != 'NULL' || !generatedMedia)) &&  (
                       <button
                         onClick={handleVideoPrevieClick}
                         className="bg-purple-600 hover:bg-purple-700 text-white px-4 py-2  rounded-md flex items-center justify-center space-x-2  text-sm sm:text-base transition-colors"
@@ -1065,7 +1156,6 @@ export function AIGenerator() {
                         <Image className="" size={20} /> Preview Video
                       </button>
                        )}
-
                     <button
                       onClick={() => {
                         if (selectedPlatforms?.length > 0) {
@@ -1162,7 +1252,7 @@ export function AIGenerator() {
         </div>
 
         {/* History Section */}
-        <div className="bg-gray-800 rounded-xl p-4 sm:p-6">
+        <div className="bg-gray-800 rounded-xl p-4 sm:p-6  max-h-96 overflow-y-auto scrollbar-hide">
           <h2 className="text-lg sm:text-xl font-bold text-white mb-4 flex items-center">
             <History className="h-4 w-4 sm:h-5 sm:w-5 mr-2" />
             History
@@ -1174,7 +1264,7 @@ export function AIGenerator() {
                   {item.topic}
                 </h3>
                 <p className="text-gray-400 text-xs sm:text-sm mb-3 line-clamp-3">
-                  {item.content.substring(0, 100)}...
+                  {item?.content === "" ? "processing ..." : item.content.substring(0, 100) }...
                 </p>
                 <div className="flex flex-col gap-2">
                   <div className="flex space-x-2">

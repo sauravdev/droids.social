@@ -1,5 +1,5 @@
 import jwt from 'jsonwebtoken' ; 
-
+import {updateContentPlan} from './supabase.controller.js'
 function encodeJwtToken() {
   const ak = "ATg988yrLBTLgPnB83mBGG8fLfKMLana"; 
   const sk = "Lp4BLyYfk8bHJCH3pQG9JKyJ9YmPtGTd";
@@ -69,17 +69,19 @@ const generateKlingVideo = async (prompt , authorization) => {
 
 const get5sVideoUrl = async (req , res ) => {
 
-  const {prompt} =  req.body ; 
-  if(!prompt) 
+  const {prompt , planId , userId } =  req.body ; 
+  console.log("req  body in video gen api  = " , req.body) ;
+  if(!prompt || !planId || !userId ) 
   {
     return  res.status(400).json({error: "Prompt is required"}) ; 
-
   }
   const authorization = encodeJwtToken();
   console.log("video generation token = " ,  authorization) ;
   const result = await generateKlingVideo(prompt  , authorization);
   console.log("response in getvideourl api = " , result) ; 
   if (result.video_url) {
+
+   
      return res.status(200).json({
         video_url: 
         result.video_url,
@@ -100,6 +102,8 @@ const get5sVideoUrl = async (req , res ) => {
     if (status?.data?.task_status === "succeed") {
       console.log("video generation completed successfully") ;
       console.log("video url = " , status?.data?.task_result?.videos?.[0]?.url) ;
+      const mediaUrl = status?.data?.task_result?.videos?.[0]?.url; 
+      await updateContentPlan(userId , planId , {media : mediaUrl }) ;
       return res.status(200).json({
         video_url: status?.data?.task_result?.videos?.[0]?.url, 
         task_id: result.task_id

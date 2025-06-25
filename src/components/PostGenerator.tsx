@@ -83,10 +83,13 @@ export function PostGenerator({
   }, [plan]);
 
 
-  const generateVideoUsingKling = async (prompt : string)  => {
+  const generateVideoUsingKling = async (planId  :any  , prompt : string)  => {
     setGeneratedVideo(null) ; 
     try{
 
+
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) throw new Error('No user found');
       const response = await fetch(`${BACKEND_APIPATH.BASEURL}/generate-video` , {
         method: "POST",
         headers: {
@@ -94,6 +97,8 @@ export function PostGenerator({
         },
         body: JSON.stringify({
           prompt,
+          planId , 
+          userId : user?.id 
         }),
       })
 
@@ -273,6 +278,8 @@ export function PostGenerator({
   };
 
   const handleVideoPrevieClick = () => {
+    console.log("plan media  = ", plan?.media);
+    console.log("generated video = ", generatedVideo);
     setShowVideoPopup(true);
   };
   const handleCloseVideoPopUp = () => {
@@ -349,7 +356,7 @@ export function PostGenerator({
       // } , 3000); // 300000
       // })
 
-      await generateVideoUsingKling(plan?.topic) ;
+      await generateVideoUsingKling(plan?.id  , plan?.topic) ;
       setIsVideoGenerated(true) ;
       setLoading(false);
     }
@@ -492,8 +499,7 @@ export function PostGenerator({
               <Image size={20} /> Preview Image
             </button>
           )}
-
-        {plan?.format === "video" && generatedVideo &&  isVideoGenerated &&  (
+        {plan?.format === "video" && (generatedVideo || plan?.media !== "NULL") &&   (
           <button
             onClick={handleVideoPrevieClick}
             className="px-3 py-1 my-2 bg-purple-500 text-white rounded-lg hover:bg-purple-600 transition-colors flex items-center gap-2"
@@ -502,7 +508,7 @@ export function PostGenerator({
           </button>
         )}
 
-        {showVideoPopup && generatedVideo && (
+        {showVideoPopup  && (
           <div className="fixed inset-0 bg-black bg-opacity-75 flex items-center justify-center z-50 p-4">
             <div className="bg-white rounded-lg max-w-4xl w-full max-h-[90vh] overflow-hidden">
               {/* Header */}
@@ -525,7 +531,7 @@ export function PostGenerator({
                   autoPlay
                 >
                   <source
-                    src={generatedVideo}
+                    src={plan?.media || generatedVideo }
                     type="video/mp4"
                   />
                   Your browser does not support the video tag.

@@ -51,7 +51,7 @@ Guidelines:
         ],
         model: "grok-3-latest",
         stream: false,
-        temperature: 0,
+        temperature: 0.8,
       }),
     });
 

@@ -160,7 +160,7 @@ export function ProfileImageUpload({ currentUrl, onUpload, type }: ProfileImageU
 
       {/* Download confirmation popup */}
       {showDownloadConfirm && (
-        <div className="absolute -white top-[-100px] left-[-150px]  h-[500px] w-[500px]   flex items-center justify-center  z-[999]">
+        <div className="absolute -white top-[-210px] left-[-100px]  h-[500px] w-[500px]   flex items-center justify-center  z-[3000]">
           <div className="bg-gray-800 px-6 py-4 rounded-lg shadow-lg text-white max-w-md">
             <h3 className="text-lg font-medium mb-3">What would you like to do?</h3>
             <div className="flex flex-col space-y-3">

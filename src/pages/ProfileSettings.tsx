@@ -526,7 +526,7 @@ export function ProfileSettings() {
               />
             </div>
 
-            <div>
+            {/* <div>
               <label
                 htmlFor="timezone"
                 className="block text-xs sm:text-sm font-medium text-gray-300 mb-1 sm:mb-2"
@@ -545,9 +545,9 @@ export function ProfileSettings() {
                 <option value="America/Denver">Mountain Time</option>
                 <option value="America/Los_Angeles">Pacific Time</option>
               </select>
-            </div>
+            </div> */}
 
-            <div>
+            {/* <div>
               <h3 className="text-xs sm:text-sm font-medium text-gray-300 mb-2 sm:mb-3">
                 Notification Preferences
               </h3>
@@ -585,7 +585,7 @@ export function ProfileSettings() {
                   </span>
                 </label>
               </div>
-            </div>
+            </div> */}
 
             <div className="flex flex-col sm:flex-row gap-3 sm:gap-4">
               

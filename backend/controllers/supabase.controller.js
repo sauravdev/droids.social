@@ -37,8 +37,22 @@ async function createUserIfNotExists(email , full_name , avartar_url  ) {
 }
 
 
+const updateContentPlan = async (userId  , planId , updates ) => {
+   const { data, error } = await supabase
+      .from('content_plans')
+      .update(updates)
+      .eq('id', planId)
+      .eq('profile_id', userId)
+      .select()
+      .single();
+  
+    if (error) throw error;
+    return data;
+}
 
 
-export {checkIfUserExists} ;
+
+
+export {checkIfUserExists , updateContentPlan } ;
 
 
