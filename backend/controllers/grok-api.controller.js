@@ -1,6 +1,8 @@
+import { updateContentPlan } from "./supabase.controller.js";
+
 async function generatePost(req, res) {
   console.log(req.body);
-  const { topic, platform } = req.body;
+  const { topic, platform , userId  , planId } = req.body;
   console.log(req.body) ;
   if (!topic || !platform) {
     return res.status(400).json({ message: "Invalid body" });
@@ -67,6 +69,12 @@ Guidelines:
 
     console.log("response from handle generate ", generatedContent);
 
+    if(userId && planId) 
+    {
+      console.log("updated plan suggestion in grok api") ; 
+      await updateContentPlan(userId , planId , {suggestion : generatedContent }) ;
+    }
+
     if (!generatedContent) {
       return res
         .status(500)
@@ -74,10 +82,15 @@ Guidelines:
     }
     return res.status(200).json({ message: generatedContent });
   } catch (error) {
+    if(userId && planId) 
+    {
+      console.log("updated plan suggestion in grok api (inside catch) ") ; 
+      await updateContentPlan(userId , planId , {suggestion : "Something went wrong while generating content please try with some another model" }) ;
+    }
     console.error("Grok API Error:", error);
     return res
       .status(500)
-      .json({ message: "Something went wrong while generating content" });
+      .json({ message: "Something went wrong while generating content please try with some another model" });
   }
 }
 

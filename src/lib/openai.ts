@@ -348,9 +348,9 @@ export async function postGenerationApi(prompt: string) {
 
 export async function generatePostUsingGrok(
   topic: string,
-
   platform: "twitter" | "linkedin" | "instagram",
-  tone?: string
+  userId : "",
+  planId : "" ,file:///home/hemant/Pictures/Screenshots/Screenshot%20from%202025-06-27%2016-58-52.png 
 ): any {
   console.log("inside generate post using grok api");
 
@@ -362,7 +362,7 @@ export async function generatePostUsingGrok(
         headers: {
           "Content-Type": "application/json",
         },
-        body: JSON.stringify({ topic, platform }),
+        body: JSON.stringify({ topic, platform ,  userId  , planId }),
       }
     );
     const data = await response.json();

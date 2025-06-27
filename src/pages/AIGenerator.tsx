@@ -42,6 +42,7 @@ interface HistoryItem {
   content: string;
   createdAt: string;
   media : string | null;
+  platform : string ; 
 }
 
 interface Success {
@@ -161,9 +162,11 @@ export function AIGenerator() {
           if(response?.[0]?.suggestion === "") return true ;
           return false;
         }) ;
-        loadHistoryItem({topic : response?.[0]?.topic || '' , content : response?.[0]?.suggestion || '' , media : response?.[0]?.media} ); 
+      
+       
+        loadHistoryItem({topic : response?.[0]?.topic || '' , content : response?.[0]?.suggestion || '' , media : response?.[0]?.media , platform : response?.[0]?.platform  } ); 
         setHistory((prev) => {
-        return response.map((item) => {return {id : item?.id , content : item?.suggestion , topic : item?.topic , createdAt : item?.created_at , media : item?.media  }} ) ;
+        return response.map((item) => {return {id : item?.id , content : item?.suggestion , topic : item?.topic , createdAt : item?.created_at , media : item?.media , platform : item?.platform }} ) ;
       })
       }
       
@@ -450,6 +453,7 @@ export function AIGenerator() {
   };
 
   const handleGenerate = async () => {
+    console.log("selected model = " , selectedModel) ; 
      
     setSuccess({ state: false, message: "" });
     if (profile?.tokens - 10 < 0) {
@@ -479,6 +483,7 @@ export function AIGenerator() {
     
 
     try {
+     
 
     const { data: { user } } = await supabase.auth.getUser();
     if (!user) throw new Error('No user found');
@@ -511,7 +516,9 @@ export function AIGenerator() {
       if (selectedModel == "grok") {
         const response = await generatePostUsingGrok(
           topic,
-          selectedPlatforms[0]
+          selectedPlatforms[0],
+          user?.id , 
+          createdPlan?.id
         );
       
         // const data = await response.json() ;
@@ -524,26 +531,20 @@ export function AIGenerator() {
         content = await generatePostFromCustomModel(topic, selectedModel);
       }
       await updateContentPlan(createdPlan?.id , {suggestion : content } )
-
-
-
-      if (selectedPlatforms?.length === 0) {
-        setError("Please select platform");
-        return;
-      }
-      // const content = await generatePostUsingGrok(topic , selectedPlatforms[0] ) ;
+     content = await generatePostUsingGrok(topic , selectedPlatforms[0] ) ;
       setGeneratedContent(content);
-      const historyItem: HistoryItem = {
-        id: crypto.randomUUID(),
-        topic,
-        content,
-        createdAt: new Date().toISOString(),
-      };
-      setHistory((prev) => [historyItem, ...prev]);
+      // const historyItem: HistoryItem = {
+      //   id: crypto.randomUUID(),
+      //   topic,
+      //   content,
+      //   createdAt: new Date().toISOString(),
+      // };
+      // setHistory((prev) => [historyItem, ...prev]);
       if (profile?.tokens - 10 >= 0) {
         await updateProfile({ tokens: profile?.tokens - 10 });
         setRefreshHeader((prev) => !prev);
       }
+      setRefreshPage((prev)=>!prev) ;
     } catch (err: any) {
       setError(err.message);
     } finally {
@@ -814,6 +815,7 @@ export function AIGenerator() {
   const loadHistoryItem = (item: HistoryItem) => {
     setTopic(item?.topic || '');
     setGeneratedContent(item?.content || '');
+    setSelectedPlatforms([item?.platform]);
     console.log("media inside history =- " , typeof ( item?.media ) ) ;
     setGeneratedMedia(item?.media || null) ;
   };
@@ -1021,11 +1023,12 @@ export function AIGenerator() {
                   {model.map((mod, index) => (
                     <button
                       key={index}
+                      disabled={generatingSuggestion}
                       onClick={() => {
                         
                         setSelectedModel(mod);
                       }}
-                      className={`px-3 py-1 rounded-full text-xs sm:text-sm transition-colors ${
+                      className={`${generatingSuggestion ? 'cursor-not-allowed' : 'cursor-pointer'} px-3 py-1 rounded-full text-xs sm:text-sm transition-colors ${
                         selectedModel === mod
                           ? "bg-purple-600 text-white"
                           : "bg-gray-700 text-gray-300 hover:bg-gray-600"
@@ -1268,20 +1271,20 @@ export function AIGenerator() {
                 </p>
                 <div className="flex flex-col gap-2">
                   <div className="flex space-x-2">
-                    <button
+                    {item?.content !== "" && <button
                       onClick={() => loadHistoryItem(item)}
                       className="text-purple-400 hover:text-purple-300 text-xs sm:text-sm flex items-center transition-colors"
                     >
                       <Edit2 className="h-3 w-3 sm:h-4 sm:w-4 mr-1" />
                       <span>Edit</span>
-                    </button>
-                    <button
+                    </button>}
+                   {item?.content !== ""  && <button
                       onClick={() => deleteHistoryItem(item.id)}
                       className="text-red-400 hover:text-red-300 text-xs sm:text-sm flex items-center transition-colors"
                     >
                       <X className="h-3 w-3 sm:h-4 sm:w-4 mr-1" />
                       <span>Delete</span>
-                    </button>
+                    </button>}
                   </div>
                   <span className="text-gray-500 text-xs">
                     {new Date(item.createdAt).toLocaleDateString()}
