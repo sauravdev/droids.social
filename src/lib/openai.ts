@@ -350,7 +350,7 @@ export async function generatePostUsingGrok(
   topic: string,
   platform: "twitter" | "linkedin" | "instagram",
   userId : "",
-  planId : "" ,file:///home/hemant/Pictures/Screenshots/Screenshot%20from%202025-06-27%2016-58-52.png 
+  planId : "" 
 ): any {
   console.log("inside generate post using grok api");
 
