@@ -503,7 +503,7 @@ export function ContentStrategy() {
                 </option>
               ))}
             </select>
-            <div className="absolute top-[3.2rem] right-0 flex items-center px-2 pointer-events-none">
+            <div className="absolute top-[2.5rem] right-0 flex items-center px-2 pointer-events-none">
               <svg
                 className="w-4 h-4 text-gray-200"
                 fill="currentColor"
@@ -522,8 +522,9 @@ export function ContentStrategy() {
           <div className=" flex-1 relative">
             <p className = "capitalize text-gray-200 ">Select a model</p>
             <select
+             disabled={generating}
               onChange={handleModelChange}
-              className="block  appearance-none w-full  bg-gray-700 border border-gray-300 hover:border-gray-400 px-4 py-2 pr-8 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-gray-200"
+              className={`block  appearance-none w-full  bg-gray-700 border border-gray-300 hover:border-gray-400 px-4 py-2 pr-8 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-gray-200 ${generating ? 'opacity-50 cursor-not-allowed' : ''}`}
             >
               <option className="capitalize" value="" disabled selected>
                 {selectedModel}
@@ -534,7 +535,7 @@ export function ContentStrategy() {
                 </option>
               ))}
             </select>
-            <div className="pointer-events-none absolute  top-[3.2rem] right-0 flex items-center px-2 text-gray-200">
+            <div className="pointer-events-none absolute  top-[2.5rem] right-0 flex items-center px-2 text-gray-200">
               <svg
                 className="h-4 w-4 fill-current"
                 xmlns="http://www.w3.org/2000/svg"

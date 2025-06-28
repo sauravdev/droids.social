@@ -185,21 +185,26 @@ export async function generatePost(
       instagram: "visual, engaging, with emojis and hashtags",
     };
     const goals = ["reach", "followers", "engagement"];
-    const prompt = `You are an expert social media . Create a niche post for topic : "${topic}".  designed to maximize reach, engagement, and virality, with the following goals: ${goals.join(
-      ", "
-    )}. Craft posts that feel authentic, human-like, and resonate with the target audience, using trending tactics and platform-specific best practices.
+    const prompt = `You are a social media expert. Create a high-performing niche post for the topic: "${topic}", optimized for maximum reach, engagement, and virality. The post should align with the following goals: ${goals.join(", ")}.
 
 Guidelines:
-- the content should be based on the following content strategy : ${topic}
-- the content should be tailored for  ${platform} platform
-- Make it ${platformGuide[platform]}${tone ? ` with a ${tone} tone` : ""}. 
-- search internet and X, find latest trends and discussions in the domain: ${topic} , make sure the content is based on those trends
-- Design posts to feel conversational, human-like, and authentic—no robotic or generic phrasing.
-- Incorporate viral elements like storytelling, humor, trending hashtags, or emotional hooks where relevant.
-- Include at least 1 CTA per post (e.g., "Comment below," "Tag a friend," "Save this") to boost interaction.
-- Make the content informative and useful
-- Post should be detailed , niche and specialised in the domain of ${topic}
-- Avoid using any markdown formatting like **, *, or __. Just return plain text without styling symbols.`;
+- Base the content on the strategy: "${topic}"
+- Tailor it specifically for the ${platform} platform
+- Follow platform best practices: ${platformGuide[platform]}${tone ? `, with a ${tone} tone` : ""}
+- Research current trends and conversations on the internet and X (Twitter) related to "${topic}", and ensure alignment with what's currently resonating
+- Write in a natural, human, and conversational tone — avoid robotic or generic language
+- Break the content into short, skimmable paragraphs with real line breaks (not \\n or markdown)
+- Ensure the first ~200 characters act as a standalone hook to grab attention in LinkedIn's preview
+- Introduce a clear CTA (e.g., “Comment below”, “Tag a friend”, “Share your thoughts”) within the first 3–5 sentences to ensure visibility before truncation
+- Integrate any hashtags or trend mentions mid-post or earlier — avoid placing them at the end of the content
+- Avoid ending the post with footnotes, summary remarks, CTAs, or hashtags, as these are often clipped
+- Structure the post to be visually scannable with line breaks every 2–3 sentences
+- Include viral elements where relevant, such as storytelling, humor, trending hashtags, or emotional hooks
+- Make the content niche-specific, insightful, practical, and authentic
+- Avoid markdown formatting entirely
+- Keep the response concise and under 200 words`
+
+
 
     const completion = await openai.chat.completions.create({
       messages: [

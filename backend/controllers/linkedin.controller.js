@@ -55,8 +55,29 @@ const getUserInfo = async (req  , res ) => {
 }
 
 
-const uploadContent = async (accessToken , id ,postId = null , text  ) => {
-  
+const formatPostText = (text) => {
+  if (!text) return "this is a sample post";
+
+  return text
+    .replace(/\\n/g, '\n')   
+    .replace(/\s+\n/g, '\n')
+    .trim();
+};
+
+
+const uploadContent = async (accessToken , id ,postId = null , rawText  ) => {
+  const text = formatPostText(rawText);
+  console.log("body = " , JSON.stringify({
+        "author": `urn:li:person:${id}`,
+        "commentary":  text || "this is a sample post" ,
+        "visibility": "PUBLIC",
+        "lifecycleState": "PUBLISHED",
+        "distribution": {
+          "feedDistribution": "MAIN_FEED",
+          "targetEntities": [],
+          "thirdPartyDistributionChannels": []
+        }
+      }))
   try{
     const response = await fetch("https://api.linkedin.com/rest/posts", {
       method: "POST",

@@ -999,11 +999,13 @@ export function AIGenerator() {
                 <div className="flex flex-wrap gap-2">
                   {formatOptions.map((format) => (
                     <button
+                      disabled={(formats.includes("video") && format === "image") || (formats.includes("image") && format === "video") }
+                    
                       key={format}
                       onClick={() => {
                         handleFormatToggle(format);
                       }}
-                      className={`px-3 py-1 rounded-full text-xs sm:text-sm transition-colors ${
+                      className={`${((formats.includes("video") && format === "image") || (formats.includes("image") && format === "video")) ? 'cursor-not-allowed' : "cursor-pointer"} px-3 py-1 rounded-full text-xs sm:text-sm transition-colors ${
                         formats.includes(format)
                           ? "bg-purple-600 text-white"
                           : "bg-gray-700 text-gray-300 hover:bg-gray-600"
