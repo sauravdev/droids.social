@@ -71,5 +71,5 @@ export default function App() {
       <Route path="/testimonials" element={session ? <Layout><Testimonials /></Layout> : <Navigate to="/login" replace />} />
       <Route path="/howitworks" element={session ? <Layout><HowItWorks /></Layout> : <Navigate to="/login" replace />} />
     </Routes>
-  );https://www.ayrshare.com/docs/quickstart#get-your-api-key
+  )
 }
