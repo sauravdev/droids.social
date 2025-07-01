@@ -19,6 +19,7 @@ import { grokApiRouter } from './routes/grok-api.route.js';
 import jwt from 'jsonwebtoken' ;
 import razorpayRouter from './routes/razorpayPayment.route.js';
 import { videoGenRouter } from './routes/videoGen.route.js';
+import { dodoRouter } from './routes/dodo.route.js';
 dotenv.config() 
 
 
@@ -37,6 +38,7 @@ app.use(googleOAuthRouter);
 app.use(grokApiRouter); 
 app.use(razorpayRouter) ;
 app.use(videoGenRouter) ; 
+app.use(dodoRouter); 
 
 
 

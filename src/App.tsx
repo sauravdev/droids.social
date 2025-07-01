@@ -24,7 +24,7 @@ import { About } from './pages/About';
 import { Contact } from './pages/Contact';
 import { Testimonials } from './pages/Testimonials';
 import { HowItWorks } from './pages/HowItWorks';
-import { PaymentSuccess } from './pages/PaymentSuccess';
+import { PaymentSuccess, RedirectedPaymentPage } from './pages/RedirectedPaymentPage';
 import GoogleAuth from './components/GoogleAuth';
 
 export default function App() {
@@ -65,11 +65,11 @@ export default function App() {
       <Route path="/linkedin/callback/auth/linkedIn" element={<LinkedInAuth />} /> 
 
       <Route path="/pricing" element={session ? <Layout><Pricing /></Layout> : <Navigate to="/login" replace />} />
-      <Route path="/payment-success" element={session ? <Layout><PaymentSuccess /></Layout> : <Navigate to="/login" replace />} />
+      <Route path="/payment-success" element={session ? <Layout><RedirectedPaymentPage /></Layout> : <Navigate to="/login" replace />} />
       <Route path="/about" element={session ? <Layout><About /></Layout> : <Navigate to="/login" replace />} />
       <Route path="/contact" element={session ? <Layout><Contact /></Layout> : <Navigate to="/login" replace />} />
       <Route path="/testimonials" element={session ? <Layout><Testimonials /></Layout> : <Navigate to="/login" replace />} />
       <Route path="/howitworks" element={session ? <Layout><HowItWorks /></Layout> : <Navigate to="/login" replace />} />
     </Routes>
-  );
+  );https://www.ayrshare.com/docs/quickstart#get-your-api-key
 }

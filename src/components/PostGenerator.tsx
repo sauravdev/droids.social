@@ -51,7 +51,7 @@ export function PostGenerator({
   const [content, setContent] = useState(plan.suggestion || "");
   const [tone, setTone] = useState<string>("");
   const [posting, setPosting] = useState<boolean | null>(false);
-  const [videoUrl , setVideoUrl] = useState(''); 
+  const [videoUrl, setVideoUrl] = useState("");
   const [success, setSuccess] = useState<Success>({
     state: false,
     message: "",
@@ -60,16 +60,17 @@ export function PostGenerator({
   const { updatePlan } = useContentPlan();
   const [showVideoPopup, setShowVideoPopup] = useState(false);
   const [showPopup, setShowPopup] = useState(false);
-  const [isVideoGenerated , setIsVideoGenerated ] = useState(false) ;
-  const [generatedVideo , setGeneratedVideo] = useState(null) ;
+  const [isVideoGenerated, setIsVideoGenerated] = useState(false);
+  const [generatedVideo, setGeneratedVideo] = useState(null);
 
   const { selectedModel } = useAuth();
 
-  const videos = ['https://zkzdqldpzvjeftxbzgvh.supabase.co/storage/v1/object/public/generated-videos//2aeb4f6f-75fc-48a1-b4aa-9e21c75aa5b3_raw_video.mp4' , 
-    'https://zkzdqldpzvjeftxbzgvh.supabase.co/storage/v1/object/public/generated-videos//8ac022e5-fcc8-4d5b-b3f3-61928f723fc0_raw_video.mp4',
+  const videos = [
+    "https://zkzdqldpzvjeftxbzgvh.supabase.co/storage/v1/object/public/generated-videos//2aeb4f6f-75fc-48a1-b4aa-9e21c75aa5b3_raw_video.mp4",
+    "https://zkzdqldpzvjeftxbzgvh.supabase.co/storage/v1/object/public/generated-videos//8ac022e5-fcc8-4d5b-b3f3-61928f723fc0_raw_video.mp4",
     "https://zkzdqldpzvjeftxbzgvh.supabase.co/storage/v1/object/public/generated-videos//2568d3a0-6fbc-41f4-b007-0fdefca8c12b_raw_video.mp4",
-    "https://zkzdqldpzvjeftxbzgvh.supabase.co/storage/v1/object/public/generated-videos//8ac022e5-fcc8-4d5b-b3f3-61928f723fc0_raw_video.mp4"
-  ]
+    "https://zkzdqldpzvjeftxbzgvh.supabase.co/storage/v1/object/public/generated-videos//8ac022e5-fcc8-4d5b-b3f3-61928f723fc0_raw_video.mp4",
+  ];
 
   useEffect(() => {
     console.log("current plan = ", plan);
@@ -82,44 +83,49 @@ export function PostGenerator({
     );
   }, [plan]);
 
+  const generateVideoUsingKling = async (planId: any, prompt: string) => {
+    setGeneratedVideo(null);
+    try {
+      const {
+        data: { user },
+      } = await supabase.auth.getUser();
+      if (!user) throw new Error("No user found");
+      const response = await fetch(
+        `${BACKEND_APIPATH.BASEURL}/generate-video`,
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({
+            prompt,
+            planId,
+            userId: user?.id,
+          }),
+        }
+      );
 
-  const generateVideoUsingKling = async (planId  :any  , prompt : string)  => {
-    setGeneratedVideo(null) ; 
-    try{
+      if (response?.status === 429) {
+        setError("Account balance too low to generate video");
+        return;
+      }
 
-
-      const { data: { user } } = await supabase.auth.getUser();
-      if (!user) throw new Error('No user found');
-      const response = await fetch(`${BACKEND_APIPATH.BASEURL}/generate-video` , {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          prompt,
-          planId , 
-          userId : user?.id 
-        }),
-      })
-
-      console.log("video generation response status = ", response)
+      console.log("video generation response status = ", response);
       const data = await response.json();
 
       console.log("video generation response = ", data);
       if (response?.status && response?.status >= 400) {
         setError("Something went wrong while generating video");
-        return ; 
+        return;
       }
-      console.log("generated video url = " , data?.video_url); 
+      console.log("generated video url = ", data?.video_url);
       setGeneratedVideo(data?.video_url);
-    }
-    catch(err: any) {
+    } catch (err: any) {
       console.log("Something went wrong while generating video ", err);
       setError("Something went wrong while generating video");
-      removeErrorToast() ; 
-    } 
-   
-  }
+      removeErrorToast();
+    }
+  };
 
   async function handlePostTweet() {
     console.log("plan suggestion = ", plan?.suggestion);
@@ -174,16 +180,15 @@ export function PostGenerator({
   const handlePostInstagram = async () => {
     console.log("plan suggestion = ", plan?.suggestion);
     console.log("content  = ", content);
-    console.log("plan media = " , plan.media) ;
-    if(plan?.format === "video" ) 
-    {
+    console.log("plan media = ", plan.media);
+    if (plan?.format === "video") {
       setError("Video posting on instagram is currently not supported !");
-        setTimeout(() => {
-            setError("");
-          }, 1500);
+      setTimeout(() => {
+        setError("");
+      }, 1500);
       return;
     }
-    if ((plan?.format == "image") && (!plan?.media || plan?.media == 'NULL')) {
+    if (plan?.format == "image" && (!plan?.media || plan?.media == "NULL")) {
       setError("Please generate an image first !");
       return;
     }
@@ -344,8 +349,7 @@ export function PostGenerator({
     setLoading(true);
     setError(null);
     let publicUrl = "";
-    if(plan?.format === "video")
-    {
+    if (plan?.format === "video") {
       // await new Promise((resolve , reject) => {
       //   setTimeout(() => {
       //   console.log("video generated !")
@@ -356,8 +360,8 @@ export function PostGenerator({
       // } , 3000); // 300000
       // })
 
-      await generateVideoUsingKling(plan?.id  , plan?.topic) ;
-      setIsVideoGenerated(true) ;
+      await generateVideoUsingKling(plan?.id, plan?.topic);
+      setIsVideoGenerated(true);
       setLoading(false);
     }
     if (plan?.format === "image") {
@@ -432,8 +436,7 @@ export function PostGenerator({
     setTimeout(() => {
       setError(null);
     }, 1500);
-  }
-  
+  };
 
   return (
     <div className="bg-gray-700 h-full  rounded-lg px-2 py-4 space-y-4 flex flex-col justify-between">
@@ -461,7 +464,11 @@ export function PostGenerator({
         </div>
       </div>
 
-      {error && <div className="bg-red-950 px-3 py-2 rounded-lg text-white text-sm">{error}</div>}
+      {error && (
+        <div className="bg-red-950 px-3 py-2 rounded-lg text-white text-sm">
+          {error}
+        </div>
+      )}
       {success.state && (
         <div className="bg-green-600 text-white px-3 py-2 sm:px-4 rounded-md text-sm">
           {success.message}
@@ -499,16 +506,17 @@ export function PostGenerator({
               <Image size={20} /> Preview Image
             </button>
           )}
-        {plan?.format === "video" && (generatedVideo || plan?.media !== "NULL") &&   (
-          <button
-            onClick={handleVideoPrevieClick}
-            className="px-3 py-1 my-2 bg-purple-500 text-white rounded-lg hover:bg-purple-600 transition-colors flex items-center gap-2"
-          >
-            <Image size={20} /> Preview Video
-          </button>
-        )}
+        {plan?.format === "video" &&
+          (generatedVideo || plan?.media !== "NULL") && (
+            <button
+              onClick={handleVideoPrevieClick}
+              className="px-3 py-1 my-2 bg-purple-500 text-white rounded-lg hover:bg-purple-600 transition-colors flex items-center gap-2"
+            >
+              <Image size={20} /> Preview Video
+            </button>
+          )}
 
-        {showVideoPopup  && (
+        {showVideoPopup && (
           <div className="fixed inset-0 bg-black bg-opacity-75 flex items-center justify-center z-50 p-4">
             <div className="bg-white rounded-lg max-w-4xl w-full max-h-[90vh] overflow-hidden">
               {/* Header */}
@@ -531,7 +539,7 @@ export function PostGenerator({
                   autoPlay
                 >
                   <source
-                    src={plan?.media || generatedVideo }
+                    src={plan?.media || generatedVideo}
                     type="video/mp4"
                   />
                   Your browser does not support the video tag.

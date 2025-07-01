@@ -28,7 +28,12 @@ import { ScheduleModal } from "../components/ScheduleModal";
 import Editor from "../components/Editor.js";
 import { useSocialAccounts } from "../hooks/useSocialAccounts.js";
 import { useScheduledPosts } from "../hooks/useScheduledPosts.js";
-import { deletePlan, getContentPlansHistory, getSocialMediaAccountInfo, updateContentPlan } from "../lib/api.js";
+import {
+  deletePlan,
+  getContentPlansHistory,
+  getSocialMediaAccountInfo,
+  updateContentPlan,
+} from "../lib/api.js";
 import { BACKEND_APIPATH } from "../constants/";
 import { useAuth } from "../context/AuthContext";
 import { useProfile } from "../hooks/useProfile.js";
@@ -41,8 +46,8 @@ interface HistoryItem {
   topic: string;
   content: string;
   createdAt: string;
-  media : string | null;
-  platform : string ; 
+  media: string | null;
+  platform: string;
 }
 
 interface Success {
@@ -50,7 +55,7 @@ interface Success {
   message: string;
 }
 
-const formatOptions = ["text", "image" , "video"];
+const formatOptions = ["text", "image", "video"];
 const sourceOptions = ["arxiv", "youtube", "twitter", "linkedin", "feedly"];
 
 export function AIGenerator() {
@@ -78,16 +83,15 @@ export function AIGenerator() {
     message: "",
   });
 
-  const [generatedMedia , setGeneratedMedia ] = useState(null)
+  const [generatedMedia, setGeneratedMedia] = useState(null);
 
   const [showPopup, setShowPopup] = useState(false);
   const handleImageClick = () => {
     setShowPopup(true);
   };
 
-  const [generatedVideo , setGeneratedVideo] = useState(null) ;
+  const [generatedVideo, setGeneratedVideo] = useState(null);
   const [showVideoPopup, setShowVideoPopup] = useState(false);
-
 
   const handleDownload = async () => {
     try {
@@ -124,7 +128,7 @@ export function AIGenerator() {
   const removeToast = () => {
     setTimeout(() => {
       setSuccess({ state: false, message: "" });
-      setError('');
+      setError("");
     }, 1500);
   };
 
@@ -133,7 +137,7 @@ export function AIGenerator() {
   const [customModels, setCustomModels] = useState<any>([]);
   const { loadCustomModels } = useCustomModel();
 
-  const [refreshPage , setRefreshPage] =  useState(false) ; 
+  const [refreshPage, setRefreshPage] = useState(false);
 
   const handleCustomModelChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
     const modelId = e.target.value;
@@ -148,35 +152,44 @@ export function AIGenerator() {
   const { accounts } = useSocialAccounts();
 
   const { createPost } = useScheduledPosts();
-  const [generatingSuggestion, setGeneratingSuggestion] = useState<boolean>(false);
- 
+  const [generatingSuggestion, setGeneratingSuggestion] =
+    useState<boolean>(false);
+
   const getHistory = async () => {
-    try{
-      const response = await getContentPlansHistory() ; 
-      console.log("history = " , response) ; 
-      
-      if(Array.isArray(response) && response?.length >  0)
-      {
+    try {
+      const response = await getContentPlansHistory();
+      console.log("history = ", response);
+
+      if (Array.isArray(response) && response?.length > 0) {
         console.log("response = ", response);
         setGeneratingSuggestion((prev) => {
-          if(response?.[0]?.suggestion === "") return true ;
+          if (response?.[0]?.suggestion === "") return true;
           return false;
-        }) ;
-      
-       
-        loadHistoryItem({topic : response?.[0]?.topic || '' , content : response?.[0]?.suggestion || '' , media : response?.[0]?.media , platform : response?.[0]?.platform  } ); 
+        });
+
+        loadHistoryItem({
+          topic: response?.[0]?.topic || "",
+          content: response?.[0]?.suggestion || "",
+          media: response?.[0]?.media,
+          platform: response?.[0]?.platform,
+        });
         setHistory((prev) => {
-        return response.map((item) => {return {id : item?.id , content : item?.suggestion , topic : item?.topic , createdAt : item?.created_at , media : item?.media , platform : item?.platform }} ) ;
-      })
+          return response.map((item) => {
+            return {
+              id: item?.id,
+              content: item?.suggestion,
+              topic: item?.topic,
+              createdAt: item?.created_at,
+              media: item?.media,
+              platform: item?.platform,
+            };
+          });
+        });
       }
-      
+    } catch (err: any) {
+      setError("Error loading history");
     }
-    catch(err : any )
-    {
-      setError("Error loading history")
-      
-    }
-  }
+  };
 
   useEffect(() => {
     (async () => {
@@ -184,58 +197,60 @@ export function AIGenerator() {
       console.log("models = ", models);
       setCustomModels(models);
     })();
-
-    
   }, []);
 
+  useEffect(() => {
+    getHistory();
+  }, [refreshPage]);
 
   useEffect(() => {
-    getHistory() ; 
-  }, [refreshPage])
+    const interval = setInterval(() => {
+      setRefreshPage((prev) => !prev);
+    }, 120000);
 
-  useEffect(() => {
-  const interval = setInterval(() => {
-    setRefreshPage(prev => !prev);
-  }, 120000);
+    return () => {
+      clearInterval(interval);
+    };
+  }, []);
 
-  return () => {
-    clearInterval(interval);
-  };
-}, []);
-
-  const handleVideoGeneration = async (userId , planId , prompt : string ) => {
-     setGeneratedVideo(null) ; 
-        try{
-    
-          const response = await fetch(`${BACKEND_APIPATH.BASEURL}/generate-video` , {
-            method: "POST",
-            headers: {
-              "Content-Type": "application/json",
-            },
-            body: JSON.stringify({
-              userId , planId ,
-              prompt,
-            }),
-          })
-    
-          console.log("video generation response status = ", response)
-          const data = await response.json();
-    
-          console.log("video generation response = ", data);
-          if (response?.status && response?.status >= 400) {
-            setError("Something went wrong while generating video");
-            return ; 
-          }
-          console.log("generated video url = " , data?.video_url); 
-          setGeneratedVideo(data?.video_url);
+  const handleVideoGeneration = async (userId, planId, prompt: string) => {
+    setGeneratedVideo(null);
+    try {
+      const response = await fetch(
+        `${BACKEND_APIPATH.BASEURL}/generate-video`,
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({
+            userId,
+            planId,
+            prompt,
+          }),
         }
-        catch(err: any) {
-          console.log("Something went wrong while generating video ", err);
-          setError("Something went wrong while generating video");
-          removeToast()
-        } 
-       
-  }
+      );
+      console.log("response = ", response);
+      if (response?.status === 429) {
+        setError("Account balance too low to generate video");
+        return;
+      }
+      console.log("video generation response status = ", response);
+      const data = await response.json();
+
+      console.log("video generation response = ", data);
+      if (response?.status && response?.status >= 400) {
+        setError("Something went wrong while generating video");
+        return;
+      }
+      console.log("generated video url = ", data?.video_url);
+      setGeneratedVideo(data?.video_url);
+    } catch (err: any) {
+      console.log("Something went wrong while generating video ", err);
+      setError("Something went wrong while generating video");
+      removeToast();
+    }
+  };
 
   async function handlePostTweet() {
     setSuccess({ state: false, message: "" });
@@ -387,7 +402,7 @@ export function AIGenerator() {
   const handleFormatToggle = (format: string) => {
     setFormats((prev) =>
       prev.includes(format) && format !== "text"
-        ? (prev.filter((f) => f !== format))
+        ? prev.filter((f) => f !== format)
         : [...prev, format]
     );
   };
@@ -453,8 +468,8 @@ export function AIGenerator() {
   };
 
   const handleGenerate = async () => {
-    console.log("selected model = " , selectedModel) ; 
-     
+    console.log("selected model = ", selectedModel);
+
     setSuccess({ state: false, message: "" });
     if (profile?.tokens - 10 < 0) {
       setError("You do not have enough tokens for post generation ..");
@@ -471,45 +486,39 @@ export function AIGenerator() {
       setError("Please enter a topic");
       return;
     }
-   
+
     setLoading(true);
     setError(null);
     setGeneratedImage("");
     setGeneratedContent("");
 
-    
-
-
-    
-
     try {
-     
-
-    const { data: { user } } = await supabase.auth.getUser();
-    if (!user) throw new Error('No user found');
-    const createdPlan = await createPlan({
+      const {
+        data: { user },
+      } = await supabase.auth.getUser();
+      if (!user) throw new Error("No user found");
+      const createdPlan = await createPlan({
         profile_id: user.id,
-        strategy_id: null ,
+        strategy_id: null,
         platform: selectedPlatforms[0],
         format: formats[0],
         topic,
-        suggestion: '',
+        suggestion: "",
         status: "pending",
         scheduled_for: null,
       });
-      setRefreshPage(prev=>!prev) ;
-      console.log("created plan in ai = " , createdPlan) ;
-      console.log("format = " , formats ) ; 
-
+      setRefreshPage((prev) => !prev);
+      console.log("created plan in ai = ", createdPlan);
+      console.log("format = ", formats);
 
       if (formats.find((format) => format === "image")) {
-      await handleImageGeneration();
-    }
+        await handleImageGeneration();
+      }
 
-     if (formats.find((format) => format === "video")) {
-      await handleVideoGeneration(user?.id , createdPlan?.id , topic);
-    }
-    
+      if (formats.find((format) => format === "video")) {
+        await handleVideoGeneration(user?.id, createdPlan?.id, topic);
+      }
+
       // const content = await generatePost(topic, selectedPlatforms[0] );
       // const content = await generatePostFromCustomModel(topic)
       let content = "";
@@ -517,10 +526,10 @@ export function AIGenerator() {
         const response = await generatePostUsingGrok(
           topic,
           selectedPlatforms[0],
-          user?.id , 
+          user?.id,
           createdPlan?.id
         );
-      
+
         // const data = await response.json() ;
         // content = data?.message ;
         console.log("content = ", response);
@@ -530,8 +539,8 @@ export function AIGenerator() {
       } else {
         content = await generatePostFromCustomModel(topic, selectedModel);
       }
-      await updateContentPlan(createdPlan?.id , {suggestion : content } )
-     content = await generatePostUsingGrok(topic , selectedPlatforms[0] ) ;
+      await updateContentPlan(createdPlan?.id, { suggestion: content });
+      content = await generatePostUsingGrok(topic, selectedPlatforms[0]);
       setGeneratedContent(content);
       // const historyItem: HistoryItem = {
       //   id: crypto.randomUUID(),
@@ -544,12 +553,12 @@ export function AIGenerator() {
         await updateProfile({ tokens: profile?.tokens - 10 });
         setRefreshHeader((prev) => !prev);
       }
-      setRefreshPage((prev)=>!prev) ;
+      setRefreshPage((prev) => !prev);
     } catch (err: any) {
       setError(err.message);
     } finally {
       setLoading(false);
-      setGeneratingSuggestion(false); 
+      setGeneratingSuggestion(false);
     }
   };
 
@@ -570,7 +579,7 @@ export function AIGenerator() {
       console.log(user);
       const createdPlan = await createPlan({
         profile_id: user.id,
-        strategy_id: null ,
+        strategy_id: null,
         platform,
         format: formats[0],
         topic,
@@ -578,7 +587,7 @@ export function AIGenerator() {
         status: "pending",
         scheduled_for: null,
       });
-      console.log("created plan = " , createdPlan ) ; 
+      console.log("created plan = ", createdPlan);
       setSuccess({ state: true, message: "Content Saved !" });
       removeToast();
     } catch (err: any) {
@@ -813,17 +822,17 @@ export function AIGenerator() {
     }
   };
   const loadHistoryItem = (item: HistoryItem) => {
-    setTopic(item?.topic || '');
-    setGeneratedContent(item?.content || '');
+    setTopic(item?.topic || "");
+    setGeneratedContent(item?.content || "");
     setSelectedPlatforms([item?.platform]);
-    console.log("media inside history =- " , typeof ( item?.media ) ) ;
-    setGeneratedMedia(item?.media || null) ;
+    console.log("media inside history =- ", typeof item?.media);
+    setGeneratedMedia(item?.media || null);
   };
 
   const deleteHistoryItem = async (id: string) => {
     await deletePlan(id);
     setHistory((prev) => prev.filter((item) => item.id !== id));
-    setRefreshPage((prev) => !prev) ; 
+    setRefreshPage((prev) => !prev);
   };
 
   const handleVideoPrevieClick = () => {
@@ -883,40 +892,40 @@ export function AIGenerator() {
         Custom Post generator
       </h1>
 
-      {showVideoPopup  && (
-                <div className="fixed inset-0 bg-black bg-opacity-75 flex items-center justify-center z-50 p-4">
-                  <div className="bg-white rounded-lg max-w-4xl w-full max-h-[90vh] overflow-hidden">
-                    {/* Header */}
-                    { <div className="flex items-center justify-between p-4 border-b">
-                      <h2 className="text-xl font-bold">Video Preview</h2>
-                      <button
-                        onClick={handleCloseVideoPopUp}
-                        className="p-2 hover:bg-gray-100 rounded-full transition-colors"
-                      >
-                        <X size={20} />
-                      </button>
-                    </div>}
-      
-                    {/* Video Container */}
-                    <div className="p-4">
-                      <video
-                        controls
-                        className="w-full h-auto rounded-lg shadow-md max-h-[70vh]"
-                        preload="metadata"
-                        autoPlay
-                      >
-                        <source
-                          src={generatedVideo || generatedMedia}
-                          type="video/mp4"
-                        />
-                        Your browser does not support the video tag.
-                      </video>
-                    </div>
-                  </div>
-                </div>
-              )}
+      {showVideoPopup && (
+        <div className="fixed inset-0 bg-black bg-opacity-75 flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-lg max-w-4xl w-full max-h-[90vh] overflow-hidden">
+            {/* Header */}
+            {
+              <div className="flex items-center justify-between p-4 border-b">
+                <h2 className="text-xl font-bold">Video Preview</h2>
+                <button
+                  onClick={handleCloseVideoPopUp}
+                  className="p-2 hover:bg-gray-100 rounded-full transition-colors"
+                >
+                  <X size={20} />
+                </button>
+              </div>
+            }
 
-
+            {/* Video Container */}
+            <div className="p-4">
+              <video
+                controls
+                className="w-full h-auto rounded-lg shadow-md max-h-[70vh]"
+                preload="metadata"
+                autoPlay
+              >
+                <source
+                  src={generatedVideo || generatedMedia}
+                  type="video/mp4"
+                />
+                Your browser does not support the video tag.
+              </video>
+            </div>
+          </div>
+        </div>
+      )}
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 sm:gap-6">
         {/* Form Section */}
@@ -999,13 +1008,20 @@ export function AIGenerator() {
                 <div className="flex flex-wrap gap-2">
                   {formatOptions.map((format) => (
                     <button
-                      disabled={(formats.includes("video") && format === "image") || (formats.includes("image") && format === "video") }
-                    
+                      disabled={
+                        (formats.includes("video") && format === "image") ||
+                        (formats.includes("image") && format === "video")
+                      }
                       key={format}
                       onClick={() => {
                         handleFormatToggle(format);
                       }}
-                      className={`${((formats.includes("video") && format === "image") || (formats.includes("image") && format === "video")) ? 'cursor-not-allowed' : "cursor-pointer"} px-3 py-1 rounded-full text-xs sm:text-sm transition-colors ${
+                      className={`${
+                        (formats.includes("video") && format === "image") ||
+                        (formats.includes("image") && format === "video")
+                          ? "cursor-not-allowed"
+                          : "cursor-pointer"
+                      } px-3 py-1 rounded-full text-xs sm:text-sm transition-colors ${
                         formats.includes(format)
                           ? "bg-purple-600 text-white"
                           : "bg-gray-700 text-gray-300 hover:bg-gray-600"
@@ -1027,23 +1043,27 @@ export function AIGenerator() {
                       key={index}
                       disabled={generatingSuggestion}
                       onClick={() => {
-                        
                         setSelectedModel(mod);
                       }}
-                      className={`${generatingSuggestion ? 'cursor-not-allowed' : 'cursor-pointer'} px-3 py-1 rounded-full text-xs sm:text-sm transition-colors ${
+                      className={`${
+                        generatingSuggestion
+                          ? "cursor-not-allowed"
+                          : "cursor-pointer"
+                      } px-3 py-1 rounded-full text-xs sm:text-sm transition-colors ${
                         selectedModel === mod
                           ? "bg-purple-600 text-white"
                           : "bg-gray-700 text-gray-300 hover:bg-gray-600"
                       }`}
                     >
-                      {mod} 
-
+                      {mod}
                     </button>
                   ))}
 
-                  {
-                    formats.includes("video") && <button className="bg-purple-600 text-white px-3 py-1 rounded-full text-xs sm:text-sm transition-colors">Kling AI</button>
-                  }
+                  {formats.includes("video") && (
+                    <button className="bg-purple-600 text-white px-3 py-1 rounded-full text-xs sm:text-sm transition-colors">
+                      Kling AI
+                    </button>
+                  )}
 
                   {customModels?.length > 0 && (
                     <select
@@ -1071,10 +1091,10 @@ export function AIGenerator() {
               <div className="mt-4">
                 <button
                   onClick={handleGenerate}
-                  disabled={loading ||  generatingSuggestion}
+                  disabled={loading || generatingSuggestion}
                   className="w-full bg-purple-600 hover:bg-purple-700 text-white px-4 py-2 rounded-md flex items-center justify-center space-x-2 disabled:opacity-50 text-sm sm:text-base transition-colors"
                 >
-                  {loading ||  generatingSuggestion ? (
+                  {loading || generatingSuggestion ? (
                     <>
                       <Loader className="h-4 w-4 sm:h-5 sm:w-5 animate-spin" />
                       <span>Generating...</span>
@@ -1091,7 +1111,10 @@ export function AIGenerator() {
               {generatedContent && (
                 <div className="relative space-y-4">
                   {generatedImage !== "" && (
-                    <div className="w-full cursor-pointer" onClick={handleImageClick}>
+                    <div
+                      className="w-full cursor-pointer"
+                      onClick={handleImageClick}
+                    >
                       <img
                         className="w-full max-h-64 sm:max-h-96 object-cover rounded-xl hover:opacity-90 transition-opacity"
                         src={generatedImage}
@@ -1153,22 +1176,22 @@ export function AIGenerator() {
                       <span>Regenerate</span>
                     </button>
 
-                      { (generatedVideo ||  (generatedMedia != 'NULL' || !generatedMedia)) &&  (
+                    {(generatedVideo ||
+                      generatedMedia != "NULL" ||
+                      !generatedMedia) && (
                       <button
                         onClick={handleVideoPrevieClick}
                         className="bg-purple-600 hover:bg-purple-700 text-white px-4 py-2  rounded-md flex items-center justify-center space-x-2  text-sm sm:text-base transition-colors"
                       >
                         <Image className="" size={20} /> Preview Video
                       </button>
-                       )}
+                    )}
                     <button
                       onClick={() => {
                         if (selectedPlatforms?.length > 0) {
-                          selectedPlatforms.map(
-                            (selectedPlatform: string) => {
-                              handleSave(selectedPlatform);
-                            }
-                          );
+                          selectedPlatforms.map((selectedPlatform: string) => {
+                            handleSave(selectedPlatform);
+                          });
                         } else {
                           handleSave("");
                         }
@@ -1269,24 +1292,31 @@ export function AIGenerator() {
                   {item.topic}
                 </h3>
                 <p className="text-gray-400 text-xs sm:text-sm mb-3 line-clamp-3">
-                  {item?.content === "" ? "processing ..." : item.content.substring(0, 100) }...
+                  {item?.content === ""
+                    ? "processing ..."
+                    : item.content.substring(0, 100)}
+                  ...
                 </p>
                 <div className="flex flex-col gap-2">
                   <div className="flex space-x-2">
-                    {item?.content !== "" && <button
-                      onClick={() => loadHistoryItem(item)}
-                      className="text-purple-400 hover:text-purple-300 text-xs sm:text-sm flex items-center transition-colors"
-                    >
-                      <Edit2 className="h-3 w-3 sm:h-4 sm:w-4 mr-1" />
-                      <span>Edit</span>
-                    </button>}
-                   {item?.content !== ""  && <button
-                      onClick={() => deleteHistoryItem(item.id)}
-                      className="text-red-400 hover:text-red-300 text-xs sm:text-sm flex items-center transition-colors"
-                    >
-                      <X className="h-3 w-3 sm:h-4 sm:w-4 mr-1" />
-                      <span>Delete</span>
-                    </button>}
+                    {item?.content !== "" && (
+                      <button
+                        onClick={() => loadHistoryItem(item)}
+                        className="text-purple-400 hover:text-purple-300 text-xs sm:text-sm flex items-center transition-colors"
+                      >
+                        <Edit2 className="h-3 w-3 sm:h-4 sm:w-4 mr-1" />
+                        <span>Edit</span>
+                      </button>
+                    )}
+                    {
+                      <button
+                        onClick={() => deleteHistoryItem(item.id)}
+                        className="text-red-400 hover:text-red-300 text-xs sm:text-sm flex items-center transition-colors"
+                      >
+                        <X className="h-3 w-3 sm:h-4 sm:w-4 mr-1" />
+                        <span>Delete</span>
+                      </button>
+                    }
                   </div>
                   <span className="text-gray-500 text-xs">
                     {new Date(item.createdAt).toLocaleDateString()}

@@ -1,5 +1,4 @@
-import React  , {useEffect} from 'react';
-import PaymentSuccessPopup from '../components/PaymentSuccessPopup';
+import React  , {useEffect, useState} from 'react';
 import { CheckCircle } from "lucide-react";
 import { useNavigate } from 'react-router-dom';
 import {motion } from 'framer-motion' ; 
@@ -7,11 +6,12 @@ import { useAuth } from '../context/AuthContext';
 import { useProfile } from '../hooks/useProfile';
 import { getProfile } from '../lib/api';
 
+
 export function PaymentSuccess() {  
   const {tokens } = useAuth() ; 
   const { updateProfile} = useProfile() ; 
     const navigateTo  = useNavigate() ; 
-    const handleRedirectToDashBoard = async () => {
+    const handleRedirectToDashBoardOnSuccess = async () => {
             const profile = await getProfile();
             const newTokens = profile?.tokens + Number( localStorage.getItem("tokens") )  ; 
             await updateProfile({tokens : newTokens  })
@@ -21,8 +21,7 @@ export function PaymentSuccess() {
         } , 2000) 
     }
     useEffect(() => {
-      // console.log("tokens = " , tokens ) ; 
-        handleRedirectToDashBoard() ; 
+        handleRedirectToDashBoardOnSuccess() ; 
     } , [] )
     return  <>
        

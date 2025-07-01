@@ -52,6 +52,14 @@ const generateKlingVideo = async (prompt , authorization) => {
 
   console.log("response from video generation api = " , data)  ; 
 
+  if(data?.code === 1102) 
+  {
+    return {
+    status: data?.data?.task_status || 'processing',
+    code : 1102
+  };
+  }
+
   if(data?.code === 1200) 
   {
     throw Error("Too many request") ;
@@ -79,6 +87,11 @@ const get5sVideoUrl = async (req , res ) => {
   console.log("video generation token = " ,  authorization) ;
   const result = await generateKlingVideo(prompt  , authorization);
   console.log("response in getvideourl api = " , result) ; 
+  if(result?.code == 1102) 
+  {
+    console.log("limit reached ...................") ; 
+    return res.status(429).json({message : "account balance not enough to generate the video"}) ;
+  }
   if (result.video_url) {
 
    
