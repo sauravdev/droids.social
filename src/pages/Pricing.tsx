@@ -64,10 +64,11 @@ export function Pricing() {
   ];
 
   const handlePayments = async (plan: { id : string ,  price: string; tokens: number; name: string }) => {
-    if (!profile?.email) {
+    if (!profile?.email || !profile?.full_name ) {
       alert('Please login to proceed with payment.');
       return;
     }
+    
     try {
       const response = await fetch(`${BACKEND_APIPATH.BASEURL}/create-dodo-checkout-session`, {
         method: 'POST',
@@ -75,6 +76,9 @@ export function Pricing() {
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({
+          email : profile?.email  , 
+          name : profile?.full_name , 
+
         product_cart: [
           {
             id: plan?.id,              

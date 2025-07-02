@@ -71,10 +71,10 @@ const createCheckoutSession = async (req , res ) =>  {
 const createPayment = async (req , res ) => {
 
     console.log("req body = "  ,req.body) ; 
-  const {product_cart} = req.body; 
+  const {product_cart , name , email } = req.body; 
   
   console.log("product cart " , product_cart) ; 
-  if(!Array.isArray(product_cart) ||  !product_cart?.[0]?.id)
+  if(!name || !email || !Array.isArray(product_cart) ||  !product_cart?.[0]?.id)
   {
     return res.status(400).json("Invalid request") ; 
   }
@@ -91,8 +91,8 @@ const createPayment = async (req , res ) => {
             zipcode : "" , 
         },
         customer : {
-            email  :"hemant6081@gmail.com" , 
-            name : "hemant" ,
+            email  :email , 
+            name : name ,
         },
         payment_link : true , 
         product_cart : product_array,

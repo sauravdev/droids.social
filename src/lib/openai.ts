@@ -202,7 +202,9 @@ Guidelines:
 - Include viral elements where relevant, such as storytelling, humor, trending hashtags, or emotional hooks
 - Make the content niche-specific, insightful, practical, and authentic
 - Avoid markdown formatting entirely
+- **Do not use parentheses under any circumstances**
 - Keep the response concise and under 200 words`
+
 
 
 
