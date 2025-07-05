@@ -57,3 +57,5 @@ export function OauthTwitterCallback() {
     </div>
   );
 }
+
+export default OauthTwitterCallback  ; 

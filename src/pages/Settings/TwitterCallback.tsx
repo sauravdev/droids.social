@@ -5,7 +5,7 @@ import { handleTwitterCallback } from '../../lib/twitter';
 import { supabase } from '../../lib/supabase';
 import { BACKEND_APIPATH } from '../../constants';
 
-export function TwitterCallback() {
+function TwitterCallback() {
   const [searchParams] = useSearchParams();
   const navigate = useNavigate();
   const [error, setError] = useState<string | null>(null);
@@ -105,3 +105,5 @@ export function TwitterCallback() {
     </div>
   );
 }
+
+export default  TwitterCallback; 

@@ -23,7 +23,7 @@ interface IMetricData {
   totalPosts: number;
 }
 
-export function Analytics() {
+function Analytics() {
   const [selectedTimeRange, setSelectedTimeRange] = useState("1week");
   const { accounts, loading: accountsLoading } = useSocialAccounts();
   const [idConnectedWithInsta, setIdConnectedWithInsta] = useState<number>();
@@ -1013,3 +1013,6 @@ function MetricCard({
     </div>
   );
 }
+
+
+export default Analytics ; 

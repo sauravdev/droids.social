@@ -52,3 +52,5 @@ const testimonials = [
         </div>
     </>
 }
+
+export default Testimonials; 

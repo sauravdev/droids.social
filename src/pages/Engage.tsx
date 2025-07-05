@@ -4,7 +4,7 @@ import { useSocialAccounts } from '../hooks/useSocialAccounts';
 import { initializeTwitterAuth } from '../lib/twitter';
 import { initializeLinkedInAuth } from '../lib/linkedin';
 
-export function Engage() {
+function Engage() {
   const { accounts, loading, error } = useSocialAccounts();
 
   const handleConnect = (platform: string) => {
@@ -234,3 +234,5 @@ const socialFeed = [
     reposted: false
   }
 ];
+
+export default Engage; 

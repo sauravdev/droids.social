@@ -1361,3 +1361,5 @@ export function AIGenerator() {
     </div>
   );
 }
+
+export default AIGenerator ;

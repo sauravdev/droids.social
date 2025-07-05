@@ -620,3 +620,6 @@ export function ContentStrategy() {
     </div>
   );
 }
+
+
+export default ContentStrategy; 

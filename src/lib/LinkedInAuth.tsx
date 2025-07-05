@@ -95,3 +95,6 @@ const LinkedInAuth = () => {
 };
 
 export  {LinkedInAuth , handleLogin};
+
+
+export default LinkedInAuth ;

@@ -193,3 +193,5 @@ export function SignUp() {
     </AuthLayout>
   );
 }
+
+export default SignUp ; 

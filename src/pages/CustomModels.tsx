@@ -452,3 +452,5 @@ export function CustomModels() {
     </div>
   );
 }
+
+export default CustomModels ;

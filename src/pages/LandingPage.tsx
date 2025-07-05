@@ -2,7 +2,7 @@ import React from 'react';
 import { Link } from 'react-router-dom';
 import { Bot, Rocket, Calendar, MessageSquare, BarChart3, Zap, Target, Sparkles, Check } from 'lucide-react';
 import { HashLink } from 'react-router-hash-link';
-export function LandingPage() {
+function LandingPage() {
   return (
     <div className="min-h-screen bg-gray-900">
       {/* Navigation */}
@@ -338,3 +338,5 @@ const testimonials = [
     quote: 'The analytics and AI suggestions have helped us grow our following by 300% in just three months. Incredible results!'
   }
 ];
+
+export default LandingPage ;

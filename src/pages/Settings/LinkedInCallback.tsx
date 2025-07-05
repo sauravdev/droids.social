@@ -50,3 +50,4 @@ export function LinkedInCallback() {
     </div>
   );
 }
+export default LinkedInCallback; 

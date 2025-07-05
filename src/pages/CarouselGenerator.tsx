@@ -91,7 +91,7 @@ interface Success {
   message: string;
 }
 
-export function CarouselGenerator() {
+function CarouselGenerator() {
   const { profile, updateProfile } = useProfile();
   const { createPost } = useScheduledPosts();
   const [topic, setTopic] = useState("");
@@ -1142,3 +1142,5 @@ emoji: A single, relevant emoji as a string (e.g., "🚀")`;
     </div>
   );
 }
+
+export default CarouselGenerator ;

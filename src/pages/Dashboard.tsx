@@ -489,3 +489,5 @@ function StatCard({ icon, title, value, trend }: StatCardProps) {
     </div>
   );
 }
+
+export default Dashboard ;

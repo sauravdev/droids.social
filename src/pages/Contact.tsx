@@ -48,3 +48,5 @@ export function Contact() {
           </div>
     </>
 }
+
+export default Contact; 

@@ -127,3 +127,6 @@ const InstagramAuth: React.FC = () => {
 };
 
 export { InstagramAuth, loginWithInstagram };
+
+
+export default InstagramAuth; 
