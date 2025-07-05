@@ -59,73 +59,86 @@ export function ScheduleModal({ plan, onSchedule, onClose }: ScheduleModalProps)
   };
 
   return (
-    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-      <div className="bg-gray-800 rounded-xl p-6 w-full max-w-md">
-        <div className="flex justify-between items-center mb-4">
-          <h3 className="text-lg font-semibold text-white">Schedule the Post</h3>
-          <button onClick={onClose} className="text-gray-400 hover:text-white">
-            <X className="h-5 w-5" />
-          </button>
+    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4 sm:p-6">
+    <div className="bg-gray-800 rounded-xl w-full max-w-md mx-auto">
+      {/* Header */}
+      <div className="flex justify-between items-center p-4 sm:p-6 pb-2 sm:pb-4">
+        <h3 className="text-base sm:text-lg font-semibold text-white truncate pr-2">
+          Schedule the Post
+        </h3>
+        <button 
+          onClick={onClose} 
+          className="text-gray-400 hover:text-white flex-shrink-0 p-1 -m-1"
+        >
+          <X className="h-5 w-5" />
+        </button>
+      </div>
+      
+      {/* Form */}
+      <form onSubmit={handleSubmit} className="px-4 sm:px-6 pb-4 sm:pb-6">
+        {/* Error Message */}
+        {error && (
+          <div className="text-red-500 text-xs sm:text-sm bg-red-900 bg-opacity-20 p-2 sm:p-3 rounded mb-4">
+            {error}
+          </div>
+        )}
+        
+        {/* Date Input */}
+        <div className="mb-4 sm:mb-6">
+          <label 
+            htmlFor="scheduledFor" 
+            className="block text-xs sm:text-sm font-medium text-gray-300 mb-2"
+          >
+            Date and Time
+          </label>
+          <input
+            type="datetime-local"
+            id="scheduledFor"
+            value={scheduledFor}
+            onChange={(e) => setScheduledFor(e.target.value)}
+            className="w-full bg-gray-700 border border-gray-600 rounded-md shadow-sm py-2.5 sm:py-2 px-3 text-white text-sm sm:text-base focus:ring-purple-500 focus:border-purple-500"
+            required
+          />
+          {isPastDate && (
+            <p className="text-red-400 text-xs mt-1.5">
+              Cannot schedule for a past date or time
+            </p>
+          )}
         </div>
         
-        <form onSubmit={handleSubmit} className="space-y-4">
-          {error && (
-            <div className="text-red-500 text-sm bg-red-900 bg-opacity-20 p-2 rounded">
-              {error}
-            </div>
-          )}
-          
-          <div>
-            <label htmlFor="scheduledFor" className="block text-sm font-medium text-gray-300 mb-1">
-              Date and Time
-            </label>
-            <input
-              type="datetime-local"
-              id="scheduledFor"
-              value={scheduledFor}
-              onChange={(e) => setScheduledFor(e.target.value)}
-              className="w-full bg-gray-700 border border-gray-600 rounded-md shadow-sm py-2 px-3 text-white focus:ring-purple-500 focus:border-purple-500"
-              required
-            />
-            {isPastDate && (
-              <p className="text-red-400 text-xs mt-1">
-                Cannot schedule for a past date or time
-              </p>
+        {/* Action Buttons */}
+        <div className="flex flex-col-reverse sm:flex-row sm:justify-end space-y-2 space-y-reverse sm:space-y-0 sm:space-x-2">
+          <button
+            type="button"
+            onClick={onClose}
+            className="w-full sm:w-auto px-4 py-2.5 sm:py-2 bg-gray-700 hover:bg-gray-600 text-white rounded-md text-sm sm:text-base font-medium"
+          >
+            Cancel
+          </button>
+          <button
+            type="submit"
+            disabled={scheduling || isPastDate || !scheduledFor}
+            className={`w-full sm:w-auto px-4 py-2.5 sm:py-2 ${
+              isPastDate || !scheduledFor
+                ? 'bg-purple-600/50 cursor-not-allowed'
+                : 'bg-purple-600 hover:bg-purple-700'
+            } text-white rounded-md flex items-center justify-center space-x-1.5 sm:space-x-1 text-sm sm:text-base font-medium`}
+          >
+            {scheduling ? (
+              <>
+                <Loader className="h-4 w-4 animate-spin" />
+                <span>Scheduling...</span>
+              </>
+            ) : (
+              <>
+                <Calendar className="h-4 w-4" />
+                <span>Schedule</span>
+              </>
             )}
-          </div>
-          
-          <div className="flex justify-end space-x-2">
-            <button
-              type="button"
-              onClick={onClose}
-              className="px-4 py-2 bg-gray-700 hover:bg-gray-600 text-white rounded-md"
-            >
-              Cancel
-            </button>
-            <button
-              type="submit"
-              disabled={scheduling || isPastDate || !scheduledFor}
-              className={`px-4 py-2 ${
-                isPastDate || !scheduledFor
-                  ? 'bg-purple-600/50 cursor-not-allowed'
-                  : 'bg-purple-600 hover:bg-purple-700'
-              } text-white rounded-md flex items-center space-x-1`}
-            >
-              {scheduling ? (
-                <>
-                  <Loader className="h-4 w-4 animate-spin" />
-                  <span>Scheduling...</span>
-                </>
-              ) : (
-                <>
-                  <Calendar className="h-4 w-4" />
-                  <span>Schedule</span>
-                </>
-              )}
-            </button>
-          </div>
-        </form>
-      </div>
+          </button>
+        </div>
+      </form>
     </div>
+  </div>
   );
 }

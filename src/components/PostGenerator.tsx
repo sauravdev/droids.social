@@ -439,50 +439,47 @@ export function PostGenerator({
   };
 
   return (
-    <div className="bg-gray-700 h-full  rounded-lg px-2 py-4 space-y-4 flex flex-col justify-between">
-      <div className="flex items-center justify-between">
-        <span className="text-purple-400 text-sm">
+    <div className="bg-gray-700 h-full rounded-lg px-3 py-4 sm:px-4 md:px-6 space-y-3 sm:space-y-4 flex flex-col justify-between">
+      {/* Header Section */}
+      <div className="flex items-center justify-between gap-2">
+        <span className="text-purple-400 text-xs sm:text-sm font-medium truncate">
           {plan.platform} • {plan.format}
         </span>
-        <div className="flex items-center space-x-2">
-          {/* <button
-            onClick={onSchedule}
-            className="text-gray-400 hover:text-white"
-            title="Schedule post"
-          >
-            <Calendar className="h-4 w-4" />
-          </button> */}
-
+        <div className="flex items-center space-x-2 flex-shrink-0">
           <button
             onClick={onSchedule}
-            className="bg-blue-600 hover:bg-blue-700 text-white  px-2 py-2 rounded-md flex items-center justify-center space-x-2 text-sm sm:text-sm"
+            className="bg-blue-600 hover:bg-blue-700 text-white px-2 py-1.5 sm:px-3 sm:py-2 rounded-md flex items-center justify-center space-x-1 sm:space-x-2 text-xs sm:text-sm font-medium transition-colors"
             title="Schedule post"
           >
-            <Calendar className="h-4 w-4 sm:h-5 sm:w-5" />
-            <span>Schedule</span>
+            <Calendar className="h-3 w-3 sm:h-4 sm:w-4 flex-shrink-0" />
+            <span className="hidden xs:inline">Schedule</span>
           </button>
         </div>
       </div>
 
+      {/* Error Message */}
       {error && (
-        <div className="bg-red-950 px-3 py-2 rounded-lg text-white text-sm">
+        <div className="bg-red-950 px-2 py-1.5 sm:px-3 sm:py-2 rounded-lg text-white text-xs sm:text-sm">
           {error}
         </div>
       )}
+      
+      {/* Success Message */}
       {success.state && (
-        <div className="bg-green-600 text-white px-3 py-2 sm:px-4 rounded-md text-sm">
+        <div className="bg-green-600 text-white px-2 py-1.5 sm:px-3 sm:py-2 rounded-md text-xs sm:text-sm">
           {success.message}
         </div>
       )}
 
-      <div>
-        <label className="block text-sm font-medium text-gray-300 mb-1">
+      {/* Tone Selection */}
+      <div className="space-y-1 sm:space-y-2">
+        <label className="block text-xs sm:text-sm font-medium text-gray-300">
           Tone
         </label>
         <select
           value={tone}
           onChange={(e) => setTone(e.target.value)}
-          className="w-full bg-gray-600 border border-gray-500 rounded-md shadow-sm py-1 px-2 text-white text-sm focus:ring-purple-500 focus:border-purple-500"
+          className="w-full bg-gray-600 border border-gray-500 rounded-md shadow-sm py-1.5 px-2 sm:py-2 sm:px-3 text-white text-xs sm:text-sm focus:ring-purple-500 focus:border-purple-500 focus:outline-none"
         >
           <option value="">Default</option>
           <option value="professional">Professional</option>
@@ -492,49 +489,57 @@ export function PostGenerator({
         </select>
       </div>
 
-      <div className="relative">
-        <label className="block text-sm font-medium text-gray-300 mb-1">
-          Generated Cotent
+      {/* Generated Content Section */}
+      <div className="relative flex-1 min-h-0">
+        <label className="block text-xs sm:text-sm font-medium text-gray-300 mb-1 sm:mb-2">
+          Generated Content
         </label>
+        
+        {/* Image Preview Button */}
         {plan?.format === "image" &&
           plan?.media !== "NULL" &&
           generatedImage && (
             <button
               onClick={handleImageClick}
-              className="px-3 py-1 my-2 bg-purple-500 text-white rounded-lg hover:bg-purple-600 transition-colors flex items-center gap-2"
+              className="w-full sm:w-auto px-2 py-1.5 sm:px-3 sm:py-2 mb-2 bg-purple-500 text-white rounded-lg hover:bg-purple-600 transition-colors flex items-center justify-center sm:justify-start gap-1 sm:gap-2 text-xs sm:text-sm"
             >
-              <Image size={20} /> Preview Image
+              <Image size={16} className="sm:w-5 sm:h-5 flex-shrink-0" />
+              <span>Preview Image</span>
             </button>
           )}
+        
+        {/* Video Preview Button */}
         {plan?.format === "video" &&
           (generatedVideo || plan?.media !== "NULL") && (
             <button
               onClick={handleVideoPrevieClick}
-              className="px-3 py-1 my-2 bg-purple-500 text-white rounded-lg hover:bg-purple-600 transition-colors flex items-center gap-2"
+              className="w-full sm:w-auto px-2 py-1.5 sm:px-3 sm:py-2 mb-2 bg-purple-500 text-white rounded-lg hover:bg-purple-600 transition-colors flex items-center justify-center sm:justify-start gap-1 sm:gap-2 text-xs sm:text-sm"
             >
-              <Image size={20} /> Preview Video
+              <Image size={16} className="sm:w-5 sm:h-5 flex-shrink-0" />
+              <span>Preview Video</span>
             </button>
           )}
 
+        {/* Video Popup */}
         {showVideoPopup && (
-          <div className="fixed inset-0 bg-black bg-opacity-75 flex items-center justify-center z-50 p-4">
-            <div className="bg-white rounded-lg max-w-4xl w-full max-h-[90vh] overflow-hidden">
+          <div className="fixed inset-0 bg-black bg-opacity-75 flex items-center justify-center z-50 p-2 sm:p-4">
+            <div className="bg-white rounded-lg w-full max-w-4xl max-h-[95vh] sm:max-h-[90vh] overflow-hidden">
               {/* Header */}
-              <div className="flex items-center justify-between p-4 border-b">
-                <h2 className="text-xl font-bold">Video Preview</h2>
+              <div className="flex items-center justify-between p-3 sm:p-4 border-b">
+                <h2 className="text-lg sm:text-xl font-bold text-gray-800">Video Preview</h2>
                 <button
                   onClick={handleCloseVideoPopUp}
-                  className="p-2 hover:bg-gray-100 rounded-full transition-colors"
+                  className="p-1.5 sm:p-2 hover:bg-gray-100 rounded-full transition-colors"
                 >
-                  <X size={20} />
+                  <X size={18} className="sm:w-5 sm:h-5" />
                 </button>
               </div>
 
               {/* Video Container */}
-              <div className="p-4">
+              <div className="p-3 sm:p-4">
                 <video
                   controls
-                  className="w-full h-auto rounded-lg shadow-md max-h-[70vh]"
+                  className="w-full h-auto rounded-lg shadow-md max-h-[60vh] sm:max-h-[70vh]"
                   preload="metadata"
                   autoPlay
                 >
@@ -548,72 +553,81 @@ export function PostGenerator({
             </div>
           </div>
         )}
+        
+        {/* Image Popup */}
         {showPopup && (
-          <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-            <img
-              className="h-[400px] w-[400px] rounded-md object-center"
-              src={generatedImage}
-            />
-            <div className="bg-white rounded-lg p-6 max-w-sm mx-4 shadow-xl">
-              <div className="flex items-center justify-between mb-4">
-                <h3 className="text-lg font-semibold text-gray-800">
-                  Download Image
-                </h3>
-                <button
-                  onClick={handleCancel}
-                  className="text-gray-400 hover:text-gray-600 transition-colors"
-                >
-                  <X size={20} />
-                </button>
+          <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+            <div className="relative w-full max-w-lg mx-auto">
+              {/* Image Display */}
+              <div className="relative mb-4">
+                <img
+                  className="w-full h-auto max-h-[50vh] sm:max-h-[60vh] rounded-md object-contain mx-auto"
+                  src={generatedImage}
+                  alt="Generated content"
+                />
               </div>
+              
+              {/* Download Dialog */}
+              <div className="bg-white rounded-lg p-4 sm:p-6 shadow-xl">
+                <div className="flex items-center justify-between mb-3 sm:mb-4">
+                  <h3 className="text-base sm:text-lg font-semibold text-gray-800">
+                    Download Image
+                  </h3>
+                  <button
+                    onClick={handleCancel}
+                    className="text-gray-400 hover:text-gray-600 transition-colors p-1"
+                  >
+                    <X size={18} className="sm:w-5 sm:h-5" />
+                  </button>
+                </div>
 
-              <p className="text-gray-600 mb-6">
-                Would you like to download this image to your device?
-              </p>
+                <p className="text-gray-600 mb-4 sm:mb-6 text-sm sm:text-base">
+                  Would you like to download this image to your device?
+                </p>
 
-              <div className="flex gap-3 justify-end">
-                <button
-                  onClick={handleCancel}
-                  className="px-4 py-2 text-gray-600 bg-gray-100 rounded-lg hover:bg-gray-200 transition-colors"
-                >
-                  Cancel
-                </button>
-                <button
-                  onClick={handleDownload}
-                  className="px-4 py-2 bg-purple-500 text-white rounded-lg hover:bg-purple-600 transition-colors flex items-center gap-2"
-                >
-                  <Download size={16} />
-                  Download
-                </button>
+                <div className="flex flex-col sm:flex-row gap-2 sm:gap-3 sm:justify-end">
+                  <button
+                    onClick={handleCancel}
+                    className="w-full sm:w-auto px-3 py-2 text-gray-600 bg-gray-100 rounded-lg hover:bg-gray-200 transition-colors text-sm sm:text-base order-2 sm:order-1"
+                  >
+                    Cancel
+                  </button>
+                  <button
+                    onClick={handleDownload}
+                    className="w-full sm:w-auto px-3 py-2 bg-purple-500 text-white rounded-lg hover:bg-purple-600 transition-colors flex items-center justify-center gap-2 text-sm sm:text-base order-1 sm:order-2"
+                  >
+                    <Download size={16} />
+                    Download
+                  </button>
+                </div>
               </div>
             </div>
           </div>
         )}
-        {/* <textarea
-          value={content}
-          onChange={(e) => setContent(e.target.value)}
-          className="w-full bg-gray-600 border border-gray-500 rounded-md shadow-sm py-2 px-3 text-white text-sm focus:ring-purple-500 focus:border-purple-500"
-          rows={4}
-        /> */}
-        <Editor data={content} />
+        
+        {/* Editor Component */}
+        <div className="flex-1 min-h-0">
+          <Editor data={content} />
+        </div>
       </div>
 
-      <div className="w-full  flex flex-col sm:flex-row items-stretch sm:items-center gap-1 sm:gap-4">
+      {/* Action Buttons */}
+      <div className="w-full flex flex-col sm:flex-row items-stretch sm:items-center gap-2 sm:gap-3 pt-2 sm:pt-0">
         <button
           onClick={handleGenerate}
           disabled={loading}
-          className="w-full sm:w-auto px-3 py-2 bg-purple-600 hover:bg-purple-700 disabled:opacity-50 disabled:hover:bg-purple-600 text-white text-sm font-medium rounded-lg flex items-center justify-center gap-2 transition-colors duration-200"
+          className="w-full sm:w-auto sm:flex-1 px-3 py-2 bg-purple-600 hover:bg-purple-700 disabled:opacity-50 disabled:hover:bg-purple-600 text-white text-xs sm:text-sm font-medium rounded-lg flex items-center justify-center gap-1.5 sm:gap-2 transition-colors duration-200"
           title="Generate new content"
         >
           {loading ? (
             <>
-              <Loader className="h-4 w-4 animate-spin flex-shrink-0" />
+              <Loader className="h-3 w-3 sm:h-4 sm:w-4 animate-spin flex-shrink-0" />
               <span className="hidden xs:inline">Generating...</span>
               <span className="xs:hidden">Gen...</span>
             </>
           ) : (
             <>
-              <img className="h-4 w-4 flex-shrink-0" src={aiMagic} alt="" />
+              <img className="h-3 w-3 sm:h-4 sm:w-4 flex-shrink-0" src={aiMagic} alt="" />
               <span>Generate</span>
             </>
           )}
@@ -621,23 +635,23 @@ export function PostGenerator({
 
         <button
           onClick={postContentHandler}
-          className="w-full sm:w-auto px-3 py-2 bg-purple-600 hover:bg-purple-700 disabled:opacity-50 disabled:hover:bg-purple-600 text-white text-sm font-medium rounded-lg flex items-center justify-center gap-2 transition-colors duration-200"
+          className="w-full sm:w-auto sm:flex-1 px-3 py-2 bg-purple-600 hover:bg-purple-700 disabled:opacity-50 disabled:hover:bg-purple-600 text-white text-xs sm:text-sm font-medium rounded-lg flex items-center justify-center gap-1.5 sm:gap-2 transition-colors duration-200"
           disabled={posting}
         >
           {posting ? (
             <>
-              <Loader className="h-4 w-4 animate-spin flex-shrink-0" />
+              <Loader className="h-3 w-3 sm:h-4 sm:w-4 animate-spin flex-shrink-0" />
               <span className="hidden xs:inline">Posting...</span>
               <span className="xs:hidden">Post...</span>
             </>
           ) : (
             <>
               {plan.platform === "twitter" ? (
-                <Twitter className="h-4 w-4 flex-shrink-0" />
+                <Twitter className="h-3 w-3 sm:h-4 sm:w-4 flex-shrink-0" />
               ) : plan.platform === "instagram" ? (
-                <Instagram className="h-4 w-4 flex-shrink-0" />
+                <Instagram className="h-3 w-3 sm:h-4 sm:w-4 flex-shrink-0" />
               ) : (
-                <Linkedin className="h-4 w-4 flex-shrink-0" />
+                <Linkedin className="h-3 w-3 sm:h-4 sm:w-4 flex-shrink-0" />
               )}
               <span className="capitalize">Post</span>
             </>
@@ -647,17 +661,17 @@ export function PostGenerator({
         <button
           onClick={handleSave}
           disabled={saving}
-          className="w-full sm:w-auto px-3 py-2 bg-purple-600 hover:bg-purple-700 disabled:opacity-50 disabled:hover:bg-purple-600 text-white text-sm font-medium rounded-lg flex items-center justify-center gap-2 transition-colors duration-200"
+          className="w-full sm:w-auto sm:flex-1 px-3 py-2 bg-purple-600 hover:bg-purple-700 disabled:opacity-50 disabled:hover:bg-purple-600 text-white text-xs sm:text-sm font-medium rounded-lg flex items-center justify-center gap-1.5 sm:gap-2 transition-colors duration-200"
         >
           {saving ? (
             <>
-              <Loader className="h-4 w-4 animate-spin flex-shrink-0" />
+              <Loader className="h-3 w-3 sm:h-4 sm:w-4 animate-spin flex-shrink-0" />
               <span className="hidden xs:inline">Saving...</span>
               <span className="xs:hidden">Save...</span>
             </>
           ) : (
             <>
-              <Save className="h-4 w-4 flex-shrink-0" />
+              <Save className="h-3 w-3 sm:h-4 sm:w-4 flex-shrink-0" />
               <span>Save</span>
             </>
           )}
