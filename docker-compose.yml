@@ -12,12 +12,13 @@ services:
       - socialdroids_network
 
   frontend:
-  build:
-    context: ./
-  ports:
-    - "5173:80"  # Host 5173 → Container 80 (Nginx serving Vite build)
-  networks:
-    - socialdroids_network
+    build:
+      context: ./  # Frontend is in the root directory
+    ports:
+      - "5173:5173"
+    command: /bin/bash -c "npm i && npm run dev"
+    networks:
+      - socialdroids_network
 
 networks:
   socialdroids_network:

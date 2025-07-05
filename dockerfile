@@ -1,18 +1,20 @@
-# ---------- Build Stage ----------
-    FROM node:20 AS builder
-    WORKDIR /app
-    
-    COPY package*.json ./
-    RUN npm install
-    
-    COPY . .
-    RUN npm run build  # Builds the Vite app into /app/dist
-    
-    # ---------- Serve Stage ----------
-    FROM nginx:stable-alpine
-    
-    COPY --from=builder /app/dist /usr/share/nginx/html
-    
-    EXPOSE 80
-    CMD ["nginx", "-g", "daemon off;"]
-    
+# Use official Node.js image as base
+FROM node:20
+
+# Set working directory
+WORKDIR /app
+
+# Copy package.json and package-lock.json (if exists)
+COPY package*.json ./
+
+# Install dependencies
+RUN npm install
+
+# Copy the rest of the frontend files
+COPY ./ .
+
+# Expose port 5173 for the frontend app
+EXPOSE 5173
+
+# Run frontend development server
+CMD ["npm", "run", "dev"]
