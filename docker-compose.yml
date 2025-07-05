@@ -12,12 +12,12 @@ services:
       - socialdroids_network
 
   frontend:
-    build:
-      context: ./  # Assuming Dockerfile is at root
-    ports:
-      - "3000:80"  # Exposes Nginx port 80 as 3000 on host
-    networks:
-      - socialdroids_network
+  build:
+    context: ./
+  ports:
+    - "5173:80"  # Host 5173 → Container 80 (Nginx serving Vite build)
+  networks:
+    - socialdroids_network
 
 networks:
   socialdroids_network:
