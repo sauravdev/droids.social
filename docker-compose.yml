@@ -13,10 +13,9 @@ services:
 
   frontend:
     build:
-      context: ./  # Frontend is in the root directory
+      context: ./  # Assuming Dockerfile is at root
     ports:
-      - "5173:5173"
-    command: /bin/bash -c "npm i && npm run dev"
+      - "3000:80"  # Exposes Nginx port 80 as 3000 on host
     networks:
       - socialdroids_network
 
