@@ -5,7 +5,7 @@ import { handleTwitterCallback } from '../../lib/twitter';
 import { supabase } from '../../lib/supabase';
 import { BACKEND_APIPATH } from '../../constants';
 
-function TwitterCallback() {
+export function TwitterCallback() {
   const [searchParams] = useSearchParams();
   const navigate = useNavigate();
   const [error, setError] = useState<string | null>(null);
@@ -27,6 +27,7 @@ function TwitterCallback() {
         body: JSON.stringify({ oauth_token, oauth_verifier }),
       });
       const data = await response.json();
+      console.log("twitter oauth flow = " , data)  ; 
       
       if (data.access_token && data.access_token_secret) {
         console.log('Access Token:', data.access_token);
@@ -74,14 +75,17 @@ function TwitterCallback() {
 
     // handleCallback();
 
-    const oauth_token = searchParams.get('oauth_token'); 
-    const oauth_verifier = searchParams.get('oauth_verifier') ; 
-    if(oauth_token && oauth_verifier) 
-    {
-      getAccessToken(oauth_token , oauth_verifier )
-      navigate('/') ;
+    ;(async () => {
+      console.log("callback .....")
+      const oauth_token = searchParams.get('oauth_token'); 
+      const oauth_verifier = searchParams.get('oauth_verifier') ; 
+      if(oauth_token && oauth_verifier) 
+      {
+        await getAccessToken(oauth_token , oauth_verifier )
+        navigate('/') ;
 
-    }
+      }
+    })()
     // console.log("search params = " , searchParams.get()) ;
     // navigate('/') ;
   }, [searchParams, navigate]);
