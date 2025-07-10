@@ -154,7 +154,7 @@ export default function App() {
         {/* Callback routes */}
         <Route 
           path="/callback/twitter" 
-          element={session ? <OauthTwitterCallback /> : <Navigate to="/login" replace />} 
+          element={session ? <TwitterCallback /> : <Navigate to="/login" replace />} 
         />
         <Route 
           path="/settings/callback/linkedin" 
