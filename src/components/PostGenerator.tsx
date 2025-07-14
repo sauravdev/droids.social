@@ -15,6 +15,8 @@ import {
   generateImage,
   generatePost,
   generatePostGeneric,
+  generateTopics,
+  generateTopicsUsingGrok,
 } from "../lib/openai";
 import type { ContentPlan } from "../lib/types";
 import Editor from "./Editor";
@@ -63,6 +65,8 @@ export function PostGenerator({
   const [isVideoGenerated, setIsVideoGenerated] = useState(false);
   const [generatedVideo, setGeneratedVideo] = useState(null);
 
+  const [selectedTopic, setSelectedTopic] = useState<string>("");
+
   const { selectedModel } = useAuth();
 
   const videos = [
@@ -107,6 +111,7 @@ export function PostGenerator({
 
       if (response?.status === 429) {
         setError("Account balance too low to generate video");
+        removeErrorToast();
         return;
       }
 
@@ -116,6 +121,7 @@ export function PostGenerator({
       console.log("video generation response = ", data);
       if (response?.status && response?.status >= 400) {
         setError("Something went wrong while generating video");
+        removeErrorToast();
         return;
       }
       console.log("generated video url = ", data?.video_url);
@@ -159,6 +165,7 @@ export function PostGenerator({
           setTimeout(() => {
             setError("");
           }, 1500);
+          removeErrorToast();
           setPosting(false);
           return;
         }
@@ -167,12 +174,14 @@ export function PostGenerator({
           setError("");
         }, 1500);
         setPosting(false);
+        removeErrorToast();
         return;
       }
       setSuccess({ state: true, message: "Content posted successfully !!" });
       removeToast();
     } catch (err: any) {
       setError(err.message);
+      removeErrorToast();
     }
 
     setPosting(false);
@@ -186,10 +195,12 @@ export function PostGenerator({
       setTimeout(() => {
         setError("");
       }, 1500);
+      removeErrorToast();
       return;
     }
     if (plan?.format == "image" && (!plan?.media || plan?.media == "NULL")) {
       setError("Please generate an image first !");
+      removeErrorToast();
       return;
     }
 
@@ -198,6 +209,7 @@ export function PostGenerator({
       const { access_token, userId } = accountInfo;
       if (!userId || !access_token) {
         setError("Something went wrong while fetching user information");
+        removeErrorToast();
         return;
       }
 
@@ -225,6 +237,7 @@ export function PostGenerator({
       removeToast();
     } catch (err: any) {
       setError(err?.message);
+      removeErrorToast();
       console.log(err);
     } finally {
       setPosting(false);
@@ -257,6 +270,7 @@ export function PostGenerator({
       removeToast();
     } catch (err: any) {
       setError(err?.message);
+      removeErrorToast();
       console.log(err);
     } finally {
       setPosting(false);
@@ -270,6 +284,70 @@ export function PostGenerator({
       handlePostInstagram();
     } else {
       handlePostLinkedin();
+    }
+  };
+
+  const handleGenerateTopics = async (topic: string, platform: string) => {
+    if (!topic) {
+      setError("Please enter a topic");
+      removeErrorToast();
+      return;
+    }
+
+    setSuccess({ state: false, message: "" });
+    setLoading(true);
+    setError(null);
+
+    const {
+      data: { user },
+    } = await supabase.auth.getUser();
+    if (!user) throw new Error("No user found");
+
+    let suggestion = "";
+    try {
+      if (selectedModel == "grok") {
+        suggestion = await generateTopicsUsingGrok(topic, platform);
+
+        const newPlan = {
+          ...plan,
+          suggestion,
+        };
+        await updatePlan(newPlan.id, { suggestion, is_keyword: true });
+        setSelectedPlan((prev) => {
+          return {
+            ...prev,
+            suggestion,
+          };
+        });
+
+        console.log("response from topic generation api = ", suggestion);
+      } else if (selectedModel == "openai") {
+        suggestion = await generateTopics(topic, platform);
+
+        const newPlan = {
+          ...plan,
+          suggestion,
+        };
+
+        await updatePlan(newPlan.id, { suggestion, is_keyword: true });
+        setSelectedPlan((prev) => {
+          return {
+            ...prev,
+            suggestion,
+          };
+        });
+
+        console.log("response from topic generation api = ", suggestion);
+      }
+
+      setContent(suggestion);
+    } catch (err) {
+      setError("Something went wrong !. Please try again");
+      removeErrorToast();
+    } finally {
+      setLoading(false);
+      setSelectedTopic("");
+      // setGeneratingSuggestion(false);
     }
   };
 
@@ -314,6 +392,7 @@ export function PostGenerator({
     } catch (error: any) {
       console.log("Something went wrong while handling the image ", error);
       setError(error?.message);
+      removeErrorToast();
       return null;
     }
   };
@@ -346,33 +425,32 @@ export function PostGenerator({
   };
 
   const handleGenerate = async () => {
+    if (!selectedTopic) {
+      setError("Please select a topic !");
+      removeErrorToast();
+      return;
+    }
     setLoading(true);
     setError(null);
-    let publicUrl = "";
+    let publicUrl: string = "";
     if (plan?.format === "video") {
-      // await new Promise((resolve , reject) => {
-      //   setTimeout(() => {
-      //   console.log("video generated !")
-      //   setIsVideoGenerated(true) ;
-      //   setLoading(false);
-      //   // const url = videos[Math.floor(Math.random() * videos.length)]
-      //   setVideoUrl(url)
-      // } , 3000); // 300000
-      // })
-
       await generateVideoUsingKling(plan?.id, plan?.topic);
       setIsVideoGenerated(true);
       setLoading(false);
     }
     if (plan?.format === "image") {
       console.log("image ..... ");
-      publicUrl = await handleImageGeneration(plan?.topic);
+      const response = await handleImageGeneration(
+        plan?.topic || selectedTopic
+      );
+      if (response) {
+        publicUrl = response;
+      }
     }
-    // console.log("image ..... ");
-    // await handleImageGeneration(plan?.topic);
+
     try {
       const generated = await generatePostGeneric(
-        plan?.suggestion,
+        selectedTopic,
         plan?.platform,
         selectedModel
       );
@@ -386,9 +464,10 @@ export function PostGenerator({
         await updatePlan(newPlan.id, {
           suggestion: generated,
           media: publicUrl,
+          is_keyword: false,
         });
         console.log("media = ", publicUrl);
-        setSelectedPlan((prev) => {
+        setSelectedPlan((prev: any) => {
           return {
             ...prev,
             suggestion: generated,
@@ -396,18 +475,21 @@ export function PostGenerator({
           };
         });
       } else {
-        await updatePlan(newPlan.id, { suggestion: generated });
-        setSelectedPlan((prev) => {
+        await updatePlan(newPlan.id, {
+          suggestion: generated,
+          is_keyword: false,
+        });
+        setSelectedPlan((prev: any) => {
           return {
             ...prev,
             suggestion: generated,
           };
         });
       }
-
       setContent(generated);
     } catch (err: any) {
       setError(err.message);
+      removeErrorToast();
     } finally {
       setLoading(false);
     }
@@ -422,6 +504,7 @@ export function PostGenerator({
       removeToast();
     } catch (err: any) {
       setError(err.message);
+      removeErrorToast();
     } finally {
       setSaving(false);
     }
@@ -439,12 +522,14 @@ export function PostGenerator({
   };
 
   return (
-    <div className="bg-gray-700 h-full rounded-lg px-3 py-4 sm:px-4 md:px-6 space-y-3 sm:space-y-4 flex flex-col justify-between">
+    <div className="bg-gray-700 first-letter h-full rounded-lg px-3 py-4 sm:px-4 md:px-6 space-y-3 sm:space-y-4 flex flex-col justify-between ">
       {/* Header Section */}
+
       <div className="flex items-center justify-between gap-2">
         <span className="text-purple-400 text-xs sm:text-sm font-medium truncate">
           {plan.platform} • {plan.format}
         </span>
+
         <div className="flex items-center space-x-2 flex-shrink-0">
           <button
             onClick={onSchedule}
@@ -463,7 +548,7 @@ export function PostGenerator({
           {error}
         </div>
       )}
-      
+
       {/* Success Message */}
       {success.state && (
         <div className="bg-green-600 text-white px-2 py-1.5 sm:px-3 sm:py-2 rounded-md text-xs sm:text-sm">
@@ -489,12 +574,38 @@ export function PostGenerator({
         </select>
       </div>
 
+      <div className="flex gap-2 items-start flex-wrap ">
+        {plan?.is_keyword &&
+          Array.isArray(JSON.parse(plan?.suggestion.trim()) || []) &&
+          JSON.parse(plan?.suggestion.trim() || [])?.length > 0 &&
+          JSON.parse(plan?.suggestion.trim()).map(
+            (item: string, index: number) => {
+              return (
+                <button
+                  title={item}
+                  className={`${
+                    selectedTopic === item
+                      ? "bg-purple-600 text-white"
+                      : "bg-gray-900 text-gray-300 hover:bg-gray-600"
+                  } px-3 py-1 rounded-full text-xs sm:text-sm transition-colors`}
+                  onClick={() => {
+                    setSelectedTopic(item);
+                  }}
+                  key={index}
+                >
+                  {item?.length > 10 ? item.substring(0, 10) + "..." : item}
+                </button>
+              );
+            }
+          )}
+      </div>
+
       {/* Generated Content Section */}
-      <div className="relative flex-1 min-h-0">
+      <div className=" min-h-0">
         <label className="block text-xs sm:text-sm font-medium text-gray-300 mb-1 sm:mb-2">
           Generated Content
         </label>
-        
+
         {/* Image Preview Button */}
         {plan?.format === "image" &&
           plan?.media !== "NULL" &&
@@ -507,7 +618,7 @@ export function PostGenerator({
               <span>Preview Image</span>
             </button>
           )}
-        
+
         {/* Video Preview Button */}
         {plan?.format === "video" &&
           (generatedVideo || plan?.media !== "NULL") && (
@@ -526,7 +637,9 @@ export function PostGenerator({
             <div className="bg-white rounded-lg w-full max-w-4xl max-h-[95vh] sm:max-h-[90vh] overflow-hidden">
               {/* Header */}
               <div className="flex items-center justify-between p-3 sm:p-4 border-b">
-                <h2 className="text-lg sm:text-xl font-bold text-gray-800">Video Preview</h2>
+                <h2 className="text-lg sm:text-xl font-bold text-gray-800">
+                  Video Preview
+                </h2>
                 <button
                   onClick={handleCloseVideoPopUp}
                   className="p-1.5 sm:p-2 hover:bg-gray-100 rounded-full transition-colors"
@@ -553,7 +666,7 @@ export function PostGenerator({
             </div>
           </div>
         )}
-        
+
         {/* Image Popup */}
         {showPopup && (
           <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
@@ -566,7 +679,7 @@ export function PostGenerator({
                   alt="Generated content"
                 />
               </div>
-              
+
               {/* Download Dialog */}
               <div className="bg-white rounded-lg p-4 sm:p-6 shadow-xl">
                 <div className="flex items-center justify-between mb-3 sm:mb-4">
@@ -604,17 +717,22 @@ export function PostGenerator({
             </div>
           </div>
         )}
-        
+
         {/* Editor Component */}
-        <div className="flex-1 min-h-0">
-          <Editor data={content} />
+        <div className="self-end">
+          <Editor initialContent={content} />
         </div>
       </div>
 
       {/* Action Buttons */}
       <div className="w-full flex flex-col sm:flex-row items-stretch sm:items-center gap-2 sm:gap-3 pt-2 sm:pt-0">
         <button
-          onClick={handleGenerate}
+          // onClick={handleGenerate}
+          onClick={() => {
+            plan?.is_keyword
+              ? handleGenerate()
+              : handleGenerateTopics(plan?.suggestion, plan?.platform);
+          }}
           disabled={loading}
           className="w-full sm:w-auto sm:flex-1 px-3 py-2 bg-purple-600 hover:bg-purple-700 disabled:opacity-50 disabled:hover:bg-purple-600 text-white text-xs sm:text-sm font-medium rounded-lg flex items-center justify-center gap-1.5 sm:gap-2 transition-colors duration-200"
           title="Generate new content"
@@ -627,7 +745,11 @@ export function PostGenerator({
             </>
           ) : (
             <>
-              <img className="h-3 w-3 sm:h-4 sm:w-4 flex-shrink-0" src={aiMagic} alt="" />
+              <img
+                className="h-3 w-3 sm:h-4 sm:w-4 flex-shrink-0"
+                src={aiMagic}
+                alt=""
+              />
               <span>Generate</span>
             </>
           )}

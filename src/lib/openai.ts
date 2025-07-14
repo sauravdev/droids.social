@@ -102,7 +102,9 @@ export async function generateContentStrategy(
   if (cached) return cached;
   await rateLimit();
   try {
-    const prompt = `You are an expert social media strategist.Create a weekly social media content strategy for a ${niche} topic designed to maximize reach, engagement, and virality, with the following goals: ${goals.join(', ')}. Craft posts that feel authentic, human-like, and resonate with the target audience, using trending tactics and platform-specific best practices.
+    const prompt = `You are an expert social media strategist.Create a weekly social media content strategy for a ${niche} topic designed to maximize reach, engagement, and virality, with the following goals: ${goals.join(
+      ", "
+    )}. Craft posts that feel authentic, human-like, and resonate with the target audience, using trending tactics and platform-specific best practices.
 
 Include:
 Daily Content Suggestions: Realistic, platform-optimized post ideas for ${allowedPlatforms} , covering all days of a week
@@ -165,6 +167,71 @@ Format the response as a structured JSON object with this schema:
   }
 }
 
+export async function generateTopics(
+  topic: string,
+  platform: "twitter" | "linkedin" | "instagram"
+): any {
+  const cacheKey = `post:${topic}:${platform}:${"default"}`;
+  const cached = checkCache<string>(cacheKey);
+  if (cached) return cached;
+
+  await rateLimit();
+
+  console.log("topic = ", topic);
+
+  try {
+    const prompt = `Conduct advanced keyword research for the following topic niche: ${topic}
+    Analyze current discussions from Reddit, X (formerly Twitter), and Google News.
+    Identify 5 high-performing, niche keywords specific to the topic of Generative AI and LLMs.
+    For each keyword, analyze real-time trends and discourse to generate one niche-specific, viral post title for ${platform}.
+
+    Ensure the titles are:
+    – Optimized for virality and engagement
+    – Use high-performing, niche keywords
+    – Inspired by real community insights
+    – Reflect expert tone and originality
+
+    Format the final output strictly as a flat JSON array (no nesting, no keys) of 5 comma-separated titles.
+
+    Output format example (match tone and structure):
+
+    json
+    Copy
+    Edit
+    [
+      "Unlock the Power of Prompt Engineering: 3 Real‑World Hacks Every AI Practitioner Needs Today",
+      "Why LLMOps Is the Missing Link in Enterprise AI: Lessons from Reddit & X Buzz",
+      "Vibe Coding: Embracing Flow‑Based Development with LLMs – A Game Changer for Software Teams",
+      "RAG Reloaded: How Retrieval‑Augmented Generation Is Disrupting Knowledge Workflows in 2025",
+      "Battling AI Hallucinations: What Recent Reddit & X Debates Reveal About LLM Trust"
+    ]`;
+
+    const completion = await openai.chat.completions.create({
+      messages: [
+        {
+          role: "system",
+          content: "You are an expert social media copywriter.",
+        },
+        {
+          role: "user",
+          content: prompt,
+        },
+      ],
+      model: "gpt-4o-mini",
+      // model: "gpt-4-turbo-preview"
+    });
+    const response = completion.choices[0].message.content;
+    console.log("response from handle generate ", response);
+    if (!response) throw new Error("Failed to generate post");
+    setCache(cacheKey, response);
+
+    return response;
+  } catch (error: any) {
+    console.error("OpenAI API Error:", error);
+    throw new Error(error.message || "Failed to generate post");
+  }
+}
+
 export async function generatePost(
   topic: string,
   platform: "twitter" | "linkedin" | "instagram",
@@ -176,7 +243,7 @@ export async function generatePost(
 
   await rateLimit();
 
-  console.log("topic = " , topic ) ; 
+  console.log("topic = ", topic);
 
   try {
     const platformGuide = {
@@ -185,12 +252,16 @@ export async function generatePost(
       instagram: "visual, engaging, with emojis and hashtags",
     };
     const goals = ["reach", "followers", "engagement"];
-    const prompt = `You are a social media expert. Create a high-performing niche post for the topic: "${topic}", optimized for maximum reach, engagement, and virality. The post should align with the following goals: ${goals.join(", ")}.
+    const prompt = `You are a social media expert. Create a high-performing niche post for the topic: "${topic}", optimized for maximum reach, engagement, and virality. The post should align with the following goals: ${goals.join(
+      ", "
+    )}.
 
 Guidelines:
 - Base the content on the strategy: "${topic}"
 - Tailor it specifically for the ${platform} platform
-- Follow platform best practices: ${platformGuide[platform]}${tone ? `, with a ${tone} tone` : ""}
+- Follow platform best practices: ${platformGuide[platform]}${
+      tone ? `, with a ${tone} tone` : ""
+    }
 - Research current trends and conversations on the internet and X (Twitter) related to "${topic}", and ensure alignment with what's currently resonating
 - Write in a natural, human, and conversational tone — avoid robotic or generic language
 - Break the content into short, skimmable paragraphs with real line breaks (not \\n or markdown)
@@ -203,10 +274,7 @@ Guidelines:
 - Make the content niche-specific, insightful, practical, and authentic
 - Avoid markdown formatting entirely
 - **Do not use parentheses under any circumstances**
-- Keep the response concise and under 200 words`
-
-
-
+- Keep the response concise and under 200 words`;
 
     const completion = await openai.chat.completions.create({
       messages: [
@@ -311,7 +379,7 @@ export async function generatePostFromCustomModel(
   topic: string,
   selectedPlatform: string,
   model: any
-) {
+): any {
   try {
     console.log("selected model found = ", model);
     const response = await openai.chat.completions.create({
@@ -353,11 +421,153 @@ export async function postGenerationApi(prompt: string) {
   return data?.results[0]?.text[0];
 }
 
+export async function generateTopicsUsingGrok(
+  topic: string,
+  platform: string
+): any {
+  console.log("inside generate post using grok api");
+
+  try {
+    const response = await fetch(`${BACKEND_APIPATH.BASEURL}/generate-topics`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({ topic, platform }),
+    });
+    const data = await response.json();
+    const topics = data?.message;
+    console.log("topics generated using grok = ", topics);
+    return topics;
+    // return chatCompletion.choices[0]?.message?.content;
+  } catch (error) {
+    console.error("Error calling Groq API:", error);
+    throw error;
+  }
+}
+
+export async function generateVideoPromptUsingGrok(topic: string): any {
+  try {
+    const response = await fetch(
+      `${BACKEND_APIPATH.BASEURL}/generate-video-prompt`,
+      {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ topic }),
+      }
+    );
+    const data = await response.json();
+    const content = data?.message;
+    return content;
+    // return chatCompletion.choices[0]?.message?.content;
+  } catch (error) {
+    console.error("Error calling Groq API:", error);
+    return null;
+  }
+}
+
+export async function generateVideoDescription(topic: string): any {
+  console.log("topic = ", topic);
+
+  try {
+    const prompt = `Write a detailed Instagram SEO optimised video description with well researched popular hashtags ${topic}, 
+Here's what to include:
+- 2-3 engaging sentences with appropriate emojis.
+- 3-5 relevant hashtags based on the video title.
+- A clear call-to-action encouraging comments.`;
+
+    const completion = await openai.chat.completions.create({
+      messages: [
+        {
+          role: "system",
+          content: "You are an expert social media copywriter.",
+        },
+        {
+          role: "user",
+          content: prompt,
+        },
+      ],
+      model: "gpt-4o-mini",
+      // model: "gpt-4-turbo-preview"
+    });
+    const response = completion.choices[0].message.content;
+    console.log("response from handle generate ", response);
+    if (!response) throw new Error("Failed to generate post");
+    return response;
+  } catch (error: any) {
+    console.error("OpenAI API Error:", error);
+    throw new Error(error.message || "Failed to generate post");
+  }
+}
+
+export async function generateVideoDescriptionUsingGrok(topic: string): any {
+  try {
+    const response = await fetch(
+      `${BACKEND_APIPATH.BASEURL}/generate-video-description`,
+      {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ topic }),
+      }
+    );
+    const data = await response.json();
+    const content = data?.message;
+    return content;
+    // return chatCompletion.choices[0]?.message?.content;
+  } catch (error) {
+    console.error("Error calling Groq API:", error);
+    return null;
+  }
+}
+
+export async function generateVideoPrompt(topic: string): any {
+  console.log("topic = ", topic);
+
+  try {
+    const prompt = `Create a 10-second vertical video script for Instagram Reels or TikTok explaining the topic: "${topic}" in a visually engaging and simple way that anyone can understand.
+
+The scene should include a dynamic hook in the first 2 seconds.
+
+Use clear visuals or actions relevant to the topic.
+
+Add a strong call-to-action at the end encouraging viewers to follow or subscribe.
+
+Return the response as a short descriptive string like:
+"Show a person walking briskly through a green park at sunrise, cutting to a smartwatch showing heart rate, with text overlay: 'Walking 30 mins daily boosts heart health!' End with: 'Follow for daily fitness tips!'."`;
+
+    const completion = await openai.chat.completions.create({
+      messages: [
+        {
+          role: "system",
+          content: "You are an expert social media copywriter.",
+        },
+        {
+          role: "user",
+          content: prompt,
+        },
+      ],
+      model: "gpt-4o-mini",
+      // model: "gpt-4-turbo-preview"
+    });
+    const response = completion.choices[0].message.content;
+    console.log("response from handle generate ", response);
+    if (!response) throw new Error("Failed to generate post");
+    return response;
+  } catch (error: any) {
+    console.error("OpenAI API Error:", error);
+    throw new Error(error.message || "Failed to generate post");
+  }
+}
+
 export async function generatePostUsingGrok(
   topic: string,
   platform: "twitter" | "linkedin" | "instagram",
-  userId : "",
-  planId : "" 
+  userId = "",
+  planId = ""
 ): any {
   console.log("inside generate post using grok api");
 
@@ -369,7 +579,7 @@ export async function generatePostUsingGrok(
         headers: {
           "Content-Type": "application/json",
         },
-        body: JSON.stringify({ topic, platform ,  userId  , planId }),
+        body: JSON.stringify({ topic, platform, userId, planId }),
       }
     );
     const data = await response.json();

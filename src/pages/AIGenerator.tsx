@@ -20,6 +20,12 @@ import {
   generatePost,
   generatePostFromCustomModel,
   generatePostUsingGrok,
+  generateTopics,
+  generateTopicsUsingGrok,
+  generateVideoDescription,
+  generateVideoDescriptionUsingGrok,
+  generateVideoPrompt,
+  generateVideoPromptUsingGrok,
   postGenerationApi,
 } from "../lib/openai";
 import { useContentPlan } from "../hooks/useContentPlan";
@@ -48,6 +54,7 @@ interface HistoryItem {
   createdAt: string;
   media: string | null;
   platform: string;
+  is_keyword: boolean;
 }
 
 interface Success {
@@ -78,10 +85,13 @@ export function AIGenerator() {
   const [posting, setPosting] = useState(false);
   const [generatedImage, setGeneratedImage] = useState("");
   const { updateProfile, profile } = useProfile();
+  const [keywordGenerated, setKeywordGenerated] = useState<boolean>(false);
   const [success, setSuccess] = useState<Success>({
     state: false,
     message: "",
   });
+
+  const [isLoading, setIsLoading] = useState(false);
 
   const [generatedMedia, setGeneratedMedia] = useState(null);
 
@@ -89,6 +99,8 @@ export function AIGenerator() {
   const handleImageClick = () => {
     setShowPopup(true);
   };
+
+  const [currentPlanId, setCurrentPlanId] = useState<string>("");
 
   const [generatedVideo, setGeneratedVideo] = useState(null);
   const [showVideoPopup, setShowVideoPopup] = useState(false);
@@ -120,6 +132,10 @@ export function AIGenerator() {
     }
   };
 
+  useEffect(() => {
+    console.log("current plan id = ", currentPlanId);
+  }, [currentPlanId]);
+
   const handleCancel = () => {
     setShowPopup(false);
   };
@@ -136,6 +152,33 @@ export function AIGenerator() {
   const [selectedModel, setSelectedModel] = useState<string>("grok");
   const [customModels, setCustomModels] = useState<any>([]);
   const { loadCustomModels } = useCustomModel();
+
+  const handleFileByExtension = (url: string) => {
+    console.log("handle file by extension called ...");
+
+    const cleanUrl = url.split("?")[0]; // Remove query string
+    const extension = cleanUrl.split(".").pop()?.toLowerCase();
+
+    if (!extension) return;
+
+    if (extension === "mp4") {
+      setGeneratedImage("");
+      setGeneratedVideo(url);
+      setGeneratedMedia(url);
+      setFormats(() => ["text", "video"]);
+    } else if (["jpeg", "jpg", "png", "webp"].includes(extension)) {
+      console.log("setting image url =", url);
+      setGeneratedVideo(null);
+      setGeneratedImage(url);
+      setGeneratedMedia(url);
+      setFormats(() => ["text", "image"]);
+    } else {
+      setGeneratedMedia(null);
+      setGeneratedImage("");
+      setGeneratedVideo("");
+      setFormats(() => ["text"]);
+    }
+  };
 
   const [refreshPage, setRefreshPage] = useState(false);
 
@@ -162,16 +205,18 @@ export function AIGenerator() {
 
       if (Array.isArray(response) && response?.length > 0) {
         console.log("response = ", response);
-        setGeneratingSuggestion((prev) => {
-          if (response?.[0]?.suggestion === "") return true;
-          return false;
-        });
+        // setGeneratingSuggestion((prev) => {
+        //   if (response?.[0]?.suggestion === "") return true;
+        //   return false;
+        // });
 
         loadHistoryItem({
+          id: response?.[0]?.id || "",
           topic: response?.[0]?.topic || "",
           content: response?.[0]?.suggestion || "",
           media: response?.[0]?.media,
           platform: response?.[0]?.platform,
+          is_keyword: response?.[0]?.is_keyword,
         });
         setHistory((prev) => {
           return response.map((item) => {
@@ -182,6 +227,7 @@ export function AIGenerator() {
               createdAt: item?.created_at,
               media: item?.media,
               platform: item?.platform,
+              is_keyword: item?.is_keyword,
             };
           });
         });
@@ -200,6 +246,50 @@ export function AIGenerator() {
   }, []);
 
   useEffect(() => {
+    (async () => {
+      try {
+        setIsLoading(true);
+        const response = await getContentPlansHistory();
+        console.log("history = ", response);
+
+        if (Array.isArray(response) && response?.length > 0) {
+          console.log("response = ", response);
+          setGeneratingSuggestion((prev) => {
+            if (response?.[0]?.suggestion === "") return true;
+            return false;
+          });
+
+          loadHistoryItem({
+            id: response?.[0]?.id || "",
+            topic: response?.[0]?.topic || "",
+            content: response?.[0]?.suggestion || "",
+            media: response?.[0]?.media,
+            platform: response?.[0]?.platform,
+            is_keyword: response?.[0]?.is_keyword,
+          });
+          setHistory((prev) => {
+            return response.map((item) => {
+              return {
+                id: item?.id,
+                content: item?.suggestion,
+                topic: item?.topic,
+                createdAt: item?.created_at,
+                media: item?.media,
+                platform: item?.platform,
+                is_keyword: item?.is_keyword,
+              };
+            });
+          });
+        }
+      } catch (err: any) {
+        setError("Error loading history");
+      } finally {
+        setIsLoading(false);
+      }
+    })();
+  }, []);
+
+  useEffect(() => {
     getHistory();
   }, [refreshPage]);
 
@@ -213,7 +303,11 @@ export function AIGenerator() {
     };
   }, []);
 
-  const handleVideoGeneration = async (userId, planId, prompt: string) => {
+  const handleVideoGeneration = async (
+    userId = "",
+    planId = "",
+    prompt: string
+  ) => {
     setGeneratedVideo(null);
     try {
       const response = await fetch(
@@ -434,6 +528,48 @@ export function AIGenerator() {
     }
   }
 
+  const videoGenPipeline = async (topic: string, userid : string) => {
+    // generate video generation prompt using model
+    if (selectedModel == "grok") {
+      const videoGenPrompt = await generateVideoPromptUsingGrok(topic);
+      if (videoGenPrompt) {
+        const content = await generateVideoDescriptionUsingGrok(topic);
+        setGeneratedContent(content);
+        await updateContentPlan(currentPlanId, {
+          suggestion: content,
+          topic,
+          is_keyword: false,
+        });
+
+        await handleVideoGeneration(userid, currentPlanId, videoGenPrompt);
+        if (profile?.tokens - 10 >= 0) {
+          await updateProfile({ tokens: profile?.tokens - 10 });
+          setRefreshHeader((prev) => !prev);
+        }
+        setRefreshPage((prev) => !prev);
+      }
+    } else if (selectedModel == "openai") {
+      const videoGenPrompt = await generateVideoPrompt(topic);
+      if (videoGenPrompt) {
+        const content = await generateVideoDescription(topic);
+        setGeneratedContent(content);
+        await updateContentPlan(currentPlanId, {
+          suggestion: content,
+          topic,
+          is_keyword: false,
+        });
+
+        await handleVideoGeneration(userid, currentPlanId, videoGenPrompt);
+        if (profile?.tokens - 10 >= 0) {
+          await updateProfile({ tokens: profile?.tokens - 10 });
+          setRefreshHeader((prev) => !prev);
+        }
+        setRefreshPage((prev) => !prev);
+      }
+    }
+
+  };
+
   const handleImageGeneration = async () => {
     try {
       const imageURI = await generateImage(topic);
@@ -453,6 +589,7 @@ export function AIGenerator() {
         .from("profile-images")
         .getPublicUrl(fileName);
       setGeneratedImage(urlData?.publicUrl);
+      await updateContentPlan(currentPlanId, { media: urlData?.publicUrl });
     } catch (error: any) {
       console.log("Something went wrong while handling the image ", error);
       setError(error?.message);
@@ -465,6 +602,74 @@ export function AIGenerator() {
         ? prev.filter((s) => s !== source)
         : [...prev, source]
     );
+  };
+
+  const handleGenerateTopics = async (topic: string, platform: string) => {
+    setSuccess({ state: false, message: "" });
+    if (profile?.tokens - 10 < 0) {
+      setError("You do not have enough tokens for post generation ..");
+      navigateTo("/pricing");
+      return;
+    }
+
+    if (selectedPlatforms.length == 0) {
+      setError("please select platform");
+      return;
+    }
+
+    if (!topic) {
+      setError("Please enter a topic");
+      return;
+    }
+
+    setLoading(true);
+    setError(null);
+    setGeneratedContent("");
+
+    const {
+      data: { user },
+    } = await supabase.auth.getUser();
+    if (!user) throw new Error("No user found");
+    const createdPlan = await createPlan({
+      profile_id: user.id,
+      strategy_id: null,
+      platform: selectedPlatforms[0],
+      format: formats[0],
+      topic,
+      suggestion: "",
+      status: "pending",
+      scheduled_for: null,
+      is_keyword: false,
+    });
+    setRefreshPage((prev) => !prev);
+
+    let suggestion = "";
+    try {
+      if (selectedModel == "grok") {
+        suggestion = await generateTopicsUsingGrok(topic, platform);
+        setGeneratedContent(suggestion);
+      } else if (selectedModel == "openai") {
+        suggestion = await generateTopics(topic, platform);
+        setGeneratedContent(suggestion);
+      }
+      if (createdPlan?.id) {
+        await updateContentPlan(createdPlan?.id, {
+          is_keyword: true,
+          suggestion,
+          topic: "",
+        });
+      }
+      if (profile?.tokens - 10 >= 0) {
+        await updateProfile({ tokens: profile?.tokens - 10 });
+        setRefreshHeader((prev) => !prev);
+      }
+      setRefreshPage((prev) => !prev);
+    } catch (err) {
+      setError("Something went wrong !. Please try again");
+    } finally {
+      setLoading(false);
+      setGeneratingSuggestion(false);
+    }
   };
 
   const handleGenerate = async () => {
@@ -491,74 +696,69 @@ export function AIGenerator() {
     setError(null);
     setGeneratedImage("");
     setGeneratedContent("");
+    setKeywordGenerated(false);
+    setGeneratingSuggestion(true);
 
-    try {
-      const {
-        data: { user },
-      } = await supabase.auth.getUser();
-      if (!user) throw new Error("No user found");
-      const createdPlan = await createPlan({
-        profile_id: user.id,
-        strategy_id: null,
-        platform: selectedPlatforms[0],
-        format: formats[0],
-        topic,
-        suggestion: "",
-        status: "pending",
-        scheduled_for: null,
-      });
-      setRefreshPage((prev) => !prev);
-      console.log("created plan in ai = ", createdPlan);
-      console.log("format = ", formats);
+    console.log("current plan id =  --> ", currentPlanId);
 
-      if (formats.find((format) => format === "image")) {
-        await handleImageGeneration();
-      }
+    if (currentPlanId) {
+      try {
+        const {
+          data: { user },
+        } = await supabase.auth.getUser();
+        if (!user) throw new Error("No user found");
 
-      if (formats.find((format) => format === "video")) {
-        await handleVideoGeneration(user?.id, createdPlan?.id, topic);
-      }
+        console.log("created plan in ai = ", currentPlanId);
+        console.log("format = ", formats);
 
-      // const content = await generatePost(topic, selectedPlatforms[0] );
-      // const content = await generatePostFromCustomModel(topic)
-      let content = "";
-      if (selectedModel == "grok") {
-        const response = await generatePostUsingGrok(
+        if (formats.find((format) => format === "image")) {
+          await handleImageGeneration();
+        }
+
+        if (formats.find((format) => format === "video")) {
+          setLoading(true);
+          await videoGenPipeline(topic , user?.id) ;
+          setLoading(false);
+          return;
+        }
+        let content = "";
+        if (selectedModel == "grok") {
+          const response = await generatePostUsingGrok(
+            topic,
+            selectedPlatforms[0],
+            user?.id,
+            currentPlanId
+          );
+
+          console.log("content = ", response);
+          content = response;
+        } else if (selectedModel == "openai") {
+          content = await generatePost(topic, selectedPlatforms[0]);
+        } else {
+          content = await generatePostFromCustomModel(
+            topic,
+            selectedPlatforms[0],
+            selectedModel
+          );
+        }
+        await updateContentPlan(currentPlanId, {
+          suggestion: content,
           topic,
-          selectedPlatforms[0],
-          user?.id,
-          createdPlan?.id
-        );
-
-        // const data = await response.json() ;
-        // content = data?.message ;
-        console.log("content = ", response);
-        content = response;
-      } else if (selectedModel == "openai") {
-        content = await generatePost(topic, selectedPlatforms[0]);
-      } else {
-        content = await generatePostFromCustomModel(topic, selectedModel);
+          is_keyword: false,
+        });
+        // content = await generatePostUsingGrok(topic, selectedPlatforms[0]);
+        setGeneratedContent(content);
+        if (profile?.tokens - 10 >= 0) {
+          await updateProfile({ tokens: profile?.tokens - 10 });
+          setRefreshHeader((prev) => !prev);
+        }
+        setRefreshPage((prev) => !prev);
+      } catch (err: any) {
+        setError(err.message);
+      } finally {
+        setLoading(false);
+        setGeneratingSuggestion(false);
       }
-      await updateContentPlan(createdPlan?.id, { suggestion: content });
-      content = await generatePostUsingGrok(topic, selectedPlatforms[0]);
-      setGeneratedContent(content);
-      // const historyItem: HistoryItem = {
-      //   id: crypto.randomUUID(),
-      //   topic,
-      //   content,
-      //   createdAt: new Date().toISOString(),
-      // };
-      // setHistory((prev) => [historyItem, ...prev]);
-      if (profile?.tokens - 10 >= 0) {
-        await updateProfile({ tokens: profile?.tokens - 10 });
-        setRefreshHeader((prev) => !prev);
-      }
-      setRefreshPage((prev) => !prev);
-    } catch (err: any) {
-      setError(err.message);
-    } finally {
-      setLoading(false);
-      setGeneratingSuggestion(false);
     }
   };
 
@@ -822,11 +1022,17 @@ export function AIGenerator() {
     }
   };
   const loadHistoryItem = (item: HistoryItem) => {
+    console.log("current plan id = ", item?.id);
+    setCurrentPlanId(item?.id);
     setTopic(item?.topic || "");
     setGeneratedContent(item?.content || "");
     setSelectedPlatforms([item?.platform]);
     console.log("media inside history =- ", typeof item?.media);
-    setGeneratedMedia(item?.media || null);
+    console.log("item media = ", item?.media);
+    item?.media && handleFileByExtension(item?.media);
+
+    console.log("boolean flag keyword generated = ", keywordGenerated);
+    setKeywordGenerated(item?.is_keyword);
   };
 
   const deleteHistoryItem = async (id: string) => {
@@ -886,14 +1092,22 @@ export function AIGenerator() {
       setGeneratedImage("");
     }
   };
+
+  if (isLoading) {
+    return (
+      <div className="flex items-center justify-center min-h-screen">
+        <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-purple-500"></div>
+      </div>
+    );
+  }
   return (
     <div className="max-w-4xl mx-auto ">
       <h1 className="text-xl sm:text-2xl md:text-3xl font-bold text-white mb-6 sm:mb-8">
         Custom Post generator
       </h1>
 
-      {showVideoPopup && (
-        <div className="fixed inset-0 bg-black bg-opacity-75 flex items-center justify-center z-50 p-4">
+      {showVideoPopup && generatedVideo && generatedMedia && (
+        <div className="fixed inset-0 bg-gray-700 bg-opacity-75 flex items-center justify-center z-50 p-4">
           <div className="bg-white rounded-lg max-w-4xl w-full max-h-[90vh] overflow-hidden">
             {/* Header */}
             {
@@ -916,10 +1130,7 @@ export function AIGenerator() {
                 preload="metadata"
                 autoPlay
               >
-                <source
-                  src={generatedVideo || generatedMedia}
-                  type="video/mp4"
-                />
+                <source src={generatedVideo} type="video/mp4" />
                 Your browser does not support the video tag.
               </video>
             </div>
@@ -958,6 +1169,34 @@ export function AIGenerator() {
                   className="w-full bg-gray-700 border border-gray-600 rounded-md shadow-sm py-2 px-3 text-white focus:ring-purple-500 focus:border-purple-500 text-sm sm:text-base"
                   placeholder="What would you like to post about?"
                 />
+              </div>
+              <div className="flex gap-2 items-start flex-wrap ">
+                {keywordGenerated &&
+                  generatedContent &&
+                  Array.isArray(JSON.parse(generatedContent.trim()) || []) &&
+                  JSON.parse(generatedContent.trim() || [])?.length > 0 &&
+                  JSON.parse(generatedContent.trim()).map(
+                    (item: string, index: number) => {
+                      return (
+                        <button
+                          title={item}
+                          className={`${
+                            topic === item
+                              ? "bg-purple-600 text-white"
+                              : "bg-gray-700 text-gray-300 hover:bg-gray-600"
+                          } px-3 py-1 rounded-full text-xs sm:text-sm transition-colors`}
+                          onClick={() => {
+                            setTopic(item);
+                          }}
+                          key={index}
+                        >
+                          {item?.length > 10
+                            ? item.substring(0, 20) + "..."
+                            : item}
+                        </button>
+                      );
+                    }
+                  )}
               </div>
 
               <div className="grid grid-cols-1 gap-4 w-full">
@@ -1090,7 +1329,11 @@ export function AIGenerator() {
 
               <div className="mt-4">
                 <button
-                  onClick={handleGenerate}
+                  onClick={() => {
+                    keywordGenerated
+                      ? handleGenerate()
+                      : handleGenerateTopics(topic, selectedPlatforms[0]);
+                  }}
                   disabled={loading || generatingSuggestion}
                   className="w-full bg-purple-600 hover:bg-purple-700 text-white px-4 py-2 rounded-md flex items-center justify-center space-x-2 disabled:opacity-50 text-sm sm:text-base transition-colors"
                 >
@@ -1108,9 +1351,9 @@ export function AIGenerator() {
                 </button>
               </div>
 
-              {generatedContent && (
+              {
                 <div className="relative space-y-4">
-                  {generatedImage !== "" && (
+                  {generatedMedia && generatedImage && (
                     <div
                       className="w-full cursor-pointer"
                       onClick={handleImageClick}
@@ -1160,121 +1403,130 @@ export function AIGenerator() {
                       </div>
                     </div>
                   )}
-                  <div>
-                    <label className="block text-sm font-medium text-gray-300 mb-2">
-                      Generated Content
-                    </label>
-                    <Editor data={generatedContent} />
-                  </div>
+                  {generatedContent && (
+                    <div>
+                      <label className="block text-sm font-medium text-gray-300 mb-2">
+                        Generated Content
+                      </label>
+                      <Editor initialContent={generatedContent} />
+                    </div>
+                  )}
 
-                  <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-3">
-                    <button
-                      onClick={handleGenerate}
-                      className="bg-purple-600 hover:bg-purple-700 text-white px-4 py-2 rounded-md flex items-center justify-center space-x-2 text-sm sm:text-base transition-colors"
-                    >
-                      <RefreshCw className="h-4 w-4 sm:h-5 sm:w-5" />
-                      <span>Regenerate</span>
-                    </button>
-
-                    {(generatedVideo ||
-                      generatedMedia != "NULL" ||
-                      !generatedMedia) && (
+                  {generatedContent && (
+                    <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-3">
                       <button
-                        onClick={handleVideoPrevieClick}
-                        className="bg-purple-600 hover:bg-purple-700 text-white px-4 py-2  rounded-md flex items-center justify-center space-x-2  text-sm sm:text-base transition-colors"
+                        onClick={() => {
+                          keywordGenerated
+                            ? handleGenerate()
+                            : handleGenerateTopics(topic, selectedPlatforms[0]);
+                        }}
+                        className="bg-purple-600 hover:bg-purple-700 text-white px-4 py-2 rounded-md flex items-center justify-center space-x-2 text-sm sm:text-base transition-colors"
                       >
-                        <Image className="" size={20} /> Preview Video
+                        <RefreshCw className="h-4 w-4 sm:h-5 sm:w-5" />
+                        <span>Regenerate</span>
                       </button>
-                    )}
-                    <button
-                      onClick={() => {
-                        if (selectedPlatforms?.length > 0) {
-                          selectedPlatforms.map((selectedPlatform: string) => {
-                            handleSave(selectedPlatform);
-                          });
-                        } else {
-                          handleSave("");
-                        }
-                        setTopic("");
-                        setGeneratedContent("");
-                        setGeneratedImage("");
-                      }}
-                      disabled={saving}
-                      className="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-md flex items-center justify-center space-x-2 disabled:opacity-50 text-sm sm:text-base transition-colors"
-                    >
-                      {saving ? (
-                        <>
-                          <Loader className="h-4 w-4 sm:h-5 sm:w-5 animate-spin" />
-                          <span>Saving...</span>
-                        </>
-                      ) : (
-                        <>
-                          <Save className="h-4 w-4 sm:h-5 sm:w-5" />
-                          <span>Save</span>
-                        </>
+
+                      {generatedContent && generatedVideo && generatedMedia && (
+                        <button
+                          onClick={handleVideoPrevieClick}
+                          className="bg-purple-600 hover:bg-purple-700 text-white px-4 py-2  rounded-md flex items-center justify-center space-x-2  text-sm sm:text-base transition-colors"
+                        >
+                          <Image className="" size={20} /> Preview Video
+                        </button>
                       )}
-                    </button>
-
-                    {selectedPlatforms?.length == 1 &&
-                      postButtons.map((postButton) => {
-                        return (
-                          selectedPlatforms.find(
-                            (selectedPlatform: string) =>
-                              selectedPlatform === postButton?.value
-                          ) && (
-                            <button
-                              key={postButton.value}
-                              onClick={postButton?.method}
-                              disabled={posting}
-                              className="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-md flex items-center justify-center space-x-2 disabled:opacity-50 text-sm sm:text-base transition-colors"
-                            >
-                              {posting ? (
-                                <>
-                                  <Loader className="h-4 w-4 sm:h-5 sm:w-5 animate-spin" />
-                                  <span>Posting...</span>
-                                </>
-                              ) : (
-                                <>
-                                  {postButton?.icon}
-                                  <span>Post</span>
-                                </>
-                              )}
-                            </button>
-                          )
-                        );
-                      })}
-
-                    {selectedPlatforms?.length > 1 && (
                       <button
-                        disabled={posting}
-                        onClick={handleMultiPlatformPost}
+                        onClick={() => {
+                          if (selectedPlatforms?.length > 0) {
+                            selectedPlatforms.map(
+                              (selectedPlatform: string) => {
+                                handleSave(selectedPlatform);
+                              }
+                            );
+                          } else {
+                            handleSave("");
+                          }
+                          setTopic("");
+                          setGeneratedContent("");
+                          setGeneratedImage("");
+                        }}
+                        disabled={saving}
                         className="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-md flex items-center justify-center space-x-2 disabled:opacity-50 text-sm sm:text-base transition-colors"
                       >
-                        {posting ? (
+                        {saving ? (
                           <>
                             <Loader className="h-4 w-4 sm:h-5 sm:w-5 animate-spin" />
-                            <span>Posting...</span>
+                            <span>Saving...</span>
                           </>
                         ) : (
                           <>
-                            <span>Post All</span>
+                            <Save className="h-4 w-4 sm:h-5 sm:w-5" />
+                            <span>Save</span>
                           </>
                         )}
                       </button>
-                    )}
 
-                    {selectedPlatforms?.length == 1 && (
-                      <button
-                        onClick={() => setShowScheduleModal(true)}
-                        className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-md flex items-center justify-center space-x-2 text-sm sm:text-base transition-colors"
-                      >
-                        <Calendar className="h-4 w-4 sm:h-5 sm:w-5" />
-                        <span>Schedule</span>
-                      </button>
-                    )}
-                  </div>
+                      {generatedContent &&
+                        selectedPlatforms?.length == 1 &&
+                        postButtons.map((postButton) => {
+                          return (
+                            selectedPlatforms.find(
+                              (selectedPlatform: string) =>
+                                selectedPlatform === postButton?.value
+                            ) && (
+                              <button
+                                key={postButton.value}
+                                onClick={postButton?.method}
+                                disabled={posting}
+                                className="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-md flex items-center justify-center space-x-2 disabled:opacity-50 text-sm sm:text-base transition-colors"
+                              >
+                                {posting ? (
+                                  <>
+                                    <Loader className="h-4 w-4 sm:h-5 sm:w-5 animate-spin" />
+                                    <span>Posting...</span>
+                                  </>
+                                ) : (
+                                  <>
+                                    {postButton?.icon}
+                                    <span>Post</span>
+                                  </>
+                                )}
+                              </button>
+                            )
+                          );
+                        })}
+
+                      {generatedContent && selectedPlatforms?.length > 1 && (
+                        <button
+                          disabled={posting}
+                          onClick={handleMultiPlatformPost}
+                          className="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-md flex items-center justify-center space-x-2 disabled:opacity-50 text-sm sm:text-base transition-colors"
+                        >
+                          {posting ? (
+                            <>
+                              <Loader className="h-4 w-4 sm:h-5 sm:w-5 animate-spin" />
+                              <span>Posting...</span>
+                            </>
+                          ) : (
+                            <>
+                              <span>Post All</span>
+                            </>
+                          )}
+                        </button>
+                      )}
+
+                      {selectedPlatforms?.length == 1 && (
+                        <button
+                          onClick={() => setShowScheduleModal(true)}
+                          className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-md flex items-center justify-center space-x-2 text-sm sm:text-base transition-colors"
+                        >
+                          <Calendar className="h-4 w-4 sm:h-5 sm:w-5" />
+                          <span>Schedule</span>
+                        </button>
+                      )}
+                    </div>
+                  )}
                 </div>
-              )}
+              }
             </div>
           </div>
         </div>
@@ -1362,4 +1614,4 @@ export function AIGenerator() {
   );
 }
 
-export default AIGenerator ;
+export default AIGenerator;

@@ -1020,7 +1020,7 @@ emoji: A single, relevant emoji as a string (e.g., "🚀")`;
               <h2 className="capitalize text-2xl text-white ">
                 Caption For <span>{platform}</span>
               </h2>
-              <Editor data={generatedCaption} />
+              <Editor initialContent={generatedCaption} />
             </div>
           )}
           {/* Slide Editor  */}
