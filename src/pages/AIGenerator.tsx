@@ -205,10 +205,10 @@ export function AIGenerator() {
 
       if (Array.isArray(response) && response?.length > 0) {
         console.log("response = ", response);
-        // setGeneratingSuggestion((prev) => {
-        //   if (response?.[0]?.suggestion === "") return true;
-        //   return false;
-        // });
+        setGeneratingSuggestion((prev) => {
+          if (response?.[0]?.suggestion === "") return true;
+          return false;
+        });
 
         loadHistoryItem({
           id: response?.[0]?.id || "",

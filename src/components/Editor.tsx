@@ -515,7 +515,7 @@ const Editor: React.FC<RichTextEditorProps> = ({
           ref={editorRef}
           contentEditable
           onInput={handleInput}
-          className="h-[300px]  overflow-y-auto focus:outline-none text-gray-200 leading-relaxed"
+          className="h-[300px]  overflow-y-auto focus:outline-none text-gray-200 leading-relaxed no-scrollbar"
           style={{ fontSize: '16px', lineHeight: '1.6' }}
           suppressContentEditableWarning={true}
           data-placeholder={placeholder}
