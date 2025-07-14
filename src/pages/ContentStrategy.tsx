@@ -41,7 +41,7 @@ function ContentPlanCard({
   selectedPlan,
 }: ContentPlanCardProps) {
   return (
-    <div className="bg-gray-800 h-full  rounded-lg p-2 flex flex-col justify-between">
+    <div className="bg-gray-700 h-full  rounded-lg p-2 flex flex-col justify-between">
       <h3 className="text-lg font-medium text-white mb-2">{plan.topic}</h3>
       <PostGenerator
         plan={plan}
@@ -576,7 +576,7 @@ export function ContentStrategy() {
       {plans.length > 0 && (
         <div className="space-y-4">
           <h2 className="text-xl font-bold text-white">Content Plans</h2>
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 ">
             { plans.map((plan) => (
                accounts.some((account) => account.platform === plan.platform) && <ContentPlanCard
                 key={plan.id}

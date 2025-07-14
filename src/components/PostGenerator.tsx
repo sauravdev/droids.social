@@ -522,7 +522,7 @@ export function PostGenerator({
   };
 
   return (
-    <div className="bg-gray-700 first-letter h-full rounded-lg px-3 py-4 sm:px-4 md:px-6 space-y-3 sm:space-y-4 flex flex-col justify-between ">
+    <div className="bg-gray-800 shadhow-xl first-letter h-full rounded-lg px-3 py-4 sm:px-4 md:px-6 space-y-3 sm:space-y-4 flex flex-col justify-between ">
       {/* Header Section */}
 
       <div className="flex items-center justify-between gap-2">
@@ -601,7 +601,7 @@ export function PostGenerator({
       </div>
 
       {/* Generated Content Section */}
-      <div className=" min-h-0">
+      <div className=" min-h-0" >
         <label className="block text-xs sm:text-sm font-medium text-gray-300 mb-1 sm:mb-2">
           Generated Content
         </label>
@@ -719,7 +719,7 @@ export function PostGenerator({
         )}
 
         {/* Editor Component */}
-        <div className="self-end">
+        <div className="self-end  ">
           <Editor initialContent={content} />
         </div>
       </div>

@@ -341,7 +341,7 @@ const Editor: React.FC<RichTextEditorProps> = ({
   }, []);
 
   return (
-    <div className="max-w-4xl  mx-auto bg-white rounded-lg shadow-lg overflow-hidden">
+    <div className="max-w-4xl   mx-auto bg-white rounded-lg shadow-lg overflow-hidden">
       {/* Toolbar */}
       <div className="border-b bg-gray-50 p-3">
         <div className="flex flex-wrap items-center gap-1">
@@ -510,12 +510,12 @@ const Editor: React.FC<RichTextEditorProps> = ({
       </div>
 
       {/* Editor */}
-      <div className="p-6">
+      <div className="p-6  bg-gray-700 text-white ">
         <div
           ref={editorRef}
           contentEditable
           onInput={handleInput}
-          className="h-[300px]  overflow-y-auto focus:outline-none text-gray-800 leading-relaxed"
+          className="h-[300px]  overflow-y-auto focus:outline-none text-gray-200 leading-relaxed"
           style={{ fontSize: '16px', lineHeight: '1.6' }}
           suppressContentEditableWarning={true}
           data-placeholder={placeholder}
