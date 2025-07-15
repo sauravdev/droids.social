@@ -17,16 +17,22 @@ import {
   generatePostGeneric,
   generateTopics,
   generateTopicsUsingGrok,
+  generateVideoDescription,
+  generateVideoDescriptionUsingGrok,
+  generateVideoPrompt,
+  generateVideoPromptUsingGrok,
 } from "../lib/openai";
 import type { ContentPlan } from "../lib/types";
 import Editor from "./Editor";
-import { getSocialMediaAccountInfo } from "../lib/api";
+import { getSocialMediaAccountInfo, updateContentPlan } from "../lib/api";
 import { BACKEND_APIPATH } from "../constants";
 import { initializeTwitterAuth } from "../lib/twitter";
 import aiMagic from "../assets/ai.png";
 import { useContentPlan } from "../hooks/useContentPlan";
 import { useAuth } from "../context/AuthContext";
 import { supabase } from "../lib/supabase";
+import { useProfile } from "../hooks/useProfile";
+import { useNavigate } from "react-router-dom";
 interface PostGeneratorProps {
   plan: ContentPlan;
   onSave: (updates: Partial<ContentPlan>) => Promise<void>;
@@ -58,6 +64,12 @@ export function PostGenerator({
     state: false,
     message: "",
   });
+
+
+  const { setRefreshHeader } = useAuth();
+
+  const navigateTo = useNavigate();
+  const { profile, updateProfile } = useProfile();
   const [generatedImage, setGeneratedImage] = useState(plan?.media || "");
   const { updatePlan } = useContentPlan();
   const [showVideoPopup, setShowVideoPopup] = useState(false);
@@ -126,6 +138,7 @@ export function PostGenerator({
       }
       console.log("generated video url = ", data?.video_url);
       setGeneratedVideo(data?.video_url);
+      setIsVideoGenerated(true);
     } catch (err: any) {
       console.log("Something went wrong while generating video ", err);
       setError("Something went wrong while generating video");
@@ -288,9 +301,17 @@ export function PostGenerator({
   };
 
   const handleGenerateTopics = async (topic: string, platform: string) => {
+
+    
     if (!topic) {
       setError("Please enter a topic");
       removeErrorToast();
+      return;
+    }
+
+    if (profile?.tokens - 10 < 0) {
+      setError("You do not have enough tokens for post generation ..");
+      navigateTo("/pricing");
       return;
     }
 
@@ -341,6 +362,10 @@ export function PostGenerator({
       }
 
       setContent(suggestion);
+      if (profile?.tokens - 10 >= 0) {
+        await updateProfile({ tokens: profile?.tokens - 10 });
+        setRefreshHeader((prev) => !prev);
+      }
     } catch (err) {
       setError("Something went wrong !. Please try again");
       removeErrorToast();
@@ -424,7 +449,67 @@ export function PostGenerator({
     }
   };
 
+  const videoGenPipeline = async ( currentPlanId : string , topic  : string) => {
+    // generate video generation prompt using model
+
+    if (selectedModel == "grok") {
+      const videoGenPrompt = await generateVideoPromptUsingGrok(topic);
+      if (videoGenPrompt) {
+        const content = await generateVideoDescriptionUsingGrok(topic);
+        setContent(content);
+        await updateContentPlan(currentPlanId, {
+          suggestion: content,
+          topic,
+          is_keyword: false,
+        });
+        setSelectedPlan((prev: any) => {
+          return {
+            ...prev,
+            suggestion: content,
+            is_keyword : false 
+          };
+        });
+        await generateVideoUsingKling(plan?.id, videoGenPrompt);
+        // await handleVideoGeneration(userid, currentPlanId, videoGenPrompt);
+        // if (profile?.tokens - 10 >= 0) {
+        //   await updateProfile({ tokens: profile?.tokens - 10 });
+        //   setRefreshHeader((prev) => !prev);
+        // }
+      }
+    } else if (selectedModel == "openai") {
+      const videoGenPrompt = await generateVideoPrompt(topic);
+      if (videoGenPrompt) {
+        const content = await generateVideoDescription(topic);
+        setContent(content);
+        await updateContentPlan(currentPlanId, {
+          suggestion: content,
+          topic,
+          is_keyword: false,
+        });
+        setSelectedPlan((prev: any) => {
+          return {
+            ...prev,
+            suggestion: content,
+            is_keyword : false 
+          };
+        });
+        await generateVideoUsingKling(plan?.id, videoGenPrompt);
+        if (profile?.tokens - 10 >= 0) {
+          await updateProfile({ tokens: profile?.tokens - 10 });
+          setRefreshHeader((prev) => !prev);
+        }
+      }
+    }
+
+  };
+
   const handleGenerate = async () => {
+    if (profile?.tokens - 10 < 0) {
+      setError("You do not have enough tokens for post generation ..");
+      navigateTo("/pricing");
+      return;
+    }
+
     if (!selectedTopic) {
       setError("Please select a topic !");
       removeErrorToast();
@@ -434,9 +519,9 @@ export function PostGenerator({
     setError(null);
     let publicUrl: string = "";
     if (plan?.format === "video") {
-      await generateVideoUsingKling(plan?.id, plan?.topic);
-      setIsVideoGenerated(true);
+      await videoGenPipeline(plan?.id , selectedTopic);
       setLoading(false);
+      return ;
     }
     if (plan?.format === "image") {
       console.log("image ..... ");
@@ -487,9 +572,15 @@ export function PostGenerator({
         });
       }
       setContent(generated);
+      if (profile?.tokens - 10 >= 0) {
+        await updateProfile({ tokens: profile?.tokens - 10 });
+        setRefreshHeader((prev) => !prev);
+      }
     } catch (err: any) {
       setError(err.message);
       removeErrorToast();
+
+      
     } finally {
       setLoading(false);
     }

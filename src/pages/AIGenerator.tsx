@@ -1159,7 +1159,7 @@ export function AIGenerator() {
                   htmlFor="topic"
                   className="block text-sm font-medium text-gray-300 mb-2"
                 >
-                  Topic
+                  Enter Your niche topic
                 </label>
                 <input
                   type="text"
@@ -1167,7 +1167,7 @@ export function AIGenerator() {
                   value={topic}
                   onChange={(e) => setTopic(e.target.value)}
                   className="w-full bg-gray-700 border border-gray-600 rounded-md shadow-sm py-2 px-3 text-white focus:ring-purple-500 focus:border-purple-500 text-sm sm:text-base"
-                  placeholder="What would you like to post about?"
+                  placeholder="Niches like statistics, motivational quotes, and educational,etc content remain popular"
                 />
               </div>
               <div className="flex gap-2 items-start flex-wrap ">
