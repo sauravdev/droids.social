@@ -81,7 +81,7 @@ const get5sVideoUrl = async (req , res ) => {
   console.log("req  body in video gen api  = " , req.body) ;
   if(!prompt || !planId || !userId ) 
   {
-    return  res.status(400).json({error: "Prompt is required"}) ; 
+    return  res.status(400).json({error: "Invalid body"}) ; 
   }
   const authorization = encodeJwtToken();
   console.log("video generation token = " ,  authorization) ;
