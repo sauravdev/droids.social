@@ -42,7 +42,7 @@ function ContentPlanCard({
 }: ContentPlanCardProps) {
   return (
     <div className="bg-gray-700 h-full  rounded-lg p-2 flex flex-col justify-between">
-      <h3 className="text-lg font-medium text-white mb-2">{plan.topic}</h3>
+      <h3 title={plan?.topic} className="text-lg font-medium text-white mb-2">{plan?.topic?.length > 30 ? plan.topic.slice(0,30) + " ..."  :  plan.topic }</h3>
       <PostGenerator
         plan={plan}
         onSave={(updates) => onSave(plan.id, updates)}
