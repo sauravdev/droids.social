@@ -92,8 +92,8 @@ export function Header() {
                 />
                 
                 {/* Username - Hidden on small screens */}
-                <span className="hidden md:block text-sm lg:text-base truncate max-w-24 lg:max-w-none">
-                  {profile?.full_name || 'User'}
+                <span title = {profile?.full_name || "User" } className="hidden md:block text-sm lg:text-base truncate max-w-24 lg:max-w-none">
+                  {profile?.full_name?.length > 10 ? profile?.full_name?.slice(0,10) + "..."  :  profile?.full_name || 'User'}
                 </span>
               </button>
               

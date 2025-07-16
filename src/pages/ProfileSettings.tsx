@@ -342,22 +342,17 @@ export function ProfileSettings() {
           </div>
 
           <div className="flex flex-col sm:flex-row gap-3">
-            <button
-              onClick={() => setShowCreateProfilePopup(false)}
-              className="flex-1 px-4 py-2 border border-gray-600 rounded-md text-gray-300 hover:bg-gray-700 text-sm sm:text-base transition-colors"
-            >
-              Skip for now
-            </button>
+          
             <button
               onClick={() => handleGenerateProfile(true)}
               disabled={generating || !popupNiche.trim() || !fullName}
-              className="flex-1 flex justify-center items-center px-4 py-2 bg-purple-600 hover:bg-purple-700 text-white rounded-md disabled:opacity-50 text-sm sm:text-base transition-colors"
+              className={`flex-1 flex justify-center items-center px-4 py-2 bg-purple-600 hover:bg-purple-700 text-white rounded-md disabled:opacity-50 text-sm sm:text-base transition-colors ${generating ? "cursor-not-allowed" : "cursor-pointer" }`}
             >
               {generating ? (
                 <>
                   <Loader className="animate-spin h-3 w-3 sm:h-4 sm:w-4 mr-2 flex-shrink-0" />
                   <span className="hidden xs:inline">Creating...</span>
-                  <span className="xs:hidden">...</span>
+               
                 </>
               ) : (
                 <>
@@ -471,6 +466,7 @@ export function ProfileSettings() {
           <div className="bg-gray-800 rounded-xl overflow-hidden">
             <ProfileImageUpload
               type="banner"
+              setError  = {setError} 
               currentUrl={settings?.banner_image_url || null}
               onUpload={(url) => updateSettings({ banner_image_url: url })}
             />
@@ -478,6 +474,7 @@ export function ProfileSettings() {
               <div className="flex items-end -mt-12 sm:-mt-16 mb-4">
                 <div className="w-24 h-24 sm:w-32 sm:h-32 relative">
                   <ProfileImageUpload
+                  setError  = {setError} 
                     type="avatar"
                     currentUrl={profile?.avatar_url || null}
                     onUpload={(url) => updateProfile({ avatar_url: url })}

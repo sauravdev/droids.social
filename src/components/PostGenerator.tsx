@@ -1,7 +1,6 @@
 import React, { useEffect, useState } from "react";
 import {
   Loader,
-  RefreshCw,
   Calendar,
   Save,
   Twitter,
@@ -13,7 +12,6 @@ import {
 } from "lucide-react";
 import {
   generateImage,
-  generatePost,
   generatePostGeneric,
   generateTopics,
   generateTopicsUsingGrok,
@@ -44,7 +42,6 @@ export function PostGenerator({
   onSave,
   onSchedule,
   setSelectedPlan,
-  selectedPlan,
 }: PostGeneratorProps) {
   const [loading, setLoading] = useState(false);
   const [saving, setSaving] = useState(false);
@@ -52,8 +49,7 @@ export function PostGenerator({
   const [error, setError] = useState<string | null>(null);
   const [content, setContent] = useState(plan.suggestion || "");
   const [tone, setTone] = useState<string>("");
-  const [posting, setPosting] = useState<boolean | null>(false);
-  const [videoUrl, setVideoUrl] = useState("");
+  const [posting, setPosting] = useState<boolean>(false);
   const [success, setSuccess] = useState<Success>({
     state: false,
     message: "",
@@ -69,12 +65,7 @@ export function PostGenerator({
 
   const { selectedModel } = useAuth();
 
-  const videos = [
-    "https://zkzdqldpzvjeftxbzgvh.supabase.co/storage/v1/object/public/generated-videos//2aeb4f6f-75fc-48a1-b4aa-9e21c75aa5b3_raw_video.mp4",
-    "https://zkzdqldpzvjeftxbzgvh.supabase.co/storage/v1/object/public/generated-videos//8ac022e5-fcc8-4d5b-b3f3-61928f723fc0_raw_video.mp4",
-    "https://zkzdqldpzvjeftxbzgvh.supabase.co/storage/v1/object/public/generated-videos//2568d3a0-6fbc-41f4-b007-0fdefca8c12b_raw_video.mp4",
-    "https://zkzdqldpzvjeftxbzgvh.supabase.co/storage/v1/object/public/generated-videos//8ac022e5-fcc8-4d5b-b3f3-61928f723fc0_raw_video.mp4",
-  ];
+
 
   useEffect(() => {
     console.log("current plan = ", plan);
@@ -558,10 +549,11 @@ export function PostGenerator({
 
       {/* Tone Selection */}
       <div className="space-y-1 sm:space-y-2">
-        <label className="block text-xs sm:text-sm font-medium text-gray-300">
+        <label className={`block text-xs sm:text-sm font-medium text-gray-300 ${loading ? 'cursor-not-allowed'  : "cursor-pointer"}`}>
           Tone
         </label>
         <select
+          disabled={loading}
           value={tone}
           onChange={(e) => setTone(e.target.value)}
           className="w-full bg-gray-600 border border-gray-500 rounded-md shadow-sm py-1.5 px-2 sm:py-2 sm:px-3 text-white text-xs sm:text-sm focus:ring-purple-500 focus:border-purple-500 focus:outline-none"
@@ -601,7 +593,7 @@ export function PostGenerator({
       </div>
 
       {/* Generated Content Section */}
-      <div className=" min-h-0" >
+      <div className=" min-h-0">
         <label className="block text-xs sm:text-sm font-medium text-gray-300 mb-1 sm:mb-2">
           Generated Content
         </label>
@@ -729,9 +721,11 @@ export function PostGenerator({
         <button
           // onClick={handleGenerate}
           onClick={() => {
-            plan?.is_keyword
-              ? handleGenerate()
-              : handleGenerateTopics(plan?.suggestion, plan?.platform);
+            if (plan?.is_keyword) {
+              handleGenerate();
+            } else {
+              handleGenerateTopics(plan?.suggestion, plan?.platform);
+            }
           }}
           disabled={loading}
           className="w-full sm:w-auto sm:flex-1 px-3 py-2 bg-purple-600 hover:bg-purple-700 disabled:opacity-50 disabled:hover:bg-purple-600 text-white text-xs sm:text-sm font-medium rounded-lg flex items-center justify-center gap-1.5 sm:gap-2 transition-colors duration-200"

@@ -6,15 +6,26 @@ interface ProfileImageUploadProps {
   currentUrl: string | null;
   onUpload: (url: string) => Promise<void>;
   type: 'avatar' | 'banner';
+  setError : (string) => void
 }
 
-export function ProfileImageUpload({ currentUrl, onUpload, type }: ProfileImageUploadProps) {
+export function ProfileImageUpload({ currentUrl, onUpload, type , setError }: ProfileImageUploadProps) {
   const [uploading, setUploading] = useState(false);
-  const [error, setError] = useState<string | null>(null);
+
   const [showDownloadConfirm, setShowDownloadConfirm] = useState(false);
   const [showChangeOptions, setShowChangeOptions] = useState(false);
   
   const uploadImage = async (event: React.ChangeEvent<HTMLInputElement>) => {
+    setError(null) ; 
+    const maxSizeInBytes = 2 * 1024 * 1024; // 2MB
+    
+    const file = event.target.files[0] ;
+    console.log("file size = " , file.size) ; 
+    if(!file) return ; 
+    if (file && file.size > maxSizeInBytes) {
+        setError("Image size should be less than 2MB")  ; 
+        return;
+      }
     try {
       setUploading(true);
       setError(null);
@@ -115,7 +126,10 @@ export function ProfileImageUpload({ currentUrl, onUpload, type }: ProfileImageU
   };
 
   return (
+    
     <div className="relative ">
+
+      
       <div 
         className={`relative ${type === 'banner' ? 'h-48' : 'h-32'} w-full rounded-lg overflow-hidden bg-gray-700`}
         onClick={handleImageClick}
@@ -151,7 +165,7 @@ export function ProfileImageUpload({ currentUrl, onUpload, type }: ProfileImageU
         <input
           id={`${type}-file-input`}
           type="file"
-          accept="image/*"
+          accept="image/png, image/jpeg"
           onChange={uploadImage}
           disabled={uploading}
           className="hidden"
@@ -201,7 +215,7 @@ export function ProfileImageUpload({ currentUrl, onUpload, type }: ProfileImageU
               <span>Select New Image</span>
               <input
                 type="file"
-                accept="image/*"
+                accept="image/png, image/jpeg"
                 onChange={uploadImage}
                 disabled={uploading}
                 className="hidden"
@@ -223,11 +237,8 @@ export function ProfileImageUpload({ currentUrl, onUpload, type }: ProfileImageU
         </div>
       )}
 
-      {error && (
-        <div className="absolute bottom-0 left-0 right-0 bg-red-900 text-white px-4 py-2 text-sm">
-          {error}
-        </div>
-      )}
+     
+
     </div>
   );
 }
