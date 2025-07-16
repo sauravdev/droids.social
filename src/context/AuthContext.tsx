@@ -251,7 +251,7 @@ useEffect(() => {
       // Wait for connection check first
       const isConnected = await connectionCheckPromise;
       if (!isConnected && mounted) {
-        setConnectionError('Unable to connect to the database. Please ensure you are connected to Supabase.');
+        setConnectionError('Unable to connect to the database. Please ensure you are connected to Supabase and have a active internet connection.');
         setLoading(false);
         return;
       }

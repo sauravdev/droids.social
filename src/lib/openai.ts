@@ -169,7 +169,7 @@ Format the response as a structured JSON object with this schema:
 
 export async function generateTopics(
   topic: string,
-  platform: "twitter" | "linkedin" | "instagram"
+  platform:string
 ): any {
   const cacheKey = `post:${topic}:${platform}:${"default"}`;
   const cached = checkCache<string>(cacheKey);

@@ -426,149 +426,149 @@ export function ContentStrategy() {
         )}
 
         <div className="space-y-4">
-          <div>
-            <label
-              htmlFor="niche"
-              className="block text-sm font-medium text-gray-300 mb-1"
-            >
-              Business Niche
-            </label>
-            <input
-              type="text"
-              id="niche"
-              value={niche}
-              onChange={(e) => setNiche(e.target.value)}
-              className="w-full bg-gray-700 border border-gray-600 rounded-md shadow-sm py-2 px-3 text-white focus:ring-purple-500 focus:border-purple-500"
-              placeholder="e.g., Tech Startup, Fashion Brand, etc."
-            />
-          </div>
+  <div>
+    <label
+      htmlFor="niche"
+      className="block text-sm font-medium text-gray-300 mb-1"
+    >
+      Business Niche
+    </label>
+    <input
+      maxLength={50}
+      type="text"
+      id="niche"
+      value={niche}
+      onChange={(e) => setNiche(e.target.value)}
+      className="w-full bg-gray-700 border border-gray-600 rounded-md shadow-sm py-2 px-3 text-white focus:ring-purple-500 focus:border-purple-500"
+      placeholder="e.g., Tech Startup, Fashion Brand, etc."
+    />
+  </div>
 
-          <div>
-            <label className="block text-sm font-medium text-gray-300 mb-1">
-              Business Goals
-            </label>
-            <form onSubmit={handleAddGoal} className="flex space-x-2 mb-2">
-              <input
-                type="text"
-                value={newGoal}
-                onChange={(e) => setNewGoal(e.target.value)}
-                className="flex-1 bg-gray-700 border border-gray-600 rounded-md shadow-sm py-2 px-3 text-white focus:ring-purple-500 focus:border-purple-500"
-                placeholder="Add a business goal"
-              />
-              <button
-                type="submit"
-                className="bg-purple-600 hover:bg-purple-700 text-white px-4 py-2 rounded-md"
-              >
-                Add Goal
-              </button>
-            </form>
-            <div className="flex flex-wrap gap-2">
-              {goals.map((goal, index) => (
-                <div
-                  key={index}
-                  className="bg-gray-700 text-white px-3 py-1 rounded-full flex items-center space-x-2"
-                >
-                  <span>{goal}</span>
-                  <button
-                    onClick={() => handleRemoveGoal(index)}
-                    className="text-gray-400 hover:text-white"
-                  >
-                    <X className="h-4 w-4" />
-                  </button>
-                </div>
-              ))}
-            </div>
-          </div>
-
-          <div className="flex gap-4 ">
-
-        {allStrategies?.length > 0 && (
-          <div className="flex-1 relative">
-            <p className = "capitalize text-gray-200 ">Select a Strategy</p>
-            <select
-              // value ={selectedStrategy}
-              onChange={onChangeStrategyHandler}
-              className="block w-full px-4 py-3 pr-8 leading-tight bg-gray-700  border-gray-300 text-gray-200 rounded-md shadow-sm appearance-none focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-            >
-              <option className="capitalize" value="" disabled selected>
-                {selectedStrategy}
-              </option>
-              {allStrategies.map((strategy) => (
-                <option
-                  className="capitalize "
-                  key={strategy?.id}
-                  value={strategy?.id}
-                >
-                  {strategy?.niche}
-                </option>
-              ))}
-            </select>
-            <div className="absolute top-[2.5rem] right-0 flex items-center px-2 pointer-events-none">
-              <svg
-                className="w-4 h-4 text-gray-200"
-                fill="currentColor"
-                viewBox="0 0 20 20"
-              >
-                <path
-                  fillRule="evenodd"
-                  d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z"
-                  clipRule="evenodd"
-                />
-              </svg>
-            </div>
-          </div>
-        )}
-        {models && models?.length > 0 && (
-          <div className=" flex-1 relative">
-            <p className = "capitalize text-gray-200 ">Select a model</p>
-            <select
-             disabled={generating}
-              onChange={handleModelChange}
-              className={`block  appearance-none w-full  bg-gray-700 border border-gray-300 hover:border-gray-400 px-4 py-2 pr-8 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-gray-200 ${generating ? 'opacity-50 cursor-not-allowed' : ''}`}
-            >
-              <option className="capitalize" value="" disabled selected>
-                {selectedModel}
-              </option>
-              {models.map((model) => (
-                <option key={model} value={model} className="py-1 capitalize">
-                  {model}
-                </option>
-              ))}
-            </select>
-            <div className="pointer-events-none absolute  top-[2.5rem] right-0 flex items-center px-2 text-gray-200">
-              <svg
-                className="h-4 w-4 fill-current"
-                xmlns="http://www.w3.org/2000/svg"
-                viewBox="0 0 20 20"
-              >
-                <path d="M9.293 12.95l.707.707L15.657 8l-1.414-1.414L10 10.828 5.757 6.586 4.343 8z" />
-              </svg>
-          </div>
-          </div>
-        )}
-        
-      </div>
-
-          <div>
-            <button
-              onClick={handleGenerateStrategy}
-              disabled={generating}
-              className="w-full bg-purple-600 hover:bg-purple-700 text-white px-4 py-2 rounded-md flex items-center justify-center space-x-2 disabled:opacity-50"
-            >
-              {generating ? (
-                <>
-                  <Loader className="h-5 w-5 animate-spin" />
-                  <span>Generating Strategy...</span>
-                </>
-              ) : (
-                <>
-                  <Calendar className="h-5 w-5" />
-                  <span>Generate Content Strategy</span>
-                </>
-              )}
-            </button>
-          </div>
+  <div>
+    <label className="block text-sm font-medium text-gray-300 mb-1">
+      Business Goals
+    </label>
+    <form onSubmit={handleAddGoal} className="flex flex-col sm:flex-row gap-2 mb-2">
+      <input
+        maxLength={50}
+        type="text"
+        value={newGoal}
+        onChange={(e) => setNewGoal(e.target.value)}
+        className="flex-1 bg-gray-700 border border-gray-600 rounded-md shadow-sm py-2 px-3 text-white focus:ring-purple-500 focus:border-purple-500"
+        placeholder="Add a business goal"
+      />
+      <button
+        type="submit"
+        className="bg-purple-600 hover:bg-purple-700 text-white px-4 py-2 rounded-md whitespace-nowrap"
+      >
+        Add Goal
+      </button>
+    </form>
+    <div className="flex flex-wrap gap-2">
+      {goals.map((goal, index) => (
+        <div
+          key={index}
+          className="bg-gray-700 text-white px-3 py-1 rounded-full flex items-center space-x-2"
+        >
+          <span>{goal}</span>
+          <button
+            onClick={() => handleRemoveGoal(index)}
+            className="text-gray-400 hover:text-white"
+          >
+            <X className="h-4 w-4" />
+          </button>
         </div>
+      ))}
+    </div>
+  </div>
+
+  <div className="flex flex-col sm:flex-row gap-4">
+    {allStrategies?.length > 0 && (
+      <div className="flex-1 relative">
+        <p className="capitalize text-gray-200 mb-1">Select a Strategy</p>
+        <select
+          onChange={onChangeStrategyHandler}
+          className="block w-full px-4 py-3 pr-8 leading-tight bg-gray-700 border-gray-300 text-gray-200 rounded-md shadow-sm appearance-none focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+        >
+          <option className="capitalize" value="" disabled selected>
+            {selectedStrategy}
+          </option>
+          {allStrategies.map((strategy) => (
+            <option
+              className="capitalize"
+              key={strategy?.id}
+              value={strategy?.id}
+            >
+              {strategy?.niche}
+            </option>
+          ))}
+        </select>
+        <div className="absolute top-[2.5rem] right-0 flex items-center px-2 pointer-events-none">
+          <svg
+            className="w-4 h-4 text-gray-200"
+            fill="currentColor"
+            viewBox="0 0 20 20"
+          >
+            <path
+              fillRule="evenodd"
+              d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z"
+              clipRule="evenodd"
+            />
+          </svg>
+        </div>
+      </div>
+    )}
+    
+    {models && models?.length > 0 && (
+      <div className="flex-1 relative">
+        <p className="capitalize text-gray-200 mb-1">Select a model</p>
+        <select
+          disabled={generating}
+          onChange={handleModelChange}
+          className={`block appearance-none w-full bg-gray-700 border border-gray-300 hover:border-gray-400 px-4 py-2 pr-8 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-gray-200 ${generating ? 'opacity-50 cursor-not-allowed' : ''}`}
+        >
+          <option className="capitalize" value="" disabled selected>
+            {selectedModel}
+          </option>
+          {models.map((model) => (
+            <option key={model} value={model} className="py-1 capitalize">
+              {model}
+            </option>
+          ))}
+        </select>
+        <div className="pointer-events-none absolute top-[2.5rem] right-0 flex items-center px-2 text-gray-200">
+          <svg
+            className="h-4 w-4 fill-current"
+            xmlns="http://www.w3.org/2000/svg"
+            viewBox="0 0 20 20"
+          >
+            <path d="M9.293 12.95l.707.707L15.657 8l-1.414-1.414L10 10.828 5.757 6.586 4.343 8z" />
+          </svg>
+        </div>
+      </div>
+    )}
+  </div>
+
+  <div>
+    <button
+      onClick={handleGenerateStrategy}
+      disabled={generating}
+      className="w-full bg-purple-600 hover:bg-purple-700 text-white px-4 py-2 rounded-md flex items-center justify-center space-x-2 disabled:opacity-50"
+    >
+      {generating ? (
+        <>
+          <Loader className="h-5 w-5 animate-spin" />
+          <span>Generating Strategy...</span>
+        </>
+      ) : (
+        <>
+          <Calendar className="h-5 w-5" />
+          <span>Generate Content Strategy</span>
+        </>
+      )}
+    </button>
+  </div>
+</div>
       </div>
 
       
@@ -577,7 +577,7 @@ export function ContentStrategy() {
         <div className="space-y-4">
           <h2 className="text-xl font-bold text-white">Content Plans</h2>
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 ">
-            { plans.map((plan) => (
+            { plans.map((plan : any ) => (
                accounts.some((account) => account.platform === plan.platform) && <ContentPlanCard
                 key={plan.id}
                 plan={plan}

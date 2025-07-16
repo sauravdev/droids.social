@@ -363,7 +363,7 @@ export function Dashboard() {
           <StatCard
             icon={<TrendingUp className="w-5 h-5 sm:w-6 sm:h-6 text-purple-500" />}
             title="Growth Rate"
-            value="2.4%"
+            value="0%"
           />
         </div>
       }
@@ -390,7 +390,7 @@ export function Dashboard() {
           <StatCard
             icon={<TrendingUp className="w-5 h-5 sm:w-6 sm:h-6 text-purple-500" />}
             title="Growth Rate"
-            value="1.4%"
+            value="0%"
           />
         </div>
       }

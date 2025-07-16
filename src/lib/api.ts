@@ -119,8 +119,8 @@ export async function getSocialAccounts() {
 }
 export async function getSocialMediaAccountInfo(platform : string ) 
 {
-  const {data : {user}} = await supabase.auth.getUser() ; 
-  if(!user) throw new Error("No user found") ; 
+  const {data : {user} , error : error1} = await supabase.auth.getUser() ; 
+  if(!user) throw error1 ; 
 
   const {data : accountInfo  , error } =   await supabase
   .from('social_accounts')

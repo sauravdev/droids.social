@@ -18,8 +18,12 @@ async function fetchWithRetry(...args: Parameters<typeof fetch>): Promise<Respon
   for (let i = 0; i < MAX_RETRIES; i++) {
     try {
       const response = await fetch(...args);
-      
 
+      if(response.status == 422) 
+      {
+        console.log("response = " , response)  ; 
+        throw new Error(`User with this email already exists`);
+      }
       if (!response.ok) {
         throw new Error(`HTTP error! status: ${response.status}`);
       }
@@ -50,7 +54,7 @@ export const supabase = createClient(supabaseUrl, supabaseAnonKey, {
         return await fetchWithRetry(...args);
       } catch (err) {
         console.error('Supabase fetch error:', err);
-        throw err;
+        throw new Error("Network error");
       }
     }
   },

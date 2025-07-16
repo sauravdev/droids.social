@@ -11,7 +11,6 @@ import {
   RefreshCw,
   X,
   Calendar,
-  HardDriveUpload,
   Download,
   Image,
 } from "lucide-react";
@@ -26,7 +25,6 @@ import {
   generateVideoDescriptionUsingGrok,
   generateVideoPrompt,
   generateVideoPromptUsingGrok,
-  postGenerationApi,
 } from "../lib/openai";
 import { useContentPlan } from "../hooks/useContentPlan";
 import { supabase } from "../lib/supabase";
@@ -46,7 +44,6 @@ import { useProfile } from "../hooks/useProfile.js";
 import { useNavigate } from "react-router-dom";
 import { initializeTwitterAuth } from "../lib/twitter.js";
 import { useCustomModel } from "../hooks/useCustomModel.js";
-import { set } from "date-fns";
 interface HistoryItem {
   id: string;
   topic: string;
@@ -63,7 +60,6 @@ interface Success {
 }
 
 const formatOptions = ["text", "image", "video"];
-const sourceOptions = ["arxiv", "youtube", "twitter", "linkedin", "feedly"];
 
 export function AIGenerator() {
   const [topic, setTopic] = useState("");
@@ -99,6 +95,8 @@ export function AIGenerator() {
   const handleImageClick = () => {
     setShowPopup(true);
   };
+
+  
 
   const [currentPlanId, setCurrentPlanId] = useState<string>("");
 
@@ -152,6 +150,8 @@ export function AIGenerator() {
   const [selectedModel, setSelectedModel] = useState<string>("grok");
   const [customModels, setCustomModels] = useState<any>([]);
   const { loadCustomModels } = useCustomModel();
+
+
 
   const handleFileByExtension = (url: string) => {
     console.log("handle file by extension called ...");
@@ -528,7 +528,7 @@ export function AIGenerator() {
     }
   }
 
-  const videoGenPipeline = async (topic: string, userid : string) => {
+  const videoGenPipeline = async (topic: string, userid: string) => {
     // generate video generation prompt using model
     if (selectedModel == "grok") {
       const videoGenPrompt = await generateVideoPromptUsingGrok(topic);
@@ -567,7 +567,6 @@ export function AIGenerator() {
         setRefreshPage((prev) => !prev);
       }
     }
-
   };
 
   const handleImageGeneration = async () => {
@@ -664,7 +663,7 @@ export function AIGenerator() {
         setRefreshHeader((prev) => !prev);
       }
       setRefreshPage((prev) => !prev);
-    } catch (err) {
+    } catch (err: any) {
       setError("Something went wrong !. Please try again");
     } finally {
       setLoading(false);
@@ -717,7 +716,7 @@ export function AIGenerator() {
 
         if (formats.find((format) => format === "video")) {
           setLoading(true);
-          await videoGenPipeline(topic , user?.id) ;
+          await videoGenPipeline(topic, user?.id);
           setLoading(false);
           return;
         }
@@ -1021,7 +1020,7 @@ export function AIGenerator() {
       setShowScheduleModal(false);
     }
   };
-  const loadHistoryItem = (item: HistoryItem) => {
+  const loadHistoryItem = (item: any) => {
     console.log("current plan id = ", item?.id);
     setCurrentPlanId(item?.id);
     setTopic(item?.topic || "");
@@ -1029,7 +1028,10 @@ export function AIGenerator() {
     setSelectedPlatforms([item?.platform]);
     console.log("media inside history =- ", typeof item?.media);
     console.log("item media = ", item?.media);
-    item?.media && handleFileByExtension(item?.media);
+
+    if (item?.media) {
+      handleFileByExtension(item?.media);
+    }
 
     console.log("boolean flag keyword generated = ", keywordGenerated);
     setKeywordGenerated(item?.is_keyword);
@@ -1162,6 +1164,7 @@ export function AIGenerator() {
                   Enter Your niche topic
                 </label>
                 <input
+                  
                   type="text"
                   id="topic"
                   value={topic}
@@ -1209,7 +1212,7 @@ export function AIGenerator() {
                       Platform
                     </label>
                     <div className="flex flex-wrap gap-2">
-                      {platforms.map((platform: string, index) => {
+                      {platforms.map((platform: string, index: number) => {
                         return (
                           accounts.find(
                             (account) => account?.platform == platform
@@ -1224,7 +1227,7 @@ export function AIGenerator() {
                                   : "bg-gray-700 text-gray-300 hover:bg-gray-600"
                               } px-3 py-1 rounded-full text-xs sm:text-sm transition-colors`}
                               onClick={() => {
-                                setSelectedPlatforms((prev) => {
+                                setSelectedPlatforms((prev: any) => {
                                   return [platform];
                                 });
                               }}
@@ -1315,7 +1318,7 @@ export function AIGenerator() {
                       <option value="custom-models" disabled>
                         Custom Models
                       </option>
-                      {customModels.map((cm: any, index) => {
+                      {customModels.map((cm: any, index: number) => {
                         return (
                           <option key={index} value={cm?.id}>
                             {cm?.model_name}
@@ -1330,9 +1333,11 @@ export function AIGenerator() {
               <div className="mt-4">
                 <button
                   onClick={() => {
-                    keywordGenerated
-                      ? handleGenerate()
-                      : handleGenerateTopics(topic, selectedPlatforms[0]);
+                    if (keywordGenerated) {
+                      handleGenerate();
+                    } else {
+                      handleGenerateTopics(topic, selectedPlatforms[0]);
+                    }
                   }}
                   disabled={loading || generatingSuggestion}
                   className="w-full bg-purple-600 hover:bg-purple-700 text-white px-4 py-2 rounded-md flex items-center justify-center space-x-2 disabled:opacity-50 text-sm sm:text-base transition-colors"
@@ -1408,7 +1413,7 @@ export function AIGenerator() {
                       <label className="block text-sm font-medium text-gray-300 mb-2">
                         Generated Content
                       </label>
-                      <Editor initialContent={generatedContent} />
+                      <Editor initialContent={generatedContent} setGeneratedContent = {setGeneratedContent }  keywordGenerated={keywordGenerated} />
                     </div>
                   )}
 
