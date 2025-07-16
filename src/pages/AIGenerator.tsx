@@ -96,6 +96,8 @@ export function AIGenerator() {
     setShowPopup(true);
   };
 
+  
+
   const [currentPlanId, setCurrentPlanId] = useState<string>("");
 
   const [generatedVideo, setGeneratedVideo] = useState(null);
@@ -148,6 +150,8 @@ export function AIGenerator() {
   const [selectedModel, setSelectedModel] = useState<string>("grok");
   const [customModels, setCustomModels] = useState<any>([]);
   const { loadCustomModels } = useCustomModel();
+
+
 
   const handleFileByExtension = (url: string) => {
     console.log("handle file by extension called ...");
@@ -1409,7 +1413,7 @@ export function AIGenerator() {
                       <label className="block text-sm font-medium text-gray-300 mb-2">
                         Generated Content
                       </label>
-                      <Editor initialContent={generatedContent} />
+                      <Editor initialContent={generatedContent} setGeneratedContent = {setGeneratedContent }  keywordGenerated={keywordGenerated} />
                     </div>
                   )}
 

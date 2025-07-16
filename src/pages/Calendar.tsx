@@ -398,21 +398,17 @@ export function Calendar() {
   // Calculate date range for the visible calendar
   const startDate = startOfMonth(currentDate);
   const endDate = endOfMonth(currentDate);
-  
-  // Generate days for the current month view
+
   const daysInMonth = eachDayOfInterval({ start: startDate, end: endDate });
   
-  // Calculate the day of week (0-6) of the first day of the month
-  // This tells us how many empty cells we need before the first day
   const firstDayOfMonth = getDay(startDate);
   
-  // Create a function to generate calendar grid with proper alignment
+ 
   const generateCalendarGrid = () => {
     const weekdays = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
-    const weekdaysShort = ['S', 'M', 'T', 'W', 'T', 'F', 'S']; // For mobile
+    const weekdaysShort = ['S', 'M', 'T', 'W', 'T', 'F', 'S'];
     const grid = [];
-    
-    // Add weekday headers
+  
     weekdays.forEach((day, index) => {
       grid.push(
         <div key={`header-${day}`} className="text-center text-gray-400 text-xs sm:text-sm font-medium py-2">
@@ -421,8 +417,7 @@ export function Calendar() {
         </div>
       );
     });
-    
-    // Add empty cells for days before the first day of month
+   
     for (let i = 0; i < firstDayOfMonth; i++) {
       grid.push(
         <div key={`empty-${i}`} className="min-h-[60px] xs:min-h-[80px] sm:min-h-[100px] p-1 sm:p-2 rounded-lg bg-gray-800 opacity-50">
@@ -430,8 +425,7 @@ export function Calendar() {
         </div>
       );
     }
-    
-    // Add the actual days of the month
+  
     daysInMonth.forEach((date) => {
       const dayPosts = getPostsForDay(date);
       grid.push(

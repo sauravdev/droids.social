@@ -90,6 +90,9 @@ export function PostGenerator({
     );
   }, [plan]);
 
+
+  useEffect(() => {console.log('change detected in edtior data = ' ,  content ) }  ,  [content ])
+
   const generateVideoUsingKling = async (planId: any, prompt: string) => {
     setGeneratedVideo(null);
     try {
@@ -803,7 +806,7 @@ export function PostGenerator({
 
         {/* Editor Component */}
         <div className="self-end  ">
-          <Editor initialContent={content} />
+          <Editor initialContent={content} setGeneratedContent={setContent} keywordGenerated={plan?.is_keyword} />
         </div>
       </div>
 

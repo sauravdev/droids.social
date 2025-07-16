@@ -23,12 +23,16 @@ interface RichTextEditorProps {
   initialContent?: string;
   onChange?: (content: string) => void;
   placeholder?: string;
+  setGeneratedContent?: (content : string) => void 
+  keywordGenerated? : Boolean 
 }
 
 const Editor: React.FC<RichTextEditorProps> = ({
   initialContent = '',
   onChange = () => {} ,
-  placeholder = 'Start writing...'
+  placeholder = 'Start writing...' , 
+  setGeneratedContent  = (data : string)=> {} ,
+  keywordGenerated = false 
 }) => {
   const editorRef = useRef<HTMLDivElement>(null);
   const [showColorPicker, setShowColorPicker] = useState(false);
@@ -87,12 +91,20 @@ const Editor: React.FC<RichTextEditorProps> = ({
     '🚀', '🛸', '🚢', '⛵', '🚤', '🛥️', '🛳️', '⛴️', '🚂', '🚃'
   ];
 
+  // useEffect(() => {
+  //   if (editorRef.current && initialContent && !isInitialized) {
+  //     editorRef.current.innerHTML = initialContent;
+  //     setIsInitialized(true);
+  //   }
+  // }, [initialContent, isInitialized]);
   useEffect(() => {
-    if (editorRef.current && initialContent && !isInitialized) {
+    if(editorRef.current && initialContent) 
+    {
       editorRef.current.innerHTML = initialContent;
-      setIsInitialized(true);
+      setIsInitialized(true); 
     }
-  }, [initialContent, isInitialized]);
+  }, []);
+  
 
   // Save and restore cursor position
   const saveCursorPosition = () => {
@@ -125,6 +137,11 @@ const Editor: React.FC<RichTextEditorProps> = ({
 
   const handleInput = () => {
     if (editorRef.current) {
+      console.log("editor data = " , editorRef.current.innerHTML) ; 
+      if(!keywordGenerated) 
+      {
+        setGeneratedContent(editorRef.current.innerHTML) ; 
+      }
       onChange?.(editorRef.current.innerHTML);
     }
   };
@@ -519,9 +536,9 @@ const Editor: React.FC<RichTextEditorProps> = ({
           style={{ fontSize: '16px', lineHeight: '1.6' }}
           suppressContentEditableWarning={true}
           data-placeholder={placeholder}
-        >
-          {initialContent}
-        </div>
+        />
+          {/* {initialContent}
+        </div> */}
       </div>
 
       <style jsx>{`
