@@ -219,7 +219,7 @@ function PostModal({ refreshCalendar, setRefreshCalendar, post, onClose }: PostM
           })
           if (response?.status >= 400) {
             if (response?.status == 403) {
-              setError("Content already posted");
+              setError("Daily limit for posting exceeded!");
               setPosting(false);
               return;
             }
@@ -281,7 +281,7 @@ function PostModal({ refreshCalendar, setRefreshCalendar, post, onClose }: PostM
               Content
             </label>
             <div className="text-sm sm:text-base">
-              <Editor data={content} />
+              <Editor initialContent={content} />
             </div>
           </div>
 

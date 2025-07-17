@@ -86,7 +86,7 @@ export function AIGenerator() {
     state: false,
     message: "",
   });
-
+  const [loadingTopics , setLoadingTopics] = useState<boolean>(false) ; 
   const [isLoading, setIsLoading] = useState(false);
 
   const [generatedMedia, setGeneratedMedia] = useState(null);
@@ -95,6 +95,7 @@ export function AIGenerator() {
   const handleImageClick = () => {
     setShowPopup(true);
   };
+  const [generatedTopics , setGeneratedTopics] = useState([]) ; 
 
   
 
@@ -217,6 +218,7 @@ export function AIGenerator() {
           media: response?.[0]?.media,
           platform: response?.[0]?.platform,
           is_keyword: response?.[0]?.is_keyword,
+          generatedTopics : response?.[0]?.generatedTopics 
         });
         setHistory((prev) => {
           return response.map((item) => {
@@ -228,6 +230,7 @@ export function AIGenerator() {
               media: item?.media,
               platform: item?.platform,
               is_keyword: item?.is_keyword,
+              generatedTopics : response?.[0]?.generatedTopics 
             };
           });
         });
@@ -621,7 +624,7 @@ export function AIGenerator() {
       return;
     }
 
-    setLoading(true);
+    setLoadingTopics(true);
     setError(null);
     setGeneratedContent("");
 
@@ -639,6 +642,7 @@ export function AIGenerator() {
       status: "pending",
       scheduled_for: null,
       is_keyword: false,
+      generatedTopics : [] 
     });
     setRefreshPage((prev) => !prev);
 
@@ -646,16 +650,18 @@ export function AIGenerator() {
     try {
       if (selectedModel == "grok") {
         suggestion = await generateTopicsUsingGrok(topic, platform);
-        setGeneratedContent(suggestion);
+        // setGeneratedContent(suggestion);
       } else if (selectedModel == "openai") {
         suggestion = await generateTopics(topic, platform);
-        setGeneratedContent(suggestion);
+        // setGeneratedContent(suggestion);
       }
+      const topics = JSON.parse(suggestion) || [] ; 
+      setGeneratedTopics(topics || [] )
       if (createdPlan?.id) {
         await updateContentPlan(createdPlan?.id, {
           is_keyword: true,
           suggestion,
-          topic: "",
+          generatedTopics : topics
         });
       }
       if (profile?.tokens - 10 >= 0) {
@@ -666,7 +672,7 @@ export function AIGenerator() {
     } catch (err: any) {
       setError("Something went wrong !. Please try again");
     } finally {
-      setLoading(false);
+      setLoadingTopics(false);
       setGeneratingSuggestion(false);
     }
   };
@@ -1026,8 +1032,10 @@ export function AIGenerator() {
     setTopic(item?.topic || "");
     setGeneratedContent(item?.content || "");
     setSelectedPlatforms([item?.platform]);
+    setGeneratedTopics(item?.generatedTopics || [] ) ; 
     console.log("media inside history =- ", typeof item?.media);
     console.log("item media = ", item?.media);
+    
 
     if (item?.media) {
       handleFileByExtension(item?.media);
@@ -1173,12 +1181,11 @@ export function AIGenerator() {
                   placeholder="Niches like statistics, motivational quotes, and educational,etc content remain popular"
                 />
               </div>
-              <div className="flex gap-2 items-start flex-wrap ">
-                {keywordGenerated &&
-                  generatedContent &&
-                  Array.isArray(JSON.parse(generatedContent.trim()) || []) &&
-                  JSON.parse(generatedContent.trim() || [])?.length > 0 &&
-                  JSON.parse(generatedContent.trim()).map(
+              {Array.isArray(generatedTopics) && 
+                  generatedTopics?.length > 0  && <div className="flex gap-2 items-start flex-wrap ">
+                    <h1 className="text-sm font-medium text-gray-300">Select a topic below based on your above niche</h1>
+                    <div className="flex gap-2 items-start flex-wrap">{
+                  generatedTopics.map(
                     (item: string, index: number) => {
                       return (
                         <button
@@ -1199,8 +1206,8 @@ export function AIGenerator() {
                         </button>
                       );
                     }
-                  )}
-              </div>
+                  )}</div>
+              </div>}
 
               <div className="grid grid-cols-1 gap-4 w-full">
                 {accounts.length > 0 && (
@@ -1330,19 +1337,16 @@ export function AIGenerator() {
                 </div>
               </div>
 
-              <div className="mt-4">
+              <div className="flex flex-col md:flex md:flex-row gap-2 ">
+              <div className="flex-1 mt-4">
                 <button
                   onClick={() => {
-                    if (keywordGenerated) {
-                      handleGenerate();
-                    } else {
-                      handleGenerateTopics(topic, selectedPlatforms[0]);
-                    }
+                    handleGenerateTopics(topic, selectedPlatforms[0]);
                   }}
                   disabled={loading || generatingSuggestion}
                   className="w-full bg-purple-600 hover:bg-purple-700 text-white px-4 py-2 rounded-md flex items-center justify-center space-x-2 disabled:opacity-50 text-sm sm:text-base transition-colors"
                 >
-                  {loading || generatingSuggestion ? (
+                  {loadingTopics ? (
                     <>
                       <Loader className="h-4 w-4 sm:h-5 sm:w-5 animate-spin" />
                       <span>Generating...</span>
@@ -1350,12 +1354,33 @@ export function AIGenerator() {
                   ) : (
                     <>
                       <Sparkles className="h-4 w-4 sm:h-5 sm:w-5" />
-                      <span>Generate Content</span>
+                      <span>{"Generate Topics"}</span>
                     </>
                   )}
                 </button>
               </div>
-
+              <div className="flex-1 mt-4">
+                <button
+                  onClick={() => {
+                    handleGenerate();
+                  }}
+                  disabled={loadingTopics }
+                  className={`w-full bg-purple-600 hover:bg-purple-700 text-white px-4 py-2 rounded-md flex items-center justify-center space-x-2 disabled:opacity-50 text-sm sm:text-base transition-colors `}
+                >
+                  {loading ? (
+                    <>
+                      <Loader className="h-4 w-4 sm:h-5 sm:w-5 animate-spin" />
+                      <span>Generating...</span>
+                    </>
+                  ) : (
+                    <>
+                      <Sparkles className="h-4 w-4 sm:h-5 sm:w-5" />
+                      <span>{"Generate Content"}</span>
+                    </>
+                  )}
+                </button>
+              </div>
+              </div>
               {
                 <div className="relative space-y-4">
                   {generatedMedia && generatedImage && (
@@ -1408,7 +1433,7 @@ export function AIGenerator() {
                       </div>
                     </div>
                   )}
-                  {generatedContent && (
+                  {!keywordGenerated && generatedContent && (
                     <div>
                       <label className="block text-sm font-medium text-gray-300 mb-2">
                         Generated Content
@@ -1417,7 +1442,7 @@ export function AIGenerator() {
                     </div>
                   )}
 
-                  {generatedContent && (
+                  {!keywordGenerated && generatedContent && (
                     <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-3">
                       <button
                         onClick={() => {
