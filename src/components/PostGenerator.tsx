@@ -61,7 +61,6 @@ export function PostGenerator({
     message: "",
   });
 
-
   const { setRefreshHeader } = useAuth();
 
   const navigateTo = useNavigate();
@@ -74,14 +73,21 @@ export function PostGenerator({
   const [generatedVideo, setGeneratedVideo] = useState(null);
 
   const [selectedTopic, setSelectedTopic] = useState<string>("");
+  const [loadingTopics , setLoadingTopics] = useState<boolean>(false) ; 
 
   const { selectedModel } = useAuth();
-
-
+  const [generatedTopics, setGeneratedTopics] = useState([]);
+  
 
   useEffect(() => {
     console.log("current plan = ", plan);
     setGeneratedImage(plan?.media || "");
+    setGeneratedTopics(plan?.generatedTopics || []);
+    if(Array.isArray(plan?.generatedTopics) && plan?.generatedTopics?.length > 0  ) 
+    {
+      setSelectedTopic(plan?.topic); 
+    }
+    console.log("--------------------------- > ", plan?.generatedTopics);
   }, []);
 
   useEffect(() => {
@@ -90,8 +96,9 @@ export function PostGenerator({
     );
   }, [plan]);
 
-
-  useEffect(() => {console.log('change detected in edtior data = ' ,  content ) }  ,  [content ])
+  useEffect(() => {
+    console.log("change detected in edtior data = ", content);
+  }, [content]);
 
   const generateVideoUsingKling = async (planId: any, prompt: string) => {
     setGeneratedVideo(null);
@@ -295,7 +302,6 @@ export function PostGenerator({
   };
 
   const handleGenerateTopics = async (topic: string, platform: string) => {
-
     
     if (!topic) {
       setError("Please enter a topic");
@@ -310,8 +316,9 @@ export function PostGenerator({
     }
 
     setSuccess({ state: false, message: "" });
-    setLoading(true);
+    
     setError(null);
+    setLoadingTopics(true) ; 
 
     const {
       data: { user },
@@ -327,11 +334,17 @@ export function PostGenerator({
           ...plan,
           suggestion,
         };
-        await updatePlan(newPlan.id, { suggestion, is_keyword: true });
+        const topics = JSON.parse(suggestion) || [];
+        setGeneratedTopics(topics || []);
+        await updatePlan(newPlan.id, {
+          
+          is_keyword: true,
+          generatedTopics: topics,
+        });
         setSelectedPlan((prev) => {
           return {
             ...prev,
-            suggestion,
+            generatedTopics: topics,
           };
         });
 
@@ -341,21 +354,27 @@ export function PostGenerator({
 
         const newPlan = {
           ...plan,
-          suggestion,
+          
         };
 
-        await updatePlan(newPlan.id, { suggestion, is_keyword: true });
+        const topics = JSON.parse(suggestion) || [];
+        setGeneratedTopics(topics || []);
+        await updatePlan(newPlan.id, {
+          
+          is_keyword: true,
+          generatedTopics: topics,
+        });
         setSelectedPlan((prev) => {
           return {
             ...prev,
-            suggestion,
+            
+            generatedTopics: topics,
           };
         });
-
         console.log("response from topic generation api = ", suggestion);
       }
 
-      setContent(suggestion);
+     
       if (profile?.tokens - 10 >= 0) {
         await updateProfile({ tokens: profile?.tokens - 10 });
         setRefreshHeader((prev) => !prev);
@@ -364,8 +383,9 @@ export function PostGenerator({
       setError("Something went wrong !. Please try again");
       removeErrorToast();
     } finally {
-      setLoading(false);
+      
       setSelectedTopic("");
+      setLoadingTopics(false) ; 
       // setGeneratingSuggestion(false);
     }
   };
@@ -443,7 +463,7 @@ export function PostGenerator({
     }
   };
 
-  const videoGenPipeline = async ( currentPlanId : string , topic  : string) => {
+  const videoGenPipeline = async (currentPlanId: string, topic: string) => {
     // generate video generation prompt using model
 
     if (selectedModel == "grok") {
@@ -460,7 +480,7 @@ export function PostGenerator({
           return {
             ...prev,
             suggestion: content,
-            is_keyword : false 
+            is_keyword: false,
           };
         });
         await generateVideoUsingKling(plan?.id, videoGenPrompt);
@@ -484,7 +504,7 @@ export function PostGenerator({
           return {
             ...prev,
             suggestion: content,
-            is_keyword : false 
+            is_keyword: false,
           };
         });
         await generateVideoUsingKling(plan?.id, videoGenPrompt);
@@ -494,7 +514,6 @@ export function PostGenerator({
         }
       }
     }
-
   };
 
   const handleGenerate = async () => {
@@ -504,7 +523,12 @@ export function PostGenerator({
       return;
     }
 
-    if (!selectedTopic) {
+    if (!selectedTopic && generatedTopics?.length === 0 ) {
+      setError("Please generate a topic !");
+      removeErrorToast();
+      return;
+    }
+    if (!selectedTopic && generatedTopics?.length >= 0 ) {
       setError("Please select a topic !");
       removeErrorToast();
       return;
@@ -513,9 +537,9 @@ export function PostGenerator({
     setError(null);
     let publicUrl: string = "";
     if (plan?.format === "video") {
-      await videoGenPipeline(plan?.id , selectedTopic);
+      await videoGenPipeline(plan?.id, selectedTopic);
       setLoading(false);
-      return ;
+      return;
     }
     if (plan?.format === "image") {
       console.log("image ..... ");
@@ -536,6 +560,7 @@ export function PostGenerator({
       const newPlan = {
         ...plan,
         suggestion: generated,
+        topic : selectedTopic
       };
       console.log("generated content = ", generated);
 
@@ -544,6 +569,7 @@ export function PostGenerator({
           suggestion: generated,
           media: publicUrl,
           is_keyword: false,
+          topic : selectedTopic
         });
         console.log("media = ", publicUrl);
         setSelectedPlan((prev: any) => {
@@ -551,17 +577,20 @@ export function PostGenerator({
             ...prev,
             suggestion: generated,
             media: publicUrl,
+            topic : selectedTopic
           };
         });
       } else {
         await updatePlan(newPlan.id, {
           suggestion: generated,
           is_keyword: false,
+          topic : selectedTopic
         });
         setSelectedPlan((prev: any) => {
           return {
             ...prev,
             suggestion: generated,
+            topic : selectedTopic
           };
         });
       }
@@ -573,8 +602,6 @@ export function PostGenerator({
     } catch (err: any) {
       setError(err.message);
       removeErrorToast();
-
-      
     } finally {
       setLoading(false);
     }
@@ -643,7 +670,11 @@ export function PostGenerator({
 
       {/* Tone Selection */}
       <div className="space-y-1 sm:space-y-2">
-        <label className={`block text-xs sm:text-sm font-medium text-gray-300 ${loading ? 'cursor-not-allowed'  : "cursor-pointer"}`}>
+        <label
+          className={`block text-xs sm:text-sm font-medium text-gray-300 ${
+            loading ? "cursor-not-allowed" : "cursor-pointer"
+          }`}
+        >
           Tone
         </label>
         <select
@@ -659,20 +690,20 @@ export function PostGenerator({
           <option value="educational">Educational</option>
         </select>
       </div>
-
-      <div className="flex gap-2 items-start flex-wrap ">
-        {plan?.is_keyword &&
-          Array.isArray(JSON.parse(plan?.suggestion.trim()) || []) &&
-          JSON.parse(plan?.suggestion.trim() || [])?.length > 0 &&
-          JSON.parse(plan?.suggestion.trim()).map(
-            (item: string, index: number) => {
+      {Array.isArray(generatedTopics) && generatedTopics?.length > 0 && (
+        <div className="flex flex-col gap-2  ">
+          <h1 className="text-sm font-medium text-gray-300">
+            Select a topic below based on your above niche
+          </h1>
+          <div className="flex gap-2 items-start flex-wrap">
+            {generatedTopics.map((item: string, index: number) => {
               return (
                 <button
                   title={item}
                   className={`${
                     selectedTopic === item
                       ? "bg-purple-600 text-white"
-                      : "bg-gray-900 text-gray-300 hover:bg-gray-600"
+                      : "bg-gray-700 text-gray-300 hover:bg-gray-600"
                   } px-3 py-1 rounded-full text-xs sm:text-sm transition-colors`}
                   onClick={() => {
                     setSelectedTopic(item);
@@ -682,9 +713,37 @@ export function PostGenerator({
                   {item?.length > 10 ? item.substring(0, 10) + "..." : item}
                 </button>
               );
-            }
-          )}
-      </div>
+            })}
+          </div>
+        </div>
+      )}
+
+      <button
+        // onClick={handleGenerate}
+        onClick={() => {
+          handleGenerateTopics(plan?.suggestion, plan?.platform);
+        }}
+        disabled={loadingTopics}
+        className=" w-full  px-3 py-2 bg-purple-600 hover:bg-purple-700 disabled:opacity-50 disabled:hover:bg-purple-600 text-white text-xs sm:text-sm font-medium rounded-lg flex items-center justify-center gap-1.5 sm:gap-2 transition-colors duration-200"
+        title="Generate new content"
+      >
+        {loadingTopics ? (
+          <>
+            <Loader className="h-3 w-3 sm:h-4 sm:w-4 animate-spin flex-shrink-0" />
+            <span className="hidden xs:inline">Generating...</span>
+            <span className="xs:hidden">Gen...</span>
+          </>
+        ) : (
+          <>
+            <img
+              className="h-3 w-3 sm:h-4 sm:w-4 flex-shrink-0"
+              src={aiMagic}
+              alt=""
+            />
+            <span>Generate Topics</span>
+          </>
+        )}
+      </button>
 
       {/* Generated Content Section */}
       <div className=" min-h-0">
@@ -716,7 +775,6 @@ export function PostGenerator({
               <span>Preview Video</span>
             </button>
           )}
-
         {/* Video Popup */}
         {showVideoPopup && (
           <div className="fixed inset-0 bg-black bg-opacity-75 flex items-center justify-center z-50 p-2 sm:p-4">
@@ -805,9 +863,15 @@ export function PostGenerator({
         )}
 
         {/* Editor Component */}
-        <div className="self-end  ">
-          <Editor initialContent={content} setGeneratedContent={setContent} keywordGenerated={plan?.is_keyword} />
-        </div>
+        {
+          <div className="self-end  ">
+            <Editor
+              initialContent={content}
+              setGeneratedContent={setContent}
+              keywordGenerated={plan?.is_keyword}
+            />
+          </div>
+        }
       </div>
 
       {/* Action Buttons */}
@@ -815,11 +879,12 @@ export function PostGenerator({
         <button
           // onClick={handleGenerate}
           onClick={() => {
-            if (plan?.is_keyword) {
-              handleGenerate();
-            } else {
-              handleGenerateTopics(plan?.suggestion, plan?.platform);
-            }
+            // if (plan?.is_keyword) {
+            //   handleGenerate();
+            // } else {
+            //   handleGenerateTopics(plan?.suggestion, plan?.platform);
+            // }
+            handleGenerate();
           }}
           disabled={loading}
           className="w-full sm:w-auto sm:flex-1 px-3 py-2 bg-purple-600 hover:bg-purple-700 disabled:opacity-50 disabled:hover:bg-purple-600 text-white text-xs sm:text-sm font-medium rounded-lg flex items-center justify-center gap-1.5 sm:gap-2 transition-colors duration-200"
@@ -842,6 +907,8 @@ export function PostGenerator({
             </>
           )}
         </button>
+
+        
 
         <button
           onClick={postContentHandler}

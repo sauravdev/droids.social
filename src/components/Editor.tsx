@@ -104,7 +104,7 @@ const Editor: React.FC<RichTextEditorProps> = ({
       editorRef.current.innerHTML = initialContent;
       setIsInitialized(true); 
     }
-  }, []);
+  }, [initialContent]);
   
 
   // Save and restore cursor position

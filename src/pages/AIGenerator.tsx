@@ -1446,9 +1446,7 @@ export function AIGenerator() {
                     <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-3">
                       <button
                         onClick={() => {
-                          keywordGenerated
-                            ? handleGenerate()
-                            : handleGenerateTopics(topic, selectedPlatforms[0]);
+                          handleGenerate()
                         }}
                         className="bg-purple-600 hover:bg-purple-700 text-white px-4 py-2 rounded-md flex items-center justify-center space-x-2 text-sm sm:text-base transition-colors"
                       >
