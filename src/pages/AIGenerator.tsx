@@ -765,6 +765,84 @@ export function AIGenerator() {
         setGeneratingSuggestion(false);
       }
     }
+    else {
+      const {
+        data: { user }
+      } = await supabase.auth.getUser();
+      if (!user) throw new Error("No user found");
+      const createdPlan = await createPlan({
+        profile_id: user.id,
+        strategy_id: null,
+        platform: selectedPlatforms[0],
+        format: formats[0],
+        topic,
+        suggestion: "",
+        status: "pending",
+        scheduled_for: null,
+        is_keyword: false,
+        generatedTopics : [] 
+      });
+      setRefreshPage((prev) => !prev);
+      try {
+        const {
+          data: { user },
+        } = await supabase.auth.getUser();
+        if (!user) throw new Error("No user found");
+
+        console.log("created plan in ai = ", currentPlanId);
+        console.log("format = ", formats);
+
+        if (formats.find((format) => format === "image")) {
+          await handleImageGeneration();
+        }
+
+        if (formats.find((format) => format === "video")) {
+          setLoading(true);
+          await videoGenPipeline(topic, user?.id);
+          setLoading(false);
+          return;
+        }
+        let content = "";
+        if (selectedModel == "grok") {
+          const response = await generatePostUsingGrok(
+            topic,
+            selectedPlatforms[0],
+            user?.id,
+            createdPlan?.id
+          );
+
+          console.log("content = ", response);
+          content = response;
+        } else if (selectedModel == "openai") {
+          content = await generatePost(topic, selectedPlatforms[0]);
+        } else {
+          content = await generatePostFromCustomModel(
+            topic,
+            selectedPlatforms[0],
+            selectedModel
+          );
+        }
+        await updateContentPlan(createdPlan?.id, {
+          suggestion: content,
+          topic,
+          is_keyword: false,
+        });
+        setGeneratedContent(content);
+        if (profile?.tokens - 10 >= 0) {
+          await updateProfile({ tokens: profile?.tokens - 10 });
+          setRefreshHeader((prev) => !prev);
+        }
+        setRefreshPage((prev) => !prev);
+      } catch (err: any) {
+        setError(err.message);
+      } finally {
+        setLoading(false);
+        setGeneratingSuggestion(false);
+      }
+      
+
+    }
+  
   };
 
   const handleSave = async (platform: string) => {
