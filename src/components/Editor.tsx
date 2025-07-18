@@ -91,6 +91,7 @@ const Editor: React.FC<RichTextEditorProps> = ({
     '🚀', '🛸', '🚢', '⛵', '🚤', '🛥️', '🛳️', '⛴️', '🚂', '🚃'
   ];
 
+ 
   // useEffect(() => {
   //   if (editorRef.current && initialContent && !isInitialized) {
   //     editorRef.current.innerHTML = initialContent;
@@ -244,6 +245,8 @@ const Editor: React.FC<RichTextEditorProps> = ({
     }
   };
 
+  
+
   const ToolbarButton: React.FC<{
     onClick: () => void;
     icon: React.ReactNode;
@@ -268,6 +271,7 @@ const Editor: React.FC<RichTextEditorProps> = ({
     title: string;
   }> = ({ show, onClose, onColorSelect, title }) => {
     if (!show) return null;
+
 
     return (
       <div className="absolute top-full left-0 mt-1 bg-white border rounded-lg shadow-lg p-3 z-50">
@@ -358,7 +362,7 @@ const Editor: React.FC<RichTextEditorProps> = ({
   }, []);
 
   return (
-    <div className="max-w-4xl   mx-auto bg-white rounded-lg shadow-lg overflow-hidden">
+    <div className="  mx-auto bg-white rounded-lg shadow-lg overflow-hidden">
       {/* Toolbar */}
       <div className="border-b bg-gray-50 p-3">
         <div className="flex flex-wrap items-center gap-1">

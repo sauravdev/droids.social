@@ -117,6 +117,18 @@ function CarouselGenerator() {
     message: "",
   });
   const navigateTo = useNavigate();
+  const [createdByText, setCreatedByText] = useState("Created by");
+  const [authorName, setAuthorName] = useState(profile?.full_name || "User");
+
+  // Handle content changes
+  const handleCreatedByChange = (e) => {
+    setCreatedByText(e.target.textContent);
+  };
+
+  const handleAuthorNameChange = (e) => {
+    setAuthorName(e.target.textContent);
+  };
+
 
   const removeToast = () => {
     setTimeout(() => {
@@ -243,7 +255,16 @@ emoji: A single, relevant emoji as a string (e.g., "🚀")`;
       const newSlides = await Promise.all(
         slideContents.slice(0, 5).map(async (slide, index) => {
           const image = await generateImg(
-            `An artistic, high-resolution illustration depicting ${slide.header}, inspired by the theme of ${topic}. The image should be vivid, meaningful, and emotionally engaging. Avoid any text, letters, or symbols. Focus on rich colors, balanced composition, and clear visual storytelling. Use a cinematic, editorial style.`
+            `Create an artistic, high-resolution illustration representing the concept: "${slide.header}", rooted in the broader theme of "${topic}". The artwork should evoke emotion and meaning through vivid color, strong composition, and symbolic visual storytelling.
+
+Guidelines:
+- Style: Cinematic and editorial; magazine-quality aesthetics
+- Composition: Balanced, with a clear focal point and depth
+- Visuals: Avoid all text, lettering, or symbols
+- Color: Rich, saturated tones with thoughtful contrast
+- Details: Include metaphorical or symbolic elements that reflect "${slide.header}"
+
+Do **not** include watermarks, logos, or text overlays. Make the image visually striking and contextually aligned with the theme "${topic}".`
           );
 
           return {
@@ -397,7 +418,7 @@ emoji: A single, relevant emoji as a string (e.g., "🚀")`;
   //   }
   // };
 
-    const exportToPDF = async () => {
+  const exportToPDF = async () => {
     setSuccess({ state: false, message: "" });
     if (slides.length === 0) {
       setError("No slides to export");
@@ -428,8 +449,8 @@ emoji: A single, relevant emoji as a string (e.g., "🚀")`;
         pdf.addImage(imgData, "JPEG", 0, 0, 1080, 1350);
 
         // Add clickable link overlay
-        const links = slide.querySelectorAll('a[href]');
-        links.forEach(link => {
+        const links = slide.querySelectorAll("a[href]");
+        links.forEach((link) => {
           const rect = link.getBoundingClientRect();
           const slideRect = slide.getBoundingClientRect();
 
@@ -463,7 +484,6 @@ emoji: A single, relevant emoji as a string (e.g., "🚀")`;
     }
   };
 
-  
   const handleInstagramExport = async () => {
     setSuccess({ state: false, message: "" });
     if (slides.length === 0) {
@@ -994,20 +1014,32 @@ emoji: A single, relevant emoji as a string (e.g., "🚀")`;
 
                   {/* Created by - Extreme Right */}
                   <div className="capitalize tracking-widest flex-shrink-0">
-                    Created by{" "}
+                    <span
+                      contentEditable={true}
+                      suppressContentEditableWarning={true}
+                      className="outline-none  focus:ring-1 focus:ring-blue-300 rounded px-1"
+                      onBlur={handleCreatedByChange}
+                      // dangerouslySetInnerHTML={{ __html: createdByText }}
+                    >
+                      {createdByText}
+                    </span>{" "}
                     <a
                       href={linkedinProfile}
                       target="_blank"
                       rel="noopener noreferrer"
-                      className="text-blue-600 hover:text-blue-800 underline cursor-pointer"
+                      className="text-blue-600 hover:text-blue-800 underline cursor-pointer outline-none  focus:ring-1 focus:ring-blue-300 rounded px-1"
                       style={{
                         color: "#2563eb",
                         textDecoration: "underline",
                         WebkitPrintColorAdjust: "exact",
                         colorAdjust: "exact",
                       }}
+                      contentEditable={true}
+                      onBlur={handleAuthorNameChange}
+                      suppressContentEditableWarning={true}
+                      // dangerouslySetInnerHTML={{ __html: authorName }}
                     >
-                      {profile?.full_name || "User"}
+                      {authorName}
                     </a>
                   </div>
                 </div>
@@ -1016,7 +1048,7 @@ emoji: A single, relevant emoji as a string (e.g., "🚀")`;
           </div>
 
           {generatedCaption && (
-            <div className="flex flex-col gap-4 my-4 ">
+            <div className="flex flex-col gap-4 my-4 w-full ">
               <h2 className="capitalize text-2xl text-white ">
                 Caption For <span>{platform}</span>
               </h2>
@@ -1143,4 +1175,4 @@ emoji: A single, relevant emoji as a string (e.g., "🚀")`;
   );
 }
 
-export default CarouselGenerator ;
+export default CarouselGenerator;

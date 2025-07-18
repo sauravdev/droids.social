@@ -370,6 +370,8 @@ export async function generateImage(prompt: string) {
     prompt: prompt,
     n: 1,
     size: "1024x1024",
+    quality: "hd",
+    style: "vivid",
   });
 
   return response.data[0].url;
