@@ -13,6 +13,7 @@ import {
   Calendar,
   Download,
   Image,
+  Plus,
 } from "lucide-react";
 import {
   generateImage,
@@ -70,7 +71,7 @@ export function AIGenerator() {
   ]);
   const [formats, setFormats] = useState<string[]>(["text"]);
   const [selectedPlatforms, setSelectedPlatforms] = useState<any>([]);
-  // const [platform , setPlatform ] = useState<string>("instagram")
+  const [storedTopic  , setStoredTopic] = useState("") ; 
   const [sources, setSources] = useState<string[]>([]);
   const [generatedContent, setGeneratedContent] = useState("");
   const [loading, setLoading] = useState(false);
@@ -86,6 +87,7 @@ export function AIGenerator() {
     state: false,
     message: "",
   });
+  const [isGeneratingNewPlan,setIsGeneratingNewPlan] = useState<boolean>(false) ; 
   const [loadingTopics , setLoadingTopics] = useState<boolean>(false) ; 
   const [isLoading, setIsLoading] = useState(false);
 
@@ -230,7 +232,7 @@ export function AIGenerator() {
               media: item?.media,
               platform: item?.platform,
               is_keyword: item?.is_keyword,
-              generatedTopics : response?.[0]?.generatedTopics 
+              generatedTopics : item?.generatedTopics 
             };
           });
         });
@@ -269,6 +271,7 @@ export function AIGenerator() {
             media: response?.[0]?.media,
             platform: response?.[0]?.platform,
             is_keyword: response?.[0]?.is_keyword,
+            generatedTopics : response?.[0]?.generatedTopics
           });
           setHistory((prev) => {
             return response.map((item) => {
@@ -280,6 +283,7 @@ export function AIGenerator() {
                 media: item?.media,
                 platform: item?.platform,
                 is_keyword: item?.is_keyword,
+                generatedTopics : item?.generatedTopics
               };
             });
           });
@@ -607,6 +611,8 @@ export function AIGenerator() {
   };
 
   const handleGenerateTopics = async (topic: string, platform: string) => {
+    console.log("topic generation called ... ")  ; 
+    console.log("current plan id = " , currentPlanId) ; 
     setSuccess({ state: false, message: "" });
     if (profile?.tokens - 10 < 0) {
       setError("You do not have enough tokens for post generation ..");
@@ -628,52 +634,87 @@ export function AIGenerator() {
     setError(null);
     setGeneratedContent("");
 
-    const {
-      data: { user },
-    } = await supabase.auth.getUser();
-    if (!user) throw new Error("No user found");
-    const createdPlan = await createPlan({
-      profile_id: user.id,
-      strategy_id: null,
-      platform: selectedPlatforms[0],
-      format: formats[0],
-      topic,
-      suggestion: "",
-      status: "pending",
-      scheduled_for: null,
-      is_keyword: false,
-      generatedTopics : [] 
-    });
-    setRefreshPage((prev) => !prev);
+    if(currentPlanId) 
+    {
+      let suggestion = "";
+      try {
+        if (selectedModel == "grok") {
+          suggestion = await generateTopicsUsingGrok(topic, platform);
+          // setGeneratedContent(suggestion);
+        } else if (selectedModel == "openai") {
+          suggestion = await generateTopics(topic, platform);
+          // setGeneratedContent(suggestion);
+        }
+        const topics = JSON.parse(suggestion) || [] ; 
+        setGeneratedTopics(topics || [] )
+        if (currentPlanId) {
+          await updateContentPlan(currentPlanId, {
+            is_keyword: true,
+            suggestion,
+            generatedTopics : topics
+          });
+        }
+        if (profile?.tokens - 10 >= 0) {
+          await updateProfile({ tokens: profile?.tokens - 10 });
+          setRefreshHeader((prev) => !prev);
+        }
+        setRefreshPage((prev) => !prev);
+      } catch (err: any) {
+        setError("Something went wrong !. Please try again");
+      } finally {
+        setLoadingTopics(false);
+        setGeneratingSuggestion(false);
+      }
 
-    let suggestion = "";
-    try {
-      if (selectedModel == "grok") {
-        suggestion = await generateTopicsUsingGrok(topic, platform);
-        // setGeneratedContent(suggestion);
-      } else if (selectedModel == "openai") {
-        suggestion = await generateTopics(topic, platform);
-        // setGeneratedContent(suggestion);
-      }
-      const topics = JSON.parse(suggestion) || [] ; 
-      setGeneratedTopics(topics || [] )
-      if (createdPlan?.id) {
-        await updateContentPlan(createdPlan?.id, {
-          is_keyword: true,
-          suggestion,
-          generatedTopics : topics
-        });
-      }
-      if (profile?.tokens - 10 >= 0) {
-        await updateProfile({ tokens: profile?.tokens - 10 });
-        setRefreshHeader((prev) => !prev);
-      }
+    }
+    else {
+      const {
+        data: { user },
+      } = await supabase.auth.getUser();
+      if (!user) throw new Error("No user found");
+      const createdPlan = await createPlan({
+        profile_id: user.id,
+        strategy_id: null,
+        platform: selectedPlatforms[0],
+        format: formats[0],
+        topic,
+        suggestion: "",
+        status: "pending",
+        scheduled_for: null,
+        is_keyword: false,
+        generatedTopics : [] 
+      });
       setRefreshPage((prev) => !prev);
-    } catch (err: any) {
-      setError("Something went wrong !. Please try again");
-    } finally {
-      setLoadingTopics(false);
-      setGeneratingSuggestion(false);
+  
+      let suggestion = "";
+      try {
+        if (selectedModel == "grok") {
+          suggestion = await generateTopicsUsingGrok(topic, platform);
+          // setGeneratedContent(suggestion);
+        } else if (selectedModel == "openai") {
+          suggestion = await generateTopics(topic, platform);
+          // setGeneratedContent(suggestion);
+        }
+        const topics = JSON.parse(suggestion) || [] ; 
+        setGeneratedTopics(topics || [] )
+        if (createdPlan?.id) {
+          await updateContentPlan(createdPlan?.id, {
+            is_keyword: true,
+            suggestion,
+            generatedTopics : topics
+          });
+        }
+        if (profile?.tokens - 10 >= 0) {
+          await updateProfile({ tokens: profile?.tokens - 10 });
+          setRefreshHeader((prev) => !prev);
+        }
+        setRefreshPage((prev) => !prev);
+      } catch (err: any) {
+        setError("Something went wrong !. Please try again");
+      } finally {
+        setLoadingTopics(false);
+        setGeneratingSuggestion(false);
+      }
     }
   };
 
@@ -1105,12 +1146,14 @@ export function AIGenerator() {
     }
   };
   const loadHistoryItem = (item: any) => {
+    console.log("loaded history item = " , item ) ; 
     console.log("current plan id = ", item?.id);
     setCurrentPlanId(item?.id);
     setTopic(item?.topic || "");
     setGeneratedContent(item?.content || "");
     setSelectedPlatforms([item?.platform]);
     setGeneratedTopics(item?.generatedTopics || [] ) ; 
+    setStoredTopic(item?.topic) ;
     console.log("media inside history =- ", typeof item?.media);
     console.log("item media = ", item?.media);
     
@@ -1181,6 +1224,38 @@ export function AIGenerator() {
     }
   };
 
+  const handleNewPlanCreation = async () => {
+    setIsGeneratingNewPlan(true) ;
+    try{
+    const {
+      data: { user },
+    } = await supabase.auth.getUser();
+    if (!user) throw new Error("No user found");
+    const createdPlan = await createPlan({
+      profile_id: user.id,
+      strategy_id: null,
+      platform: selectedPlatforms[0],
+      format: formats[0],
+      topic : "",
+      suggestion: "New Plan",
+      status: "pending",
+      scheduled_for: null,
+      is_keyword: false,
+      generatedTopics : [] 
+    });
+    setCurrentPlanId(createdPlan?.id) ; 
+    setRefreshPage(prev=>!prev) ; 
+    }
+    catch(err) 
+    {
+      console.log(err) ;
+      setError('Something went wrong') ;
+    }
+    finally{
+      setIsGeneratingNewPlan(false) ;
+    }
+  }
+
   if (isLoading) {
     return (
       <div className="flex items-center justify-center min-h-screen">
@@ -1190,8 +1265,8 @@ export function AIGenerator() {
   }
   return (
     <div className="max-w-4xl mx-auto ">
-      <h1 className="text-xl sm:text-2xl md:text-3xl font-bold text-white mb-6 sm:mb-8">
-        Custom Post generator
+      <h1 className="text-xl flex items-center gap-4  sm:text-2xl md:text-3xl font-bold text-white mb-6 sm:mb-8">
+        Custom Post generator <button disabled={isGeneratingNewPlan} onClick={handleNewPlanCreation} title="Create new empty plan" className={`${isGeneratingNewPlan ? 'cursor-not-allowed' : "cursor-pointer"}`}><Plus className="h-6 w-6 font-bold" /></button> 
       </h1>
 
       {showVideoPopup && generatedVideo && generatedMedia && (
@@ -1511,7 +1586,7 @@ export function AIGenerator() {
                       </div>
                     </div>
                   )}
-                  {!keywordGenerated && generatedContent && (
+                  {storedTopic && !keywordGenerated && generatedContent && (
                     <div>
                       <label className="block text-sm font-medium text-gray-300 mb-2">
                         Generated Content
@@ -1520,7 +1595,7 @@ export function AIGenerator() {
                     </div>
                   )}
 
-                  {!keywordGenerated && generatedContent && (
+                  {storedTopic && !keywordGenerated && generatedContent && (
                     <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-3">
                       <button
                         onClick={() => {

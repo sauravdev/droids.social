@@ -91,21 +91,40 @@ const Editor: React.FC<RichTextEditorProps> = ({
     '🚀', '🛸', '🚢', '⛵', '🚤', '🛥️', '🛳️', '⛴️', '🚂', '🚃'
   ];
 
- 
-  // useEffect(() => {
-  //   if (editorRef.current && initialContent && !isInitialized) {
-  //     editorRef.current.innerHTML = initialContent;
-  //     setIsInitialized(true);
-  //   }
-  // }, [initialContent, isInitialized]);
+  // Track the last content that was set to avoid unnecessary updates
+  const lastSetContentRef = useRef<string>('');
+
+  // Initialize content and handle updates from external sources (like regenerate button)
   useEffect(() => {
-    if(editorRef.current && initialContent) 
-    {
-      editorRef.current.innerHTML = initialContent;
-      setIsInitialized(true); 
+    if (editorRef.current && initialContent !== undefined) {
+      
+      if (initialContent !== lastSetContentRef.current) {
+      
+        const savedRange = document.activeElement === editorRef.current ? saveCursorPosition() : null;
+        
+        editorRef.current.innerHTML = initialContent;
+        lastSetContentRef.current = initialContent;
+        
+        if (savedRange && initialContent.length > 0) {
+          setTimeout(() => {
+            if (editorRef.current) {
+              editorRef.current.focus();
+              try {
+                restoreCursorPosition(savedRange);
+              } catch (e) {
+                // If cursor restoration fails, just focus the editor
+                console.log('Could not restore cursor position');
+              }
+            }
+          }, 0);
+        }
+        
+        if (!isInitialized) {
+          setIsInitialized(true);
+        }
+      }
     }
   }, [initialContent]);
-  
 
   // Save and restore cursor position
   const saveCursorPosition = () => {
@@ -138,12 +157,16 @@ const Editor: React.FC<RichTextEditorProps> = ({
 
   const handleInput = () => {
     if (editorRef.current) {
-      console.log("editor data = " , editorRef.current.innerHTML) ; 
-      if(!keywordGenerated) 
-      {
-        setGeneratedContent(editorRef.current.innerHTML) ; 
+      const currentContent = editorRef.current.innerHTML;
+      console.log("editor data = ", currentContent); 
+      
+      // Update our tracking ref to prevent unnecessary re-renders
+      lastSetContentRef.current = currentContent;
+      
+      if(!keywordGenerated) {
+        setGeneratedContent(currentContent); 
       }
-      onChange?.(editorRef.current.innerHTML);
+      onChange?.(currentContent);
     }
   };
 
@@ -245,8 +268,6 @@ const Editor: React.FC<RichTextEditorProps> = ({
     }
   };
 
-  
-
   const ToolbarButton: React.FC<{
     onClick: () => void;
     icon: React.ReactNode;
@@ -271,7 +292,6 @@ const Editor: React.FC<RichTextEditorProps> = ({
     title: string;
   }> = ({ show, onClose, onColorSelect, title }) => {
     if (!show) return null;
-
 
     return (
       <div className="absolute top-full left-0 mt-1 bg-white border rounded-lg shadow-lg p-3 z-50">
@@ -362,7 +382,7 @@ const Editor: React.FC<RichTextEditorProps> = ({
   }, []);
 
   return (
-    <div className="  mx-auto bg-white rounded-lg shadow-lg overflow-hidden">
+    <div className="mx-auto bg-white rounded-lg shadow-lg overflow-hidden">
       {/* Toolbar */}
       <div className="border-b bg-gray-50 p-3">
         <div className="flex flex-wrap items-center gap-1">
@@ -531,21 +551,28 @@ const Editor: React.FC<RichTextEditorProps> = ({
       </div>
 
       {/* Editor */}
-      <div className="p-6  bg-gray-700 text-white ">
+      <div className="p-6 bg-gray-700 text-white">
         <div
           ref={editorRef}
           contentEditable
           onInput={handleInput}
-          className="h-[300px]  overflow-y-auto focus:outline-none text-gray-200 leading-relaxed no-scrollbar"
+          className="h-[300px] overflow-y-auto focus:outline-none text-gray-200 leading-relaxed no-scrollbar"
           style={{ fontSize: '16px', lineHeight: '1.6' }}
           suppressContentEditableWarning={true}
           data-placeholder={placeholder}
         />
-          {/* {initialContent}
-        </div> */}
       </div>
 
-      <style jsx>{`
+      <style>{`
+        .no-scrollbar::-webkit-scrollbar {
+          display: none;
+        }
+        
+        .no-scrollbar {
+          -ms-overflow-style: none;
+          scrollbar-width: none;
+        }
+        
         [contenteditable]:empty:before {
           content: attr(data-placeholder);
           color: #9ca3af;
@@ -556,21 +583,21 @@ const Editor: React.FC<RichTextEditorProps> = ({
           font-size: 2rem;
           font-weight: bold;
           margin: 1rem 0;
-          color: #1f2937;
+          color: #e5e7eb;
         }
         
         [contenteditable] h2 {
           font-size: 1.5rem;
           font-weight: bold;
           margin: 0.75rem 0;
-          color: #1f2937;
+          color: #e5e7eb;
         }
         
         [contenteditable] h3 {
           font-size: 1.25rem;
           font-weight: bold;
           margin: 0.5rem 0;
-          color: #1f2937;
+          color: #e5e7eb;
         }
         
         [contenteditable] ul, [contenteditable] ol {
@@ -589,16 +616,16 @@ const Editor: React.FC<RichTextEditorProps> = ({
         }
         
         [contenteditable] a {
-          color: #2563eb;
+          color: #60a5fa;
           text-decoration: underline;
         }
         
         [contenteditable] a:hover {
-          color: #1d4ed8;
+          color: #3b82f6;
         }
       `}</style>
     </div>
   );
 };
 
-export default Editor ; 
+export default Editor;

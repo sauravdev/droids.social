@@ -274,7 +274,7 @@ export async function getContentPlansHistory() {
     .select('*')
     .eq('profile_id', user.id)
     .is('strategy_id', null) 
-    .order('created_at', { ascending: false });
+    .order('updated_at', { ascending: false });
 
   if (error) throw error;
   return plans;
