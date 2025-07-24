@@ -171,33 +171,33 @@ function CarouselGenerator() {
     setError(null);
 
     try {
-      const prompt = `Create a high-quality, professional carousel post about "${topic}" optimized for ${platform} (e.g., Instagram, LinkedIn), consisting of exactly 5 slides. Design it to be visually appealing, concise, and engaging, using emojis to enhance tone and draw attention. Follow this structure:
+      const prompt = `Do latest internet search and create a high-quality, professional, informative carousel post about "${topic}" optimized for ${platform} (e.g., Instagram, LinkedIn), consisting of exactly 5 slides. Design it to be visually appealing, little bit concise, and engaging, using emojis to enhance tone and draw attention. Follow this structure:
 
 Intro Slide: A bold, attention-grabbing headline that introduces the topic, paired with an emoji to set the mood.
 
-Content Slide 1: One key insight about the topic.
+Content Slide 1: One key insight about the topic.l which is informative and thought provoking with some details.
 
-Content Slide 2: Another key insight or value-adding point.
+Content Slide 2: Another key insight or value-adding point which is informative.
 
-Content Slide 3: A final strong insight, quote, or tip.
+Content Slide 3: A final strong insight, quote, or tip which is informative and little detailed.
 
-Outro Slide: A summary or call-to-action (e.g., "Follow for more," "Share your thoughts"), paired with an impactful emoji.
+Outro Slide: A summary and call-to-action (e.g., "Follow for more," "Share your thoughts"), paired with an impactful emoji.
 
 Guidelines:
 
-Keep text concise (max 20 words per slide) to suit carousel readability.
+Keep text concise (max 30-40 words per slide) to suit carousel readability.
 
 Use platform-appropriate tone (e.g., professional for LinkedIn, casual for Instagram).
 
 Select emojis that align with the topic and enhance emotional appeal.
 
-Avoid overloading slides with multiple points—focus on one idea per slide.
+Avoid overloading slides with multiple points—focus on one idea per slide with little detail
 
 Format the output as a JSON array of 5 objects, each containing:
 
 header: The slide's headline (short and punchy)
 
-content: The supporting text (detailed but concise)
+content: The supporting text (detailed but little concise)
 
 emoji: A single, relevant emoji as a string (e.g., "🚀")`;
 
