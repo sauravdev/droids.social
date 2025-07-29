@@ -73,19 +73,20 @@ export function PostGenerator({
   const [generatedVideo, setGeneratedVideo] = useState(null);
 
   const [selectedTopic, setSelectedTopic] = useState<string>("");
-  const [loadingTopics , setLoadingTopics] = useState<boolean>(false) ; 
+  const [loadingTopics, setLoadingTopics] = useState<boolean>(false);
 
   const { selectedModel } = useAuth();
   const [generatedTopics, setGeneratedTopics] = useState([]);
-  
 
   useEffect(() => {
     console.log("current plan = ", plan);
     setGeneratedImage(plan?.media || "");
     setGeneratedTopics(plan?.generatedTopics || []);
-    if(Array.isArray(plan?.generatedTopics) && plan?.generatedTopics?.length > 0  ) 
-    {
-      setSelectedTopic(plan?.topic); 
+    if (
+      Array.isArray(plan?.generatedTopics) &&
+      plan?.generatedTopics?.length > 0
+    ) {
+      setSelectedTopic(plan?.topic);
     }
     console.log("--------------------------- > ", plan?.generatedTopics);
   }, []);
@@ -146,69 +147,42 @@ export function PostGenerator({
       removeErrorToast();
     }
   };
+  const validatekey = async (apiKey: string) => {
+    console.log("api key = ", apiKey);
+    if (!apiKey) {
+      return false;
+    }
+    try {
+      const response = await fetch(`${BACKEND_APIPATH.BASEURL}/user`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          API_KEY: apiKey,
+        }),
+      });
+      const data = await response.json();
+      if (data.status == 401) {
+        setError("Invalid api key!");
+        removeToast();
+        return false;
+      }
+      return true;
+    } catch (err) {
+      console.log("err = ", err);
+      return false;
+    }
+  };
 
   async function handlePostTweet() {
     console.log("plan suggestion = ", plan?.suggestion);
     console.log("content  = ", content);
+    console.log("plan = ", plan);
+    removeErrorToast() ; 
 
-    setPosting(true);
-    setSuccess({ state: false, message: "" });
-    try {
-      const accountInfo = await getSocialMediaAccountInfo("twitter");
-      const { access_token, refresh_token } = accountInfo;
-      const response = await fetch(
-        `${BACKEND_APIPATH.BASEURL}/post/tweet/twitter`,
-        {
-          headers: {
-            Accept: "application/json",
-            "Content-Type": "application/json",
-          },
-          method: "POST",
-          body: JSON.stringify({ access_token, refresh_token, data: content }),
-        }
-      );
-      const data = await response.json();
-      console.log("twitter api response = ", data);
-      if (response?.status >= 400) {
-        if (response?.status == 401) {
-          // redirect to login
-          initializeTwitterAuth();
-          return;
-        } else if (response?.status == 403) {
-          setError("Your daily limit is exceeded please try again later !");
-          setTimeout(() => {
-            setError("");
-          }, 1500);
-          removeErrorToast();
-          setPosting(false);
-          return;
-        }
-        setError("Something went wrong while posting on twitter");
-        setTimeout(() => {
-          setError("");
-        }, 1500);
-        setPosting(false);
-        removeErrorToast();
-        return;
-      }
-      setSuccess({ state: true, message: "Content posted successfully !!" });
-      removeToast();
-    } catch (err: any) {
-      setError(err.message);
-      removeErrorToast();
-    }
-
-    setPosting(false);
-  }
-  const handlePostInstagram = async () => {
-    console.log("plan suggestion = ", plan?.suggestion);
-    console.log("content  = ", content);
-    console.log("plan media = ", plan.media);
     if (plan?.format === "video") {
       setError("Video posting on instagram is currently not supported !");
-      setTimeout(() => {
-        setError("");
-      }, 1500);
       removeErrorToast();
       return;
     }
@@ -218,28 +192,125 @@ export function PostGenerator({
       return;
     }
 
+    setSuccess({ state: false, message: "" });
+    try {
+      const accountInfo = await getSocialMediaAccountInfo("twitter");
+      const { api_key } = accountInfo;
+      const isApiKeyValid = await validatekey(api_key);
+      if (!isApiKeyValid) {
+        setError(
+          "Invalid API key! If you haven't generated one yet, please follow the instructions on the dashboard after clicking 'Connect Social Accounts' to create your API key."
+        );
+        return;
+      }
+      setPosting(true);
+      const response = await fetch(
+        `${BACKEND_APIPATH.BASEURL}/post/tweet/twitter`,
+        {
+          headers: {
+            Accept: "application/json",
+            "Content-Type": "application/json",
+          },
+          method: "POST",
+          body: JSON.stringify(
+            plan?.format == "image"
+              ? {
+                  api_key,
+                  data: content,
+                  image: plan?.media,
+                }
+              : {
+                  api_key,
+                  data: content,
+                }
+          ),
+        }
+      );
+      const data = await response.json();
+      console.log(data);
+      if (response?.status >= 400) {
+        if (response?.status == 400) {
+          setError(data?.message || "Something went wrong");
+          removeToast();
+          return;
+        }
+        if (response?.status == 403) {
+          setError("You dont have enough permissions.");
+          removeToast();
+          return;
+        }
+        if (response?.status == 429) {
+          setError(
+            "You have exceeded your API quota for the month. Please upgrade your plan."
+          );
+          removeToast();
+          return;
+        } else if (response?.status == 401) {
+          setError("Invalid api key");
+          removeToast();
+          return;
+        }
+        setError("Something went wrong while posting on twitter");
+        removeToast();
+        return;
+      }
+      setSuccess({
+        state: true,
+        message: data?.message || "Content posted !!",
+      });
+    } catch (err: any) {
+      setError(err.message);
+      removeErrorToast();
+    } finally {
+      setPosting(false);
+    }
+  }
+  const handlePostInstagram = async () => {
+    console.log("plan suggestion = ", plan?.suggestion);
+    console.log("content  = ", content);
+    console.log("plan media = ", plan.media);
+    removeErrorToast() ; 
+    if (plan?.format === "carousel") {
+      setError("Carousel posting and generation is supported from carousel tab !");
+      removeErrorToast();
+      return;
+    }
+    if (plan?.format === "video") {
+      setError("Video posting on instagram is currently not supported !");
+      removeErrorToast();
+      return;
+    }
+    if (plan?.format == "image" && (!plan?.media || plan?.media == "NULL")) {
+      setError("Please generate an image first !");
+      removeErrorToast();
+      return;
+    }
+    setSuccess({ state: false, message: "" });
+
     try {
       const accountInfo = await getSocialMediaAccountInfo("instagram");
-      const { access_token, userId } = accountInfo;
-      if (!userId || !access_token) {
-        setError("Something went wrong while fetching user information");
-        removeErrorToast();
+      const { api_key } = accountInfo;
+      const isApiKeyValid = await validatekey(api_key);
+
+      if (!isApiKeyValid) {
+        setError(
+          "Invalid API key! If you haven't generated one yet, please follow the instructions on the dashboard after clicking 'Connect Social Accounts' to create your API key."
+        );
         return;
       }
 
       setPosting(true);
-      setSuccess({ state: false, message: "" });
 
       const response = await fetch(
         `${BACKEND_APIPATH.BASEURL}/upload/post/instagram`,
         {
           method: "POST",
           headers: {
-            Authorization: `Bearer ${access_token}`,
+            Accept: "application/json",
             "Content-Type": "application/json",
           },
           body: JSON.stringify({
-            IG_USER_ID: userId,
+            api_key,
             caption: content,
             imageUrl: plan?.media,
           }),
@@ -247,8 +318,37 @@ export function PostGenerator({
       );
       const data = await response.json();
       console.log("post instagram api ", data);
-      setSuccess({ state: true, message: "Content posted successfully !!" });
-      removeToast();
+      if (response?.status >= 400) {
+        if (response?.status == 400) {
+          setError(data?.message || "Something went wrong");
+          removeToast();
+          return;
+        }
+        if (response?.status == 403) {
+          setError("You dont have enough permissions.");
+          removeToast();
+          return;
+        }
+        if (response?.status == 429) {
+          setError(
+            "You have exceeded your API quota for the month. Please upgrade your plan."
+          );
+          removeToast();
+          return;
+        } else if (response?.status == 401) {
+          setError("Invalid api key");
+          removeToast();
+          return;
+        }
+        setError("Something went wrong while posting on twitter");
+        removeToast();
+        return;
+      }
+
+      setSuccess({
+        state: true,
+        message: data?.message || "Content posted !!",
+      });
     } catch (err: any) {
       setError(err?.message);
       removeErrorToast();
@@ -260,28 +360,90 @@ export function PostGenerator({
   const handlePostLinkedin = async () => {
     console.log("plan suggestion = ", plan?.suggestion);
     console.log("content  = ", content);
+    console.log(plan);
+    removeErrorToast() ; 
 
-    setPosting(true);
+    if (plan?.format === "video") {
+      setError("Video posting on instagram is currently not supported !");
+      removeErrorToast();
+      return;
+    }
+    if (plan?.format == "image" && (!plan?.media || plan?.media == "NULL")) {
+      setError("Please generate an image first !");
+      removeErrorToast();
+      return;
+    }
+
+
     setSuccess({ state: false, message: "" });
 
     try {
       const accountInfo = await getSocialMediaAccountInfo("linkedin");
-      const { access_token, userId } = accountInfo;
+      const { api_key } = accountInfo;
+      const isApiKeyValid = await validatekey(api_key);
+      if (!isApiKeyValid) {
+        setError(
+          "Invalid API key! If you haven't generated one yet, please follow the instructions on the dashboard after clicking 'Connect Social Accounts' to create your API key."
+        );
+        return;
+      }
+
+      setPosting(true);
       const response = await fetch(
         `${BACKEND_APIPATH.BASEURL}/upload/post/linkedin`,
         {
           method: "POST",
           headers: {
-            Authorization: `Bearer ${access_token}`,
+            Accept: "application/json",
             "Content-Type": "application/json",
           },
-          body: JSON.stringify({ id: userId, text: content }),
+          body: JSON.stringify(
+            plan?.format == "image"
+              ? {
+                  api_key,
+                  text: content,
+                  image: plan?.media,
+                }
+              : {
+                  api_key,
+                  text: content,
+                }
+          ),
         }
       );
       const data = await response.json();
       console.log("post linkedin api ", data);
-      setSuccess({ state: true, message: "Content posted successfully !!" });
-      removeToast();
+      if (response?.status >= 400) {
+        if (response?.status == 400) {
+          setError(data?.message || "Something went wrong");
+          removeToast();
+          return;
+        }
+        if (response?.status == 403) {
+          setError("You dont have enough permissions");
+          removeToast();
+          return;
+        }
+        if (response?.status == 429) {
+          setError(
+            "You have exceeded your API quota for the month. Please upgrade your plan."
+          );
+          removeToast();
+          return;
+        } else if (response?.status == 401) {
+          setError("Invalid api key");
+          removeToast();
+          return;
+        }
+        setError("Something went wrong while posting on linkedin");
+        removeToast();
+        return;
+      }
+
+      setSuccess({
+        state: true,
+        message: data?.message || "Content posted !!",
+      });
     } catch (err: any) {
       setError(err?.message);
       removeErrorToast();
@@ -302,7 +464,8 @@ export function PostGenerator({
   };
 
   const handleGenerateTopics = async (topic: string, platform: string) => {
-    
+    removeErrorToast() ; 
+    setSuccess({ state: false, message: "" });
     if (!topic) {
       setError("Please enter a topic");
       removeErrorToast();
@@ -316,9 +479,9 @@ export function PostGenerator({
     }
 
     setSuccess({ state: false, message: "" });
-    
+
     setError(null);
-    setLoadingTopics(true) ; 
+    setLoadingTopics(true);
 
     const {
       data: { user },
@@ -337,7 +500,6 @@ export function PostGenerator({
         const topics = JSON.parse(suggestion) || [];
         setGeneratedTopics(topics || []);
         await updatePlan(newPlan.id, {
-          
           is_keyword: true,
           generatedTopics: topics,
         });
@@ -354,27 +516,24 @@ export function PostGenerator({
 
         const newPlan = {
           ...plan,
-          
         };
 
         const topics = JSON.parse(suggestion) || [];
         setGeneratedTopics(topics || []);
         await updatePlan(newPlan.id, {
-          
           is_keyword: true,
           generatedTopics: topics,
         });
         setSelectedPlan((prev) => {
           return {
             ...prev,
-            
+
             generatedTopics: topics,
           };
         });
         console.log("response from topic generation api = ", suggestion);
       }
 
-     
       if (profile?.tokens - 10 >= 0) {
         await updateProfile({ tokens: profile?.tokens - 10 });
         setRefreshHeader((prev) => !prev);
@@ -383,9 +542,8 @@ export function PostGenerator({
       setError("Something went wrong !. Please try again");
       removeErrorToast();
     } finally {
-      
       setSelectedTopic("");
-      setLoadingTopics(false) ; 
+      setLoadingTopics(false);
       // setGeneratingSuggestion(false);
     }
   };
@@ -517,18 +675,20 @@ export function PostGenerator({
   };
 
   const handleGenerate = async () => {
+    removeErrorToast() ; 
+    setSuccess({ state: false, message: "" });
     if (profile?.tokens - 10 < 0) {
       setError("You do not have enough tokens for post generation ..");
       navigateTo("/pricing");
       return;
     }
 
-    if (!selectedTopic && generatedTopics?.length === 0 ) {
+    if (!selectedTopic && generatedTopics?.length === 0) {
       setError("Please generate a topic !");
       removeErrorToast();
       return;
     }
-    if (!selectedTopic && generatedTopics?.length >= 0 ) {
+    if (!selectedTopic && generatedTopics?.length >= 0) {
       setError("Please select a topic !");
       removeErrorToast();
       return;
@@ -560,7 +720,7 @@ export function PostGenerator({
       const newPlan = {
         ...plan,
         suggestion: generated,
-        topic : selectedTopic
+        topic: selectedTopic,
       };
       console.log("generated content = ", generated);
 
@@ -569,7 +729,7 @@ export function PostGenerator({
           suggestion: generated,
           media: publicUrl,
           is_keyword: false,
-          topic : selectedTopic
+          topic: selectedTopic,
         });
         console.log("media = ", publicUrl);
         setSelectedPlan((prev: any) => {
@@ -577,20 +737,20 @@ export function PostGenerator({
             ...prev,
             suggestion: generated,
             media: publicUrl,
-            topic : selectedTopic
+            topic: selectedTopic,
           };
         });
       } else {
         await updatePlan(newPlan.id, {
           suggestion: generated,
           is_keyword: false,
-          topic : selectedTopic
+          topic: selectedTopic,
         });
         setSelectedPlan((prev: any) => {
           return {
             ...prev,
             suggestion: generated,
-            topic : selectedTopic
+            topic: selectedTopic,
           };
         });
       }
@@ -609,6 +769,7 @@ export function PostGenerator({
   const handleSave = async () => {
     setSaving(true);
     setSuccess({ state: false, message: "" });
+    removeErrorToast() ; 
 
     try {
       await onSave({ suggestion: content });
@@ -663,7 +824,7 @@ export function PostGenerator({
 
       {/* Success Message */}
       {success.state && (
-        <div className="bg-green-600 text-white px-2 py-1.5 sm:px-3 sm:py-2 rounded-md text-xs sm:text-sm">
+        <div className="bg-green-600 text-white px-2 py-1.5 sm:px-3 sm:py-2 rounded-md text-xs sm:text-sm flex flex-wrap break-words overflow-x-auto max-w-full">
           {success.message}
         </div>
       )}
@@ -907,8 +1068,6 @@ export function PostGenerator({
             </>
           )}
         </button>
-
-        
 
         <button
           onClick={postContentHandler}

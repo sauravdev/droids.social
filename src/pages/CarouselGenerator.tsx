@@ -31,9 +31,6 @@ import { BACKEND_APIPATH } from "../constants";
 import Editor from "../components/Editor";
 import { useAuth } from "../context/AuthContext";
 import { useNavigate } from "react-router-dom";
-import { nonWhiteSpace } from "html2canvas/dist/types/css/syntax/parser";
-import { overflowWrap } from "html2canvas/dist/types/css/property-descriptors/overflow-wrap";
-import { textAlign } from "html2canvas/dist/types/css/property-descriptors/text-align";
 
 interface CarouselSlide {
   id: string;
@@ -95,9 +92,7 @@ function CarouselGenerator() {
   const { profile, updateProfile } = useProfile();
   const { createPost } = useScheduledPosts();
   const [topic, setTopic] = useState("");
-  const [platform, setPlatform] = useState<"linkedin" | "instagram">(
-    "linkedin"
-  );
+  const [platform, setPlatform] = useState<"linkedin" | "instagram">("linkedin");
   const [slides, setSlides] = useState<CarouselSlide[]>([]);
   const [currentSlide, setCurrentSlide] = useState(0);
   const [generating, setGenerating] = useState(false);
@@ -108,19 +103,14 @@ function CarouselGenerator() {
   const [postingOnInsta, setPostingOnInsta] = useState<boolean>(false);
   const [postingOnLinkedin, setPostingOnLinkedIn] = useState<boolean>(false);
   const [showScheduleModal, setShowScheduleModal] = useState<boolean>(false);
-  const [schedulingInstagramCarousel, setSchedulingInstagramCarousel] =
-    useState<boolean>(false);
+  const [schedulingInstagramCarousel, setSchedulingInstagramCarousel] = useState<boolean>(false);
   const [generatedCaption, setGeneratedCaption] = useState<string>("");
   const { setRefreshHeader } = useAuth();
-  const [success, setSuccess] = useState<Success>({
-    state: false,
-    message: "",
-  });
+  const [success, setSuccess] = useState<Success>({ state: false, message: "" });
   const navigateTo = useNavigate();
   const [createdByText, setCreatedByText] = useState("Created by");
   const [authorName, setAuthorName] = useState(profile?.full_name || "User");
 
-  // Handle content changes
   const handleCreatedByChange = (e) => {
     setCreatedByText(e.target.textContent);
   };
@@ -129,15 +119,13 @@ function CarouselGenerator() {
     setAuthorName(e.target.textContent);
   };
 
-
   const removeToast = () => {
     setTimeout(() => {
       setSuccess({ state: false, message: "" });
     }, 2500);
   };
-  const handleBrandLogoUpload = (
-    event: React.ChangeEvent<HTMLInputElement>
-  ) => {
+
+  const handleBrandLogoUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
     if (file) {
       const reader = new FileReader();
@@ -150,9 +138,7 @@ function CarouselGenerator() {
 
   const updateSlide = (id: string, updates: Partial<CarouselSlide>) => {
     setSlides((prevSlides) =>
-      prevSlides.map((slide) =>
-        slide.id === id ? { ...slide, ...updates } : slide
-      )
+      prevSlides.map((slide) => (slide.id === id ? { ...slide, ...updates } : slide))
     );
   };
 
@@ -175,7 +161,7 @@ function CarouselGenerator() {
 
 Intro Slide: A bold, attention-grabbing headline that introduces the topic, paired with an emoji to set the mood.
 
-Content Slide 1: One key insight about the topic.l which is informative and thought provoking with some details.
+Content Slide 1: One key insight about the topic which is informative and thought-provoking with some details.
 
 Content Slide 2: Another key insight or value-adding point which is informative.
 
@@ -208,9 +194,7 @@ emoji: A single, relevant emoji as a string (e.g., "🚀")`;
           const imageURI = await generateImage(prompt);
           console.log("image generated = ", imageURI);
           try {
-            const proxyUrl = `${
-              BACKEND_APIPATH.BASEURL
-            }/fetch-image?url=${encodeURIComponent(imageURI)}`;
+            const proxyUrl = `${BACKEND_APIPATH.BASEURL}/fetch-image?url=${encodeURIComponent(imageURI)}`;
             const response = await fetch(proxyUrl);
             const blob = await response.blob();
             const imageObjectUrl = URL.createObjectURL(blob);
@@ -276,7 +260,6 @@ Do **not** include watermarks, logos, or text overlays. Make the image visually 
             image: image,
             ...defaultSlideStyle,
             ...themes[index % themes.length],
-
             isCustomImage: false,
           };
         })
@@ -297,10 +280,7 @@ Do **not** include watermarks, logos, or text overlays. Make the image visually 
     }
   };
 
-  async function uploadToSupabase(
-    imageData: File | Blob,
-    fileName: string
-  ): Promise<string | null> {
+  async function uploadToSupabase(imageData: File | Blob, fileName: string): Promise<string | null> {
     try {
       const { data, error } = await supabase.storage
         .from("profile-images")
@@ -345,16 +325,13 @@ Do **not** include watermarks, logos, or text overlays. Make the image visually 
       await page.render(renderContext).promise;
       images.push(canvas.toDataURL("image/jpeg"));
 
-      // Convert canvas to image data URL
       const imgData = canvas.toDataURL("image/jpeg");
       const imgBlob = await (await fetch(imgData)).blob();
       const timestamp = new Date().toISOString().replace(/[-:.TZ]/g, "");
-      const fileName = `uploads/Dalle-slide-${timestamp}-${i}.jpeg`;
+      const fileName = `Uploads/Dalle-slide-${timestamp}-${i}.jpeg`;
       const publicUrl = await uploadToSupabase(imgBlob, fileName);
       if (publicUrl) {
-        console.log(
-          `Image for page ${i} uploaded successfully! Public URL: ${publicUrl}`
-        );
+        console.log(`Image for page ${i} uploaded successfully! Public URL: ${publicUrl}`);
         imageUrls.push(publicUrl);
       }
     }
@@ -363,60 +340,6 @@ Do **not** include watermarks, logos, or text overlays. Make the image visually 
 
     return { imageUrls };
   };
-
-  // const exportToPDF = async () => {
-  //   setSuccess({ state: false, message: "" });
-  //   if (slides.length === 0) {
-  //     setError("No slides to export");
-  //     return;
-  //   }
-
-  //   setExporting(true);
-  //   setError(null);
-
-  //   try {
-  //     const pdf = new jsPDF("p", "px", [1080, 1350]);
-  //     const pdfPages = [];
-
-  //     for (let i = 0; i < slides.length; i++) {
-  //       const slide = document.getElementById(`slide-${i}`);
-  //       if (!slide) continue;
-
-  //       const canvas = await html2canvas(slide, {
-  //         scale: 2,
-  //         backgroundColor: slides[i].backgroundColor,
-  //         logging: false,
-  //         useCORS: true,
-  //         // height: slide.clientHeight,
-  //         // width: slide.clientWidth,
-  //         // width: 1080,
-  //         // height: 1350
-  //       });
-
-  //       const imgData = canvas.toDataURL("image/jpeg", 0.92);
-  //       pdfPages.push(imgData);
-  //       if (i > 0) pdf.addPage([1080, 1350], "p");
-  //       pdf.addImage(imgData, "JPEG", 0, 0, 1080, 1350);
-  //     }
-
-  //     const pdfBlob = pdf.output("blob");
-  //     console.log("pdf blob", pdfBlob);
-  //     const pdfUrl = URL.createObjectURL(pdfBlob);
-  //     const downloadLink = document.createElement("a");
-  //     downloadLink.href = pdfUrl;
-  //     downloadLink.download = "generated.pdf";
-  //     downloadLink.textContent = "Download PDF";
-  //     document.body.appendChild(downloadLink);
-  //     downloadLink.click();
-  //     setSuccess({ state: true, message: "PDF Downloaded successfully !!" });
-
-  //     removeToast();
-  //   } catch (err: any) {
-  //     setError("Error exporting to PDF: " + (err?.message || "Unknown error"));
-  //   } finally {
-  //     setExporting(false);
-  //   }
-  // };
 
   const exportToPDF = async () => {
     setSuccess({ state: false, message: "" });
@@ -429,6 +352,7 @@ Do **not** include watermarks, logos, or text overlays. Make the image visually 
     setError(null);
 
     try {
+      // Set PDF dimensions to match Instagram/LinkedIn carousel aspect ratio (1080x1350)
       const pdf = new jsPDF("p", "px", [1080, 1350]);
       const pdfPages = [];
 
@@ -436,17 +360,36 @@ Do **not** include watermarks, logos, or text overlays. Make the image visually 
         const slide = document.getElementById(`slide-${i}`);
         if (!slide) continue;
 
+        // Increase canvas scale for higher resolution and better text clarity
         const canvas = await html2canvas(slide, {
-          scale: 2,
+          scale: 3, // Increased scale for sharper text
           backgroundColor: slides[i].backgroundColor,
           logging: false,
           useCORS: true,
+          windowWidth: 1080, // Ensure consistent width
+          windowHeight: 1350, // Ensure consistent height
+          onclone: (clonedDoc) => {
+            // Adjust styles in the cloned document to improve text rendering
+            const clonedSlide = clonedDoc.getElementById(`slide-${i}`);
+            if (clonedSlide) {
+              clonedSlide.style.fontSize = slides[i].headerSize; // Preserve header font size
+              clonedSlide.style.lineHeight = "1.5"; // Increase line height for better spacing
+              clonedSlide.style.letterSpacing = "0.5px"; // Add slight letter spacing
+              clonedSlide.style.transform = "none"; // Remove any transforms
+              const textElements = clonedSlide.querySelectorAll(".editable-text");
+              textElements.forEach((el) => {
+                el.style.fontSize = slides[i].contentSize; // Preserve content font size
+                el.style.lineHeight = "1.6"; // Improve text spacing
+                el.style.padding = "15px"; // Add padding for better layout
+              });
+            }
+          },
         });
 
-        const imgData = canvas.toDataURL("image/jpeg", 0.92);
+        const imgData = canvas.toDataURL("image/jpeg", 0.95); // Higher quality JPEG
         pdfPages.push(imgData);
         if (i > 0) pdf.addPage([1080, 1350], "p");
-        pdf.addImage(imgData, "JPEG", 0, 0, 1080, 1350);
+        pdf.addImage(imgData, "JPEG", 0, 0, 1080, 1350, undefined, "FAST"); // Use FAST compression for better performance
 
         // Add clickable link overlay
         const links = slide.querySelectorAll("a[href]");
@@ -454,13 +397,11 @@ Do **not** include watermarks, logos, or text overlays. Make the image visually 
           const rect = link.getBoundingClientRect();
           const slideRect = slide.getBoundingClientRect();
 
-          // Calculate relative position within the slide
           const x = (rect.left - slideRect.left) * (1080 / slideRect.width);
           const y = (rect.top - slideRect.top) * (1350 / slideRect.height);
           const width = rect.width * (1080 / slideRect.width);
           const height = rect.height * (1350 / slideRect.height);
 
-          // Add clickable area to PDF
           pdf.link(x, y, width, height, { url: link.href });
         });
       }
@@ -501,18 +442,33 @@ Do **not** include watermarks, logos, or text overlays. Make the image visually 
         if (!slide) continue;
 
         const canvas = await html2canvas(slide, {
-          scale: 2,
+          scale: 3,
           backgroundColor: slides[i].backgroundColor,
           logging: false,
           useCORS: true,
-          height: slide.clientHeight,
-          width: slide.clientWidth,
+          windowWidth: 1080,
+          windowHeight: 1350,
+          onclone: (clonedDoc) => {
+            const clonedSlide = clonedDoc.getElementById(`slide-${i}`);
+            if (clonedSlide) {
+              clonedSlide.style.fontSize = slides[i].headerSize;
+              clonedSlide.style.lineHeight = "1.5";
+              clonedSlide.style.letterSpacing = "0.5px";
+              clonedSlide.style.transform = "none";
+              const textElements = clonedSlide.querySelectorAll(".editable-text");
+              textElements.forEach((el) => {
+                el.style.fontSize = slides[i].contentSize;
+                el.style.lineHeight = "1.6";
+                el.style.padding = "15px";
+              });
+            }
+          },
         });
 
-        const imgData = canvas.toDataURL("image/jpeg");
+        const imgData = canvas.toDataURL("image/jpeg", 0.95);
         pdfPages.push(imgData);
         if (i > 0) pdf.addPage([1080, 1350], "p");
-        pdf.addImage(imgData, "JPEG", 0, 0, 1080, 1350);
+        pdf.addImage(imgData, "JPEG", 0, 0, 1080, 1350, undefined, "FAST");
       }
 
       const pdfBlob = pdf.output("blob");
@@ -540,12 +496,9 @@ Do **not** include watermarks, logos, or text overlays. Make the image visually 
         const data = await response.json();
         console.log("response from insta carousel api = ", data);
       } catch (err: any) {
-        console.log(
-          "Something went wrong while publishing carousel ",
-          err || err?.message
-        );
+        console.log("Something went wrong while publishing carousel ", err || err?.message);
       }
-      setSuccess({ state: true, message: "content scheduled successfully" });
+      setSuccess({ state: true, message: "Content scheduled successfully" });
       removeToast();
     } catch (error: any) {
       console.log("Something went wrong = ", error || error?.message);
@@ -554,10 +507,7 @@ Do **not** include watermarks, logos, or text overlays. Make the image visually 
     }
   };
 
-  const handleScheduleCarouselOnInstagram = async (
-    date: string,
-    postId: null | string = null
-  ) => {
+  const handleScheduleCarouselOnInstagram = async (date: string, postId: null | string = null) => {
     setSchedulingInstagramCarousel(true);
     setSuccess({ state: false, message: "" });
     if (slides.length === 0) {
@@ -574,18 +524,33 @@ Do **not** include watermarks, logos, or text overlays. Make the image visually 
         if (!slide) continue;
 
         const canvas = await html2canvas(slide, {
-          scale: 2,
+          scale: 3,
           backgroundColor: slides[i].backgroundColor,
           logging: false,
           useCORS: true,
-          height: slide.clientHeight,
-          width: slide.clientWidth,
+          windowWidth: 1080,
+          windowHeight: 1350,
+          onclone: (clonedDoc) => {
+            const clonedSlide = clonedDoc.getElementById(`slide-${i}`);
+            if (clonedSlide) {
+              clonedSlide.style.fontSize = slides[i].headerSize;
+              clonedSlide.style.lineHeight = "1.5";
+              clonedSlide.style.letterSpacing = "0.5px";
+              clonedSlide.style.transform = "none";
+              const textElements = clonedSlide.querySelectorAll(".editable-text");
+              textElements.forEach((el) => {
+                el.style.fontSize = slides[i].contentSize;
+                el.style.lineHeight = "1.6";
+                el.style.padding = "15px";
+              });
+            }
+          },
         });
 
-        const imgData = canvas.toDataURL("image/jpeg");
+        const imgData = canvas.toDataURL("image/jpeg", 0.95);
         pdfPages.push(imgData);
         if (i > 0) pdf.addPage([1080, 1350], "p");
-        pdf.addImage(imgData, "JPEG", 0, 0, 1080, 1350);
+        pdf.addImage(imgData, "JPEG", 0, 0, 1080, 1350, undefined, "FAST");
       }
 
       const pdfBlob = pdf.output("blob");
@@ -629,25 +594,20 @@ Do **not** include watermarks, logos, or text overlays. Make the image visually 
       removeToast();
     } catch (error: any) {
       setError(error?.message);
-      console.log(
-        "Something went wrong while scheduling carousel post for instagram => ",
-        error || error?.message
-      );
+      console.log("Something went wrong while scheduling carousel post for instagram => ", error || error?.message);
     } finally {
       setSchedulingInstagramCarousel(false);
     }
   };
 
-  const handleScheduleCarouselOnLinkedin = (
-    date: string,
-    postId: null | string = null
-  ) => {};
+  const handleScheduleCarouselOnLinkedin = (date: string, postId: null | string = null) => {};
 
   const handleLinkedinExport = async () => {
     setPostingOnLinkedIn(true);
-    exportToPDF();
+    await exportToPDF();
     setPostingOnLinkedIn(false);
   };
+
   return (
     <div className="space-y-8">
       <h1 className="text-3xl font-bold text-white mb-8">Carousel Generator</h1>
@@ -656,10 +616,7 @@ Do **not** include watermarks, logos, or text overlays. Make the image visually 
       <div className="bg-gray-800 rounded-xl p-6">
         <div className="space-y-6">
           <div>
-            <label
-              htmlFor="topic"
-              className="block text-sm font-medium text-gray-300 mb-2"
-            >
+            <label htmlFor="topic" className="block text-sm font-medium text-gray-300 mb-2">
               Topic
             </label>
             <input
@@ -673,16 +630,12 @@ Do **not** include watermarks, logos, or text overlays. Make the image visually 
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-gray-300 mb-2">
-              Platform
-            </label>
+            <label className="block text-sm font-medium text-gray-300 mb-2">Platform</label>
             <div className="flex space-x-4">
               <button
                 onClick={() => setPlatform("linkedin")}
                 className={`px-4 py-2 rounded-lg ${
-                  platform === "linkedin"
-                    ? "bg-blue-600 text-white"
-                    : "bg-gray-700 text-gray-300 hover:bg-gray-600"
+                  platform === "linkedin" ? "bg-blue-600 text-white" : "bg-gray-700 text-gray-300 hover:bg-gray-600"
                 }`}
               >
                 LinkedIn
@@ -690,9 +643,7 @@ Do **not** include watermarks, logos, or text overlays. Make the image visually 
               <button
                 onClick={() => setPlatform("instagram")}
                 className={`px-4 py-2 rounded-lg ${
-                  platform === "instagram"
-                    ? "bg-pink-600 text-white"
-                    : "bg-gray-700 text-gray-300 hover:bg-gray-600"
+                  platform === "instagram" ? "bg-pink-600 text-white" : "bg-gray-700 text-gray-300 hover:bg-gray-600"
                 }`}
               >
                 Instagram
@@ -701,9 +652,7 @@ Do **not** include watermarks, logos, or text overlays. Make the image visually 
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-gray-300 mb-2">
-              Brand Logo
-            </label>
+            <label className="block text-sm font-medium text-gray-300 mb-2">Brand Logo</label>
             <div className="flex items-center space-x-4">
               <input
                 type="file"
@@ -720,10 +669,7 @@ Do **not** include watermarks, logos, or text overlays. Make the image visually 
                 <span>Upload Logo</span>
               </label>
               {brandLogo && (
-                <button
-                  onClick={() => setBrandLogo(null)}
-                  className="text-red-400 hover:text-red-300"
-                >
+                <button onClick={() => setBrandLogo(null)} className="text-red-400 hover:text-red-300">
                   Remove
                 </button>
               )}
@@ -732,10 +678,7 @@ Do **not** include watermarks, logos, or text overlays. Make the image visually 
 
           {platform == "linkedin" && (
             <div>
-              <label
-                htmlFor="linkedin"
-                className="block text-sm font-medium text-gray-300 mb-2"
-              >
+              <label htmlFor="linkedin" className="block text-sm font-medium text-gray-300 mb-2">
                 LinkedIn Profile URL
               </label>
               <input
@@ -809,9 +752,7 @@ Do **not** include watermarks, logos, or text overlays. Make the image visually 
             )}
             {slides.length > 0 && platform == "instagram" && (
               <button
-                onClick={() => {
-                  setShowScheduleModal(true);
-                }}
+                onClick={() => setShowScheduleModal(true)}
                 disabled={schedulingInstagramCarousel}
                 className="flex-1 bg-purple-600 hover:bg-purple-700 text-white px-4 py-2 rounded-lg flex items-center justify-center space-x-2 disabled:opacity-50"
               >
@@ -831,44 +772,35 @@ Do **not** include watermarks, logos, or text overlays. Make the image visually 
           </div>
 
           {error && (
-            <div className="bg-red-900 text-white px-4 py-3 rounded-lg">
-              {error}
-            </div>
+            <div className="bg-red-900 text-white px-4 py-3 rounded-lg">{error}</div>
           )}
 
           {success.state && (
-            <div className="bg-green-600 text-white px-3 py-2 sm:px-4 rounded-md text-sm">
-              {success.message}
-            </div>
+            <div className="bg-green-600 text-white px-3 py-2 sm:px-4 rounded-md text-sm">{success.message}</div>
           )}
         </div>
       </div>
 
       {/* Preview and Editor sections */}
       {slides.length > 0 && (
-        <div className="bg-gray-800 rounded-xl p-6">
+        <div className="bg-gray-800 rounded-xl p-6 px-24">
           <h2 className="text-xl font-bold text-white mb-4">Preview & Edit</h2>
           <div className="flex flex-col gap-4 w-full">
             {slides.map((slide, index) => (
               <div
-                onClick={() => {
-                  setCurrentSlide(index);
-                }}
+                onClick={() => setCurrentSlide(index)}
                 id={`slide-${index}`}
                 key={slide.id}
                 className={`${
-                  currentSlide == index ? "border-2" : ""
-                } carousel-slide flex flex-col items-center justify-between p-4 rounded-lg shadow-lg w-full `}
+                  currentSlide == index ? "border-2 border-purple-500" : ""
+                } carousel-slide flex flex-col items-center justify-between p-6 rounded-lg shadow-lg w-full`}
                 style={{
                   backgroundColor: slide.backgroundColor,
                   color: slide.textColor,
-                  backgroundImage: slide.backgroundColor.includes("gradient")
-                    ? slide.backgroundColor
-                    : undefined,
-                  minHeight: "auto",
-                  height: "auto",
-                  overflow: "visible",
-                  paddingBottom: "20px",
+                  backgroundImage: slide.backgroundColor.includes("gradient") ? slide.backgroundColor : undefined,
+                  minHeight: "1350px", // Fixed height for PDF consistency
+                  width: "1080px", // Fixed width for PDF consistency
+                  boxSizing: "border-box",
                 }}
               >
                 <input
@@ -879,7 +811,6 @@ Do **not** include watermarks, logos, or text overlays. Make the image visually 
                     if (file) {
                       const reader = new FileReader();
                       reader.onloadend = () => {
-                        // Update the slide with the custom uploaded image
                         updateSlide(slide.id, {
                           image: reader.result as string,
                           isCustomImage: true,
@@ -888,17 +819,14 @@ Do **not** include watermarks, logos, or text overlays. Make the image visually 
                       reader.readAsDataURL(file);
                     }
                   }}
-                  className="hidden "
+                  className="hidden"
                   id={`custom-image-upload-${slide.id}`}
                 />
 
                 {slide.image ? (
-                  <label
-                    htmlFor={`custom-image-upload-${slide.id}`}
-                    className="block cursor-pointer w-full"
-                  >
+                  <label htmlFor={`custom-image-upload-${slide.id}`} className="block cursor-pointer w-full rounded-md">
                     <img
-                      className="rounded-sm w-full h-auto max-h-[500px] object-cover mx-auto"
+                      className="rounded-sm w-full h-auto max-h-[800px] object-cover mx-auto"
                       src={slide?.image}
                       alt="Slide image"
                     />
@@ -911,75 +839,52 @@ Do **not** include watermarks, logos, or text overlays. Make the image visually 
                 ) : (
                   <label
                     htmlFor={`custom-image-upload-${slide.id}`}
-                    className="cursor-pointer bg-blue-500 hover:bg-blue-600 text-white px-4 py-2 rounded-md flex items-center justify-center h-[500px]"
+                    className="cursor-pointer bg-blue-500 hover:bg-blue-600 text-white px-4 py-2 rounded-md flex items-center justify-center h-[800px] "
                   >
                     Upload Image
                   </label>
                 )}
 
                 {/* Slide Content */}
-                <div className=" flex flex-col items-center justify-center space-y-2 w-full gap-2 my-10 px-20">
+                <div className="flex flex-col items-center justify-center space-y-4 w-full gap-4 my-10 px-20">
                   <h2
                     style={{
                       fontFamily: slide.headerFont,
                       fontSize: slide.headerSize,
+                      lineHeight: "1.5",
+                      letterSpacing: "0.5px",
                     }}
                     className="text-center font-bold flex items-center space-x-2 w-full"
                   >
                     <span>{slide.emoji}</span>
                     <div
                       contentEditable="true"
-                      className="text-center bg-transparent  outline-none w-full tracking-widest "
-                      onChange={(e: any) =>
-                        updateSlide(slide.id, { header: e.target.value })
-                      }
+                      suppressContentEditableWarning={true}
+                      className="text-center bg-transparent outline-none w-full tracking-widest"
+                      onBlur={(e) => updateSlide(slide.id, { header: e.currentTarget.innerText })}
                     >
                       {slide.header}
                     </div>
                   </h2>
 
-                  {/* <div
-                    contentEditable="true"
-                    suppressContentEditableWarning={true}
-                    style={{
-                      width: "100%",
-                      minHeight: "40px",
-                      height: "auto",
-                      maxWidth: "100%",
-                      overflowWrap: "break-word",
-                      wordBreak: "break-word",
-                      whiteSpace: "pre-wrap",
-                      padding: "5px",
-
-                      outline: "none",
-                      textAlign: "center",
-                    }}
-                    className="bg-transparent text-2xl tracking-wider font-medium text-white"
-                    onChange={(e) =>
-                      updateSlide(slide.id, { content: e.target.value })
-                    } // Updates state on change
-                  >
-                    {slide.content}
-                  </div> */}
-
                   <div
                     contentEditable
                     suppressContentEditableWarning
                     style={{
-                      minHeight: "60px",
+                      minHeight: "100px",
                       maxWidth: "100%",
                       wordBreak: "break-word",
                       overflowWrap: "break-word",
                       textAlign: "center",
                       outline: "none",
-                      padding: "10px",
+                      padding: "15px",
+                      fontFamily: slide.contentFont,
+                      fontSize: slide.contentSize,
+                      lineHeight: "1.6",
+                      letterSpacing: "0.5px",
                     }}
-                    className="editable-text tracking-widest bg-transparent text-white text-2xl font-medium"
-                    onBlur={(e) =>
-                      updateSlide(slide.id, {
-                        content: e.currentTarget.innerText,
-                      })
-                    }
+                    className="editable-text tracking-widest bg-transparent text-white"
+                    onBlur={(e) => updateSlide(slide.id, { content: e.currentTarget.innerText })}
                   >
                     {slide.content}
                   </div>
@@ -987,7 +892,6 @@ Do **not** include watermarks, logos, or text overlays. Make the image visually 
 
                 {/* Footer */}
                 <div className="w-full flex items-center justify-between text-sm opacity-75">
-                  {/* Logo - Extreme Left */}
                   <div className="flex items-center gap-2">
                     <div
                       style={{
@@ -1012,14 +916,12 @@ Do **not** include watermarks, logos, or text overlays. Make the image visually 
                     </div>
                   </div>
 
-                  {/* Created by - Extreme Right */}
                   <div className="capitalize tracking-widest flex-shrink-0">
                     <span
                       contentEditable={true}
                       suppressContentEditableWarning={true}
-                      className="outline-none  focus:ring-1 focus:ring-blue-300 rounded px-1"
+                      className="outline-none focus:ring-1 focus:ring-blue-300 rounded px-1"
                       onBlur={handleCreatedByChange}
-                      // dangerouslySetInnerHTML={{ __html: createdByText }}
                     >
                       {createdByText}
                     </span>{" "}
@@ -1027,7 +929,7 @@ Do **not** include watermarks, logos, or text overlays. Make the image visually 
                       href={linkedinProfile}
                       target="_blank"
                       rel="noopener noreferrer"
-                      className="text-blue-600 hover:text-blue-800 underline cursor-pointer outline-none  focus:ring-1 focus:ring-blue-300 rounded px-1"
+                      className="text-blue-600 hover:text-blue-800 underline cursor-pointer outline-none focus:ring-1 focus:ring-blue-300 rounded px-1"
                       style={{
                         color: "#2563eb",
                         textDecoration: "underline",
@@ -1037,7 +939,6 @@ Do **not** include watermarks, logos, or text overlays. Make the image visually 
                       contentEditable={true}
                       onBlur={handleAuthorNameChange}
                       suppressContentEditableWarning={true}
-                      // dangerouslySetInnerHTML={{ __html: authorName }}
                     >
                       {authorName}
                     </a>
@@ -1048,19 +949,18 @@ Do **not** include watermarks, logos, or text overlays. Make the image visually 
           </div>
 
           {generatedCaption && (
-            <div className="flex flex-col gap-4 my-4 w-full ">
-              <h2 className="capitalize text-2xl text-white ">
+            <div className="flex flex-col gap-4 my-4 w-full">
+              <h2 className="capitalize text-2xl text-white">
                 Caption For <span>{platform}</span>
               </h2>
               <Editor initialContent={generatedCaption} />
             </div>
           )}
-          {/* Slide Editor  */}
+
+          {/* Slide Editor */}
           <div className="mt-6 space-y-4">
             <div>
-              <label className="block text-sm font-medium text-gray-300 mb-2">
-                Theme
-              </label>
+              <label className="block text-sm font-medium text-gray-300 mb-2">Theme</label>
               <div className="grid grid-cols-4 gap-2">
                 {themes.map((theme, index) => (
                   <button
@@ -1071,12 +971,10 @@ Do **not** include watermarks, logos, or text overlays. Make the image visually 
                         textColor: theme.text,
                       })
                     }
-                    className="h-10 rounded-lg cursor-pointer  border-transparent hover:border-purple-500 transition-colors"
+                    className="h-10 rounded-lg cursor-pointer border-transparent hover:border-purple-500 transition-colors"
                     style={{
                       background: theme.bg,
-                      backgroundImage: theme.bg.includes("gradient")
-                        ? theme.bg
-                        : undefined,
+                      backgroundImage: theme.bg.includes("gradient") ? theme.bg : undefined,
                       minHeight: "auto",
                       padding: "20px",
                       breakInside: "avoid",
@@ -1087,16 +985,12 @@ Do **not** include watermarks, logos, or text overlays. Make the image visually 
             </div>
 
             <div>
-              <label className="block text-sm font-medium text-gray-300 mb-2">
-                Emoji
-              </label>
+              <label className="block text-sm font-medium text-gray-300 mb-2">Emoji</label>
               <div className="flex flex-wrap gap-2">
                 {emojis.map((emoji, index) => (
                   <button
                     key={index}
-                    onClick={() =>
-                      updateSlide(slides[currentSlide].id, { emoji })
-                    }
+                    onClick={() => updateSlide(slides[currentSlide].id, { emoji })}
                     className="w-10 h-10 flex items-center justify-center bg-gray-700 rounded-lg hover:bg-gray-600 text-xl"
                   >
                     {emoji}
@@ -1106,16 +1000,12 @@ Do **not** include watermarks, logos, or text overlays. Make the image visually 
             </div>
 
             <div>
-              <label className="block text-sm font-medium text-gray-300 mb-2">
-                Bullet Style
-              </label>
+              <label className="block text-sm font-medium text-gray-300 mb-2">Bullet Style</label>
               <div className="flex flex-wrap gap-2">
                 {icons.map((icon, index) => (
                   <button
                     key={index}
-                    onClick={() =>
-                      updateSlide(slides[currentSlide].id, { icon })
-                    }
+                    onClick={() => updateSlide(slides[currentSlide].id, { icon })}
                     className="w-10 h-10 flex items-center justify-center bg-gray-700 rounded-lg hover:bg-gray-600 text-xl"
                   >
                     {icon}
@@ -1125,9 +1015,7 @@ Do **not** include watermarks, logos, or text overlays. Make the image visually 
             </div>
 
             <div>
-              <label className="block text-sm font-medium text-gray-300 mb-2">
-                Font Style
-              </label>
+              <label className="block text-sm font-medium text-gray-300 mb-2">Font Style</label>
               <div className="grid grid-cols-2 gap-2">
                 {fonts.map((font, index) => (
                   <button
@@ -1163,11 +1051,7 @@ Do **not** include watermarks, logos, or text overlays. Make the image visually 
             created_at: new Date().toISOString(),
             updated_at: new Date().toISOString(),
           }}
-          onSchedule={
-            platform == "instagram"
-              ? handleScheduleCarouselOnInstagram
-              : handleScheduleCarouselOnLinkedin
-          }
+          onSchedule={platform == "instagram" ? handleScheduleCarouselOnInstagram : handleScheduleCarouselOnLinkedin}
           onClose={() => setShowScheduleModal(false)}
         />
       )}

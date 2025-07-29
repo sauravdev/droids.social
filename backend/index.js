@@ -20,6 +20,7 @@ import jwt from 'jsonwebtoken' ;
 import razorpayRouter from './routes/razorpayPayment.route.js';
 import { videoGenRouter } from './routes/videoGen.route.js';
 import { dodoRouter } from './routes/dodo.route.js';
+import { userRouter } from './routes/user.route.js';
 dotenv.config() 
 
 
@@ -39,6 +40,7 @@ app.use(grokApiRouter);
 app.use(razorpayRouter) ;
 app.use(videoGenRouter) ; 
 app.use(dodoRouter); 
+app.use(userRouter); 
 
 
 

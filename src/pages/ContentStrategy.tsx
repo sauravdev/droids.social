@@ -30,7 +30,7 @@ interface ContentPlanCardProps {
   onSave: (planId: string, updates: Partial<ContentPlan>) => Promise<void>;
   onSchedule: (plan: ContentPlan) => void;
   setSelectedPlan: (action: any) => void;
-  selectedPlan : any 
+  selectedPlan: any;
 }
 
 function ContentPlanCard({
@@ -42,13 +42,17 @@ function ContentPlanCard({
 }: ContentPlanCardProps) {
   return (
     <div className="bg-gray-700 h-full  rounded-lg p-2 flex flex-col justify-between">
-      <h3 title={plan?.topic} className="text-lg font-medium text-white mb-2">{plan?.topic?.length > 30 ? plan.topic.slice(0,30) + " ..."  :  plan.topic }</h3>
+      <h3 title={plan?.topic} className="text-lg font-medium text-white mb-2">
+        {plan?.topic?.length > 30
+          ? plan.topic.slice(0, 30) + " ..."
+          : plan.topic}
+      </h3>
       <PostGenerator
         plan={plan}
         onSave={(updates) => onSave(plan.id, updates)}
         onSchedule={() => onSchedule(plan)}
         setSelectedPlan={setSelectedPlan}
-        selectedPlan = {selectedPlan} 
+        selectedPlan={selectedPlan}
       />
     </div>
   );
@@ -79,7 +83,7 @@ export function ContentStrategy() {
   const [selectedPlan, setSelectedPlan] = useState<ContentPlan | null>(null);
   const [showScheduleModal, setShowScheduleModal] = useState(false);
   const { profile, updateProfile } = useProfile();
-  const [selectedStrategyId , setSelectedStrategyId] = useState('');
+  const [selectedStrategyId, setSelectedStrategyId] = useState("");
   const [success, setSuccess] = useState<Success>({
     state: false,
     message: "",
@@ -100,17 +104,16 @@ export function ContentStrategy() {
   const { models, setSelectedModel, selectedModel } = useAuth();
 
   useEffect(() => {
-    ;(async () => {
-      console.log("change spotted in selected plan = " , selectedPlan) ; 
-      if(selectedStrategyId )
-      {
+    (async () => {
+      console.log("change spotted in selected plan = ", selectedPlan);
+      if (selectedStrategyId) {
         const data = await getContentPlansWithSpecificStrategyId(
-            selectedStrategyId 
-          );
+          selectedStrategyId
+        );
         setPlans(data);
       }
-    })()
-  } , [selectedPlan]  )  
+    })();
+  }, [selectedPlan]);
 
   const onChangeStrategyHandler = async (e: any) => {
     console.log("function triggered ... ");
@@ -126,8 +129,8 @@ export function ContentStrategy() {
       setPlans(newPlans);
       // console.log("nicheeeeeeeeeeeeeee => " , strategy?.niche)
       setSelectedStrategy(strategy?.niche);
-      setSelectedStrategyId(strategy?.id || '') ; 
-      
+      setSelectedStrategyId(strategy?.id || "");
+
       console.log("new plans = ", newPlans);
     } catch (err: any) {
       setError(err.message);
@@ -160,8 +163,8 @@ export function ContentStrategy() {
             response[0]?.id
           );
           setPlans(data);
-          setSelectedStrategy(response[0]?.niche)
-          setSelectedStrategyId(response[0]?.id || '') ; 
+          setSelectedStrategy(response[0]?.niche);
+          setSelectedStrategyId(response[0]?.id || "");
         }
       } catch (err: any) {
         console.log("error = ", err);
@@ -255,7 +258,33 @@ export function ContentStrategy() {
     }
   };
 
+  const validatekey = async (apiKey: string) => {
+    console.log("api key = ", apiKey);
+    if (!apiKey) {
+      return false;
+    }
+    try {
+      const response = await fetch(`${BACKEND_APIPATH.BASEURL}/user`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          API_KEY: apiKey,
+        }),
+      });
+      const data = await response.json();
+      if (data.status == 401) {
+        setError("Invalid api key!");
 
+        return false;
+      }
+      return true;
+    } catch (err) {
+      console.log("err = ", err);
+      return false;
+    }
+  };
 
   const handleSchedule = async (
     strategyId: string,
@@ -266,8 +295,7 @@ export function ContentStrategy() {
     status: string,
     scheduled_for: string
   ) => {
-
-    console.log("selected plan suggestion ====== " , selectedPlan?.suggestion) ; 
+    console.log("selected plan suggestion ====== ", selectedPlan?.suggestion);
     if (!selectedPlan) return;
     // console.log("scheduling for date = "  , date ) ;
     const {
@@ -277,50 +305,62 @@ export function ContentStrategy() {
 
     //creating a schedule
     try {
-
-       if((format === "video" ) && platform == "instagram") 
-        {
-          setError("Video posting on instagram is currently not supported !");
-           setTimeout(() => {
-            setError("");
-          }, 1500);
-          return ; 
-        }
-        if((format === "carousel" ) && platform == "instagram") 
-        {
-          setError("Carousel posting on instagram is currently not supported !");
-           setTimeout(() => {
-            setError("");
-          }, 1500);
-          return ; 
-        }
+      if (format === "video" && platform == "instagram") {
+        setError("Video posting on instagram is currently not supported !");
+        setTimeout(() => {
+          setError("");
+        }, 1500);
+        return;
+      }
+      if (format === "carousel" && platform == "instagram") {
+        setError("Carousel posting on instagram is currently not supported !");
+        setTimeout(() => {
+          setError("");
+        }, 1500);
+        return;
+      }
+      if (selectedPlan.format == "image" && selectedPlan?.media && selectedPlan?.media == "NULL") {
+        setError("Please generate an image first !");
+        setTimeout(() => {
+          setError("");
+        }, 1500);
+        return;
+      }
       const response = await createPost({
         profile_id: user.id,
         platform: platform,
         content: suggestion,
-        media_urls: [],
+        media_urls: (selectedPlan?.media && selectedPlan?.media != "NULL") ?[selectedPlan?.media] : [],
         scheduled_for,
         status,
       });
       console.log("response  = ", response);
       const jobId = response?.id;
       if (platform == "instagram") {
-
-       
         const accountInfo = await getSocialMediaAccountInfo("instagram");
-        const { access_token, userId } = accountInfo;
+        const { api_key } = accountInfo;
+
+        const isApiKeyValid = await validatekey(api_key);
+
+        if (!isApiKeyValid) {
+          setError(
+            "Invalid API key! If you haven't generated one yet, please follow the instructions on the dashboard after clicking 'Connect Social Accounts' to create your API key."
+          );
+          return;
+        }
         const response = await fetch(
           `${BACKEND_APIPATH.BASEURL}/schedule/post/instagram`,
           {
             method: "POST",
             headers: {
-              Authorization: `Bearer ${access_token}`,
+              Accept: "application/json",
               "Content-Type": "application/json",
             },
             body: JSON.stringify({
-              IG_USER_ID: userId,
+              api_key,
               date: scheduled_for,
               caption: suggestion,
+              imageUrl: selectedPlan?.media,
               jobId,
             }),
           }
@@ -330,21 +370,39 @@ export function ContentStrategy() {
         setSuccess({ state: true, message: "Content Scheduled Successfully" });
       } else if (platform == "linkedin") {
         const accountInfo = await getSocialMediaAccountInfo("linkedin");
-        const { access_token, userId } = accountInfo;
+        const { api_key } = accountInfo;
+        const isApiKeyValid = await validatekey(api_key);
+        if (!isApiKeyValid) {
+          setError(
+            "Invalid API key! If you haven't generated one yet, please follow the instructions on the dashboard after clicking 'Connect Social Accounts' to create your API key."
+          );
+          return;
+        }
+
         const response = await fetch(
           `${BACKEND_APIPATH.BASEURL}/schedule/post/linkedin`,
           {
             method: "POST",
             headers: {
-              Authorization: `Bearer ${access_token}`,
+              Accept: "application/json",
               "Content-Type": "application/json",
             },
-            body: JSON.stringify({
-              id: userId,
-              text: suggestion,
-              date: scheduled_for,
-              jobId,
-            }),
+            body: JSON.stringify(
+              selectedPlan?.media && selectedPlan?.media != "NULL"
+                ? {
+                    api_key,
+                    text: suggestion,
+                    date: scheduled_for,
+                    jobId,
+                    image: selectedPlan?.media,
+                  }
+                : {
+                    api_key,
+                    text: suggestion,
+                    date: scheduled_for,
+                    jobId,
+                  }
+            ),
           }
         );
 
@@ -352,18 +410,41 @@ export function ContentStrategy() {
         console.log(data);
         setSuccess({ state: true, message: "Content Scheduled Successfully" });
       } else if (platform == "twitter") {
+        setSuccess({ state: false, message: "" });
+        const accountInfo = await getSocialMediaAccountInfo("twitter");
+        const { api_key } = accountInfo;
+        const isApiKeyValid = await validatekey(api_key);
+        if (!isApiKeyValid) {
+          setError(
+            "Invalid API key! If you haven't generated one yet, please follow the instructions on the dashboard after clicking 'Connect Social Accounts' to create your API key."
+          );
+          return;
+        }
+
         const scheduledResponse = await fetch(
           `${BACKEND_APIPATH.BASEURL}/schedule/post/api`,
           {
             method: "POST",
             headers: {
+              Accept: "application/json",
               "Content-Type": "application/json",
             },
-            body: JSON.stringify({
-              data: suggestion,
-              date: scheduled_for,
-              jobId,
-            }),
+            body: JSON.stringify(
+              selectedPlan?.media && selectedPlan?.media != "NULL"
+                ? {
+                    api_key,
+                    data: suggestion,
+                    date: scheduled_for,
+                    jobId,
+                    image: selectedPlan?.media,
+                  }
+                : {
+                    api_key,
+                    data: suggestion,
+                    date: scheduled_for,
+                    jobId,
+                  }
+            ),
           }
         );
         const data = await scheduledResponse.json();
@@ -426,172 +507,187 @@ export function ContentStrategy() {
         )}
 
         <div className="space-y-4">
-  <div>
-    <label
-      htmlFor="niche"
-      className="block text-sm font-medium text-gray-300 mb-1"
-    >
-      Business Niche
-    </label>
-    <input
-      maxLength={50}
-      type="text"
-      id="niche"
-      value={niche}
-      onChange={(e) => setNiche(e.target.value)}
-      className="w-full bg-gray-700 border border-gray-600 rounded-md shadow-sm py-2 px-3 text-white focus:ring-purple-500 focus:border-purple-500"
-      placeholder="e.g., Tech Startup, Fashion Brand, etc."
-    />
-  </div>
-
-  <div>
-    <label className="block text-sm font-medium text-gray-300 mb-1">
-      Business Goals
-    </label>
-    <form onSubmit={handleAddGoal} className="flex flex-col sm:flex-row gap-2 mb-2">
-      <input
-        maxLength={50}
-        type="text"
-        value={newGoal}
-        onChange={(e) => setNewGoal(e.target.value)}
-        className="flex-1 bg-gray-700 border border-gray-600 rounded-md shadow-sm py-2 px-3 text-white focus:ring-purple-500 focus:border-purple-500"
-        placeholder="Add a business goal"
-      />
-      <button
-        type="submit"
-        className="bg-purple-600 hover:bg-purple-700 text-white px-4 py-2 rounded-md whitespace-nowrap"
-      >
-        Add Goal
-      </button>
-    </form>
-    <div className="flex flex-wrap gap-2">
-      {goals.map((goal, index) => (
-        <div
-          key={index}
-          className="bg-gray-700 text-white px-3 py-1 rounded-full flex items-center space-x-2"
-        >
-          <span>{goal}</span>
-          <button
-            onClick={() => handleRemoveGoal(index)}
-            className="text-gray-400 hover:text-white"
-          >
-            <X className="h-4 w-4" />
-          </button>
-        </div>
-      ))}
-    </div>
-  </div>
-
-  <div className="flex flex-col sm:flex-row gap-4">
-    {allStrategies?.length > 0 && (
-      <div className="flex-1 relative">
-        <p className="capitalize text-gray-200 mb-1">Select a Strategy</p>
-        <select
-          onChange={onChangeStrategyHandler}
-          className="block w-full px-4 py-3 pr-8 leading-tight bg-gray-700 border-gray-300 text-gray-200 rounded-md shadow-sm appearance-none focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-        >
-          <option className="capitalize" value="" disabled selected>
-            {selectedStrategy}
-          </option>
-          {allStrategies.map((strategy) => (
-            <option
-              className="capitalize"
-              key={strategy?.id}
-              value={strategy?.id}
+          <div>
+            <label
+              htmlFor="niche"
+              className="block text-sm font-medium text-gray-300 mb-1"
             >
-              {strategy?.niche}
-            </option>
-          ))}
-        </select>
-        <div className="absolute top-[2.5rem] right-0 flex items-center px-2 pointer-events-none">
-          <svg
-            className="w-4 h-4 text-gray-200"
-            fill="currentColor"
-            viewBox="0 0 20 20"
-          >
-            <path
-              fillRule="evenodd"
-              d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z"
-              clipRule="evenodd"
+              Business Niche
+            </label>
+            <input
+              maxLength={50}
+              type="text"
+              id="niche"
+              value={niche}
+              onChange={(e) => setNiche(e.target.value)}
+              className="w-full bg-gray-700 border border-gray-600 rounded-md shadow-sm py-2 px-3 text-white focus:ring-purple-500 focus:border-purple-500"
+              placeholder="e.g., Tech Startup, Fashion Brand, etc."
             />
-          </svg>
+          </div>
+
+          <div>
+            <label className="block text-sm font-medium text-gray-300 mb-1">
+              Business Goals
+            </label>
+            <form
+              onSubmit={handleAddGoal}
+              className="flex flex-col sm:flex-row gap-2 mb-2"
+            >
+              <input
+                maxLength={50}
+                type="text"
+                value={newGoal}
+                onChange={(e) => setNewGoal(e.target.value)}
+                className="flex-1 bg-gray-700 border border-gray-600 rounded-md shadow-sm py-2 px-3 text-white focus:ring-purple-500 focus:border-purple-500"
+                placeholder="Add a business goal"
+              />
+              <button
+                type="submit"
+                className="bg-purple-600 hover:bg-purple-700 text-white px-4 py-2 rounded-md whitespace-nowrap"
+              >
+                Add Goal
+              </button>
+            </form>
+            <div className="flex flex-wrap gap-2">
+              {goals.map((goal, index) => (
+                <div
+                  key={index}
+                  className="bg-gray-700 text-white px-3 py-1 rounded-full flex items-center space-x-2"
+                >
+                  <span>{goal}</span>
+                  <button
+                    onClick={() => handleRemoveGoal(index)}
+                    className="text-gray-400 hover:text-white"
+                  >
+                    <X className="h-4 w-4" />
+                  </button>
+                </div>
+              ))}
+            </div>
+          </div>
+
+          <div className="flex flex-col sm:flex-row gap-4">
+            {allStrategies?.length > 0 && (
+              <div className="flex-1 relative">
+                <p className="capitalize text-gray-200 mb-1">
+                  Select a Strategy
+                </p>
+                <select
+                  onChange={onChangeStrategyHandler}
+                  className="block w-full px-4 py-3 pr-8 leading-tight bg-gray-700 border-gray-300 text-gray-200 rounded-md shadow-sm appearance-none focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                >
+                  <option className="capitalize" value="" disabled selected>
+                    {selectedStrategy}
+                  </option>
+                  {allStrategies.map((strategy) => (
+                    <option
+                      className="capitalize"
+                      key={strategy?.id}
+                      value={strategy?.id}
+                    >
+                      {strategy?.niche}
+                    </option>
+                  ))}
+                </select>
+                <div className="absolute top-[2.5rem] right-0 flex items-center px-2 pointer-events-none">
+                  <svg
+                    className="w-4 h-4 text-gray-200"
+                    fill="currentColor"
+                    viewBox="0 0 20 20"
+                  >
+                    <path
+                      fillRule="evenodd"
+                      d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z"
+                      clipRule="evenodd"
+                    />
+                  </svg>
+                </div>
+              </div>
+            )}
+
+            {models && models?.length > 0 && (
+              <div className="flex-1 relative">
+                <p className="capitalize text-gray-200 mb-1">Select a model</p>
+                <select
+                  disabled={generating}
+                  onChange={handleModelChange}
+                  className={`block appearance-none w-full bg-gray-700 border border-gray-300 hover:border-gray-400 px-4 py-2 pr-8 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-gray-200 ${
+                    generating ? "opacity-50 cursor-not-allowed" : ""
+                  }`}
+                >
+                  <option className="capitalize" value="" disabled selected>
+                    {selectedModel}
+                  </option>
+                  {models.map((model) => (
+                    <option
+                      key={model}
+                      value={model}
+                      className="py-1 capitalize"
+                    >
+                      {model}
+                    </option>
+                  ))}
+                </select>
+                <div className="pointer-events-none absolute top-[2.5rem] right-0 flex items-center px-2 text-gray-200">
+                  <svg
+                    className="h-4 w-4 fill-current"
+                    xmlns="http://www.w3.org/2000/svg"
+                    viewBox="0 0 20 20"
+                  >
+                    <path d="M9.293 12.95l.707.707L15.657 8l-1.414-1.414L10 10.828 5.757 6.586 4.343 8z" />
+                  </svg>
+                </div>
+              </div>
+            )}
+          </div>
+
+          <div>
+            <button
+              onClick={handleGenerateStrategy}
+              disabled={generating}
+              className="w-full bg-purple-600 hover:bg-purple-700 text-white px-4 py-2 rounded-md flex items-center justify-center space-x-2 disabled:opacity-50"
+            >
+              {generating ? (
+                <>
+                  <Loader className="h-5 w-5 animate-spin" />
+                  <span>Generating Strategy...</span>
+                </>
+              ) : (
+                <>
+                  <Calendar className="h-5 w-5" />
+                  <span>Generate Content Strategy</span>
+                </>
+              )}
+            </button>
+          </div>
         </div>
       </div>
-    )}
-    
-    {models && models?.length > 0 && (
-      <div className="flex-1 relative">
-        <p className="capitalize text-gray-200 mb-1">Select a model</p>
-        <select
-          disabled={generating}
-          onChange={handleModelChange}
-          className={`block appearance-none w-full bg-gray-700 border border-gray-300 hover:border-gray-400 px-4 py-2 pr-8 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-gray-200 ${generating ? 'opacity-50 cursor-not-allowed' : ''}`}
-        >
-          <option className="capitalize" value="" disabled selected>
-            {selectedModel}
-          </option>
-          {models.map((model) => (
-            <option key={model} value={model} className="py-1 capitalize">
-              {model}
-            </option>
-          ))}
-        </select>
-        <div className="pointer-events-none absolute top-[2.5rem] right-0 flex items-center px-2 text-gray-200">
-          <svg
-            className="h-4 w-4 fill-current"
-            xmlns="http://www.w3.org/2000/svg"
-            viewBox="0 0 20 20"
-          >
-            <path d="M9.293 12.95l.707.707L15.657 8l-1.414-1.414L10 10.828 5.757 6.586 4.343 8z" />
-          </svg>
-        </div>
-      </div>
-    )}
-  </div>
 
-  <div>
-    <button
-      onClick={handleGenerateStrategy}
-      disabled={generating}
-      className="w-full bg-purple-600 hover:bg-purple-700 text-white px-4 py-2 rounded-md flex items-center justify-center space-x-2 disabled:opacity-50"
-    >
-      {generating ? (
-        <>
-          <Loader className="h-5 w-5 animate-spin" />
-          <span>Generating Strategy...</span>
-        </>
-      ) : (
-        <>
-          <Calendar className="h-5 w-5" />
-          <span>Generate Content Strategy</span>
-        </>
-      )}
-    </button>
-  </div>
-</div>
-      </div>
-
-      
       {/* Content Plans */}
       {plans.length > 0 && (
         <div className="space-y-4">
           <h2 className="text-xl font-bold text-white">Content Plans</h2>
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 ">
-            { plans.map((plan : any ) => (
-               accounts.some((account) => account.platform === plan.platform) && <ContentPlanCard
-                key={plan.id}
-                plan={plan}
-                onSave={updatePlan}
-                onSchedule={(plan) => {
-                  console.log("scheduling plan = ", plan);
-                  setSelectedPlan(plan);
-                  setShowScheduleModal(true);
-                  // add logic to schedule post
-                }}
-                setSelectedPlan={setSelectedPlan}
-                selectedPlan = {selectedPlan} 
-              />
-            ))}
+            {plans.map(
+              (plan: any) =>
+                accounts.some(
+                  (account) => account.platform === plan.platform
+                ) && (
+                  <ContentPlanCard
+                    key={plan.id}
+                    plan={plan}
+                    onSave={updatePlan}
+                    onSchedule={(plan) => {
+                      console.log("scheduling plan = ", plan);
+                      setSelectedPlan(plan);
+                      setShowScheduleModal(true);
+                      // add logic to schedule post
+                    }}
+                    setSelectedPlan={setSelectedPlan}
+                    selectedPlan={selectedPlan}
+                  />
+                )
+            )}
           </div>
         </div>
       )}
@@ -621,5 +717,4 @@ export function ContentStrategy() {
   );
 }
 
-
-export default ContentStrategy; 
+export default ContentStrategy;

@@ -152,7 +152,7 @@ const scheduleContentHandler = async (req  , res ) => {
     return res.status(401).json({ error: 'Unauthorized: No valid access token provided' });
   }
   if(!id || !date || !text ) {
-    return res.status(400).json({message : "Invalid body : Incomplete data recieved"})  ;  // date is required  in the request body.  // should validate date format as well.  // date should be in ISO 8601 format.  // date should be in future.  // date should not be in past.   // date should not be in the past.   // date should not be in the past.   // date should not be in the past.   // date should not be in the past.   // date should not be in the past.   // date should not be in the past.   // date should not be in the past.   // date should not be in the past.   // date should not be in the past.   // date should not be in the past.   // date should not be in the past.   // date should not be in the past.   // date should not be in the
+    return res.status(400).json({message : "Invalid body : Incomplete data recieved"})  ; 
   }
   const accessToken = authHeader.replace("Bearer " , "") ; 
   try{

@@ -37,7 +37,9 @@ import {
   deletePlan,
   getContentPlansHistory,
   getSocialMediaAccountInfo,
+  linkSocialAccount,
   updateContentPlan,
+  updateSocialAccount,
 } from "../lib/api.js";
 import { BACKEND_APIPATH } from "../constants/";
 import { useAuth } from "../context/AuthContext";
@@ -71,7 +73,7 @@ export function AIGenerator() {
   ]);
   const [formats, setFormats] = useState<string[]>(["text"]);
   const [selectedPlatforms, setSelectedPlatforms] = useState<any>([]);
-  const [storedTopic  , setStoredTopic] = useState("") ; 
+  const [storedTopic, setStoredTopic] = useState("");
   const [sources, setSources] = useState<string[]>([]);
   const [generatedContent, setGeneratedContent] = useState("");
   const [loading, setLoading] = useState(false);
@@ -87,8 +89,9 @@ export function AIGenerator() {
     state: false,
     message: "",
   });
-  const [isGeneratingNewPlan,setIsGeneratingNewPlan] = useState<boolean>(false) ; 
-  const [loadingTopics , setLoadingTopics] = useState<boolean>(false) ; 
+  const [isGeneratingNewPlan, setIsGeneratingNewPlan] =
+    useState<boolean>(false);
+  const [loadingTopics, setLoadingTopics] = useState<boolean>(false);
   const [isLoading, setIsLoading] = useState(false);
 
   const [generatedMedia, setGeneratedMedia] = useState(null);
@@ -97,9 +100,7 @@ export function AIGenerator() {
   const handleImageClick = () => {
     setShowPopup(true);
   };
-  const [generatedTopics , setGeneratedTopics] = useState([]) ; 
-
-  
+  const [generatedTopics, setGeneratedTopics] = useState([]);
 
   const [currentPlanId, setCurrentPlanId] = useState<string>("");
 
@@ -154,7 +155,33 @@ export function AIGenerator() {
   const [customModels, setCustomModels] = useState<any>([]);
   const { loadCustomModels } = useCustomModel();
 
-
+  const validatekey = async (apiKey: string) => {
+    console.log("api key = ", apiKey);
+    if (!apiKey) {
+      return false;
+    }
+    try {
+      const response = await fetch(`${BACKEND_APIPATH.BASEURL}/user`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          API_KEY: apiKey,
+        }),
+      });
+      const data = await response.json();
+      if (data.status == 401) {
+        setError("Invalid api key!");
+        removeToast();
+        return false;
+      }
+      return true;
+    } catch (err) {
+      console.log("err = ", err);
+      return false;
+    }
+  };
 
   const handleFileByExtension = (url: string) => {
     console.log("handle file by extension called ...");
@@ -197,6 +224,61 @@ export function AIGenerator() {
   const { createPlan } = useContentPlan();
   const { accounts } = useSocialAccounts();
 
+  const fetchAndUpdateActiveSocialAccounts = async (apiKey: string) => {
+    console.log("api key = ", apiKey);
+    console.log("accounts = ", accounts);
+    if (!apiKey) {
+      return false;
+    }
+    try {
+      const response = await fetch(`${BACKEND_APIPATH.BASEURL}/user`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          API_KEY: apiKey,
+        }),
+      });
+      const data = await response.json();
+      console.log(
+        "active social accounts = ",
+        data?.data?.activeSocialAccounts
+      );
+      const includedPlatforms = accounts.map((account) => account.platform);
+
+      if (
+        data?.data?.activeSocialAccounts &&
+        Array.isArray(data?.data?.activeSocialAccounts) &&
+        data?.data?.activeSocialAccounts.length > 0
+      ) {
+        const activeAccounts = data?.data?.activeSocialAccounts;
+        activeAccounts.map(async (platform: string) => {
+          if (!includedPlatforms.includes(platform)) {
+            // link social account
+            await linkSocialAccount({
+              username: "",
+              platform,
+              api_key: apiKey,
+              access_token: "",
+              refresh_token: "",
+              userId: "",
+            });
+          }
+        });
+      }
+      if (data.status == 401) {
+        setError("Invalid api key!");
+        removeToast();
+        return false;
+      }
+      return true;
+    } catch (err) {
+      console.log("err = ", err);
+      return false;
+    }
+  };
+
   const { createPost } = useScheduledPosts();
   const [generatingSuggestion, setGeneratingSuggestion] =
     useState<boolean>(false);
@@ -220,7 +302,7 @@ export function AIGenerator() {
           media: response?.[0]?.media,
           platform: response?.[0]?.platform,
           is_keyword: response?.[0]?.is_keyword,
-          generatedTopics : response?.[0]?.generatedTopics 
+          generatedTopics: response?.[0]?.generatedTopics,
         });
         setHistory((prev) => {
           return response.map((item) => {
@@ -232,7 +314,7 @@ export function AIGenerator() {
               media: item?.media,
               platform: item?.platform,
               is_keyword: item?.is_keyword,
-              generatedTopics : item?.generatedTopics 
+              generatedTopics: item?.generatedTopics,
             };
           });
         });
@@ -247,6 +329,7 @@ export function AIGenerator() {
       const models = await loadCustomModels();
       console.log("models = ", models);
       setCustomModels(models);
+      // await fetchAndUpdateActiveSocialAccounts() ;
     })();
   }, []);
 
@@ -271,7 +354,7 @@ export function AIGenerator() {
             media: response?.[0]?.media,
             platform: response?.[0]?.platform,
             is_keyword: response?.[0]?.is_keyword,
-            generatedTopics : response?.[0]?.generatedTopics
+            generatedTopics: response?.[0]?.generatedTopics,
           });
           setHistory((prev) => {
             return response.map((item) => {
@@ -283,7 +366,7 @@ export function AIGenerator() {
                 media: item?.media,
                 platform: item?.platform,
                 is_keyword: item?.is_keyword,
-                generatedTopics : item?.generatedTopics
+                generatedTopics: item?.generatedTopics,
               };
             });
           });
@@ -355,10 +438,21 @@ export function AIGenerator() {
 
   async function handlePostTweet() {
     setSuccess({ state: false, message: "" });
-    const accountInfo = await getSocialMediaAccountInfo("twitter");
-    const { access_token, refresh_token } = accountInfo;
-    setPosting(true);
+    if (!generatedContent) {
+      setError("Please generate content !");
+    }
+
     try {
+      const accountInfo = await getSocialMediaAccountInfo("twitter");
+      const { api_key } = accountInfo;
+      const isApiKeyValid = await validatekey(api_key);
+      if (!isApiKeyValid) {
+        setError(
+          "Invalid API key! If you haven't generated one yet, please follow the instructions on the dashboard after clicking 'Connect Social Accounts' to create your API key."
+        );
+        return;
+      }
+      setPosting(true);
       const response = await fetch(
         `${BACKEND_APIPATH.BASEURL}/post/tweet/twitter`,
         {
@@ -367,47 +461,62 @@ export function AIGenerator() {
             "Content-Type": "application/json",
           },
           method: "POST",
-          body: JSON.stringify({
-            access_token,
-            refresh_token,
-            data: generatedContent,
-          }),
+          body: JSON.stringify(
+            generatedImage
+              ? {
+                  api_key,
+                  data: generatedContent,
+                  image: generatedImage,
+                }
+              : {
+                  api_key,
+                  data: generatedContent,
+                }
+          ),
         }
       );
       const data = await response.json();
       console.log(data);
       if (response?.status >= 400) {
+        if (response?.status == 400) {
+          setError(data?.message || "Something went wrong");
+          removeToast();
+          return;
+        }
         if (response?.status == 403) {
-          setError("Your daily limit is exceeded please try again later !");
-          setTopic("");
-          setGeneratedContent("");
-          setGeneratedImage("");
+          setError("You dont have enough permissions.");
+          removeToast();
+          return;
+        }
+        if (response?.status == 429) {
+          setError(
+            "You have exceeded your API quota for the month. Please upgrade your plan."
+          );
+          removeToast();
           return;
         } else if (response?.status == 401) {
-          // redirect to login
-          initializeTwitterAuth();
+          setError("Invalid api key");
+          removeToast();
           return;
         }
         setError("Something went wrong while posting on twitter");
-        setTopic("");
-        setGeneratedContent("");
-        setGeneratedImage("");
+        removeToast();
         return;
       }
-      setSuccess({ state: true, message: "Content posted !!" });
-      removeToast();
+      setSuccess({
+        state: true,
+        message: data?.message || "Content posted !!",
+      });
     } catch (err: any) {
       setError(err?.message);
+      removeToast();
     } finally {
-      setTopic("");
-      setGeneratedContent("");
-      setGeneratedImage("");
       setPosting(false);
     }
   }
   const handlePostInstagram = async () => {
     setSuccess({ state: false, message: "" });
-    setPosting(true);
+
     if (!generatedImage) {
       setError("Please Provide Image For Uploading On Instagram");
       return;
@@ -418,23 +527,28 @@ export function AIGenerator() {
 
     try {
       const accountInfo = await getSocialMediaAccountInfo("instagram");
-      const { access_token, userId } = accountInfo;
+      const { api_key } = accountInfo;
 
-      if (!userId || !access_token) {
-        setError("Something went wrong while fetching user information");
+      const isApiKeyValid = await validatekey(api_key);
+
+      if (!isApiKeyValid) {
+        setError(
+          "Invalid API key! If you haven't generated one yet, please follow the instructions on the dashboard after clicking 'Connect Social Accounts' to create your API key."
+        );
         return;
       }
 
+      setPosting(true);
       const response = await fetch(
         `${BACKEND_APIPATH.BASEURL}/upload/post/instagram`,
         {
           method: "POST",
           headers: {
-            Authorization: `Bearer ${access_token}`,
+            Accept: "application/json",
             "Content-Type": "application/json",
           },
           body: JSON.stringify({
-            IG_USER_ID: userId,
+            api_key,
             caption: generatedContent,
             imageUrl: generatedImage,
           }),
@@ -442,16 +556,42 @@ export function AIGenerator() {
       );
       const data = await response.json();
       console.log("post instagram api ", data);
-      setSuccess({ state: true, message: "Content posted !!" });
-      removeToast();
+      if (response?.status >= 400) {
+        if (response?.status == 400) {
+          setError(data?.message || "Something went wrong");
+          removeToast();
+          return;
+        }
+        if (response?.status == 403) {
+          setError("You dont have enough permissions.");
+          removeToast();
+          return;
+        }
+        if (response?.status == 429) {
+          setError(
+            "You have exceeded your API quota for the month. Please upgrade your plan."
+          );
+          removeToast();
+          return;
+        } else if (response?.status == 401) {
+          setError("Invalid api key");
+          removeToast();
+          return;
+        }
+        setError("Something went wrong while posting on twitter");
+        removeToast();
+        return;
+      }
+
+      setSuccess({
+        state: true,
+        message: data?.message || "Content posted !!",
+      });
     } catch (err: any) {
-      console.log(err);
-      setError(err.message);
+      setError(err?.message);
+      removeToast();
     } finally {
       setPosting(false);
-      setTopic("");
-      setGeneratedContent("");
-      setGeneratedImage("");
     }
   };
 
@@ -459,38 +599,78 @@ export function AIGenerator() {
     setPosting(true);
     setSuccess({ state: false, message: "" });
     if (!generatedContent) {
-      setError("Please Provide Caption For Uploading On Linkedin ");
+      setError("Please generate content !");
     }
     try {
       const accountInfo = await getSocialMediaAccountInfo("linkedin");
-      const { access_token, userId } = accountInfo;
-      if (!userId || !access_token) {
-        setError("Something went wrong while fetching user information");
+      const { api_key } = accountInfo;
+      const isApiKeyValid = await validatekey(api_key);
+      if (!isApiKeyValid) {
+        setError(
+          "Invalid API key! If you haven't generated one yet, please follow the instructions on the dashboard after clicking 'Connect Social Accounts' to create your API key."
+        );
         return;
       }
+      setPosting(true);
       const response = await fetch(
         `${BACKEND_APIPATH.BASEURL}/upload/post/linkedin`,
         {
           method: "POST",
           headers: {
-            Authorization: `Bearer ${access_token}`,
+            Accept: "application/json",
             "Content-Type": "application/json",
           },
-          body: JSON.stringify({ id: userId, text: generatedContent }),
+          body: JSON.stringify(
+            generatedImage
+              ? {
+                  api_key,
+                  text: generatedContent,
+                  image: generatedImage,
+                }
+              : {
+                  api_key,
+                  text: generatedContent,
+                }
+          ),
         }
       );
       const data = await response.json();
       console.log("post linkedin api ", data);
-      setSuccess({ state: true, message: "Content posted !!" });
-      removeToast();
+      if (response?.status >= 400) {
+        if (response?.status == 400) {
+          setError(data?.message || "Something went wrong");
+          removeToast();
+          return;
+        }
+        if (response?.status == 403) {
+          setError("You dont have enough permissions");
+          removeToast();
+          return;
+        }
+        if (response?.status == 429) {
+          setError(
+            "You have exceeded your API quota for the month. Please upgrade your plan."
+          );
+          removeToast();
+          return;
+        } else if (response?.status == 401) {
+          setError("Invalid api key");
+          removeToast();
+          return;
+        }
+        setError("Something went wrong while posting on linkedin");
+        removeToast();
+        return;
+      }
+      setSuccess({
+        state: true,
+        message: data?.message || "Content posted !!",
+      });
     } catch (err: any) {
       console.log(err);
       setError(err?.message);
     } finally {
       setPosting(false);
-      setGeneratedContent("");
-      setTopic("");
-      setGeneratedImage("");
     }
   };
 
@@ -611,8 +791,8 @@ export function AIGenerator() {
   };
 
   const handleGenerateTopics = async (topic: string, platform: string) => {
-    console.log("topic generation called ... ")  ; 
-    console.log("current plan id = " , currentPlanId) ; 
+    console.log("topic generation called ... ");
+    console.log("current plan id = ", currentPlanId);
     setSuccess({ state: false, message: "" });
     if (profile?.tokens - 10 < 0) {
       setError("You do not have enough tokens for post generation ..");
@@ -634,8 +814,7 @@ export function AIGenerator() {
     setError(null);
     setGeneratedContent("");
 
-    if(currentPlanId) 
-    {
+    if (currentPlanId) {
       let suggestion = "";
       try {
         if (selectedModel == "grok") {
@@ -645,13 +824,13 @@ export function AIGenerator() {
           suggestion = await generateTopics(topic, platform);
           // setGeneratedContent(suggestion);
         }
-        const topics = JSON.parse(suggestion) || [] ; 
-        setGeneratedTopics(topics || [] )
+        const topics = JSON.parse(suggestion) || [];
+        setGeneratedTopics(topics || []);
         if (currentPlanId) {
           await updateContentPlan(currentPlanId, {
             is_keyword: true,
             suggestion,
-            generatedTopics : topics
+            generatedTopics: topics,
           });
         }
         if (profile?.tokens - 10 >= 0) {
@@ -665,9 +844,7 @@ export function AIGenerator() {
         setLoadingTopics(false);
         setGeneratingSuggestion(false);
       }
-
-    }
-    else {
+    } else {
       const {
         data: { user },
       } = await supabase.auth.getUser();
@@ -682,10 +859,10 @@ export function AIGenerator() {
         status: "pending",
         scheduled_for: null,
         is_keyword: false,
-        generatedTopics : [] 
+        generatedTopics: [],
       });
       setRefreshPage((prev) => !prev);
-  
+
       let suggestion = "";
       try {
         if (selectedModel == "grok") {
@@ -695,13 +872,13 @@ export function AIGenerator() {
           suggestion = await generateTopics(topic, platform);
           // setGeneratedContent(suggestion);
         }
-        const topics = JSON.parse(suggestion) || [] ; 
-        setGeneratedTopics(topics || [] )
+        const topics = JSON.parse(suggestion) || [];
+        setGeneratedTopics(topics || []);
         if (createdPlan?.id) {
           await updateContentPlan(createdPlan?.id, {
             is_keyword: true,
             suggestion,
-            generatedTopics : topics
+            generatedTopics: topics,
           });
         }
         if (profile?.tokens - 10 >= 0) {
@@ -805,10 +982,9 @@ export function AIGenerator() {
         setLoading(false);
         setGeneratingSuggestion(false);
       }
-    }
-    else {
+    } else {
       const {
-        data: { user }
+        data: { user },
       } = await supabase.auth.getUser();
       if (!user) throw new Error("No user found");
       const createdPlan = await createPlan({
@@ -821,7 +997,7 @@ export function AIGenerator() {
         status: "pending",
         scheduled_for: null,
         is_keyword: false,
-        generatedTopics : [] 
+        generatedTopics: [],
       });
       setRefreshPage((prev) => !prev);
       try {
@@ -880,10 +1056,7 @@ export function AIGenerator() {
         setLoading(false);
         setGeneratingSuggestion(false);
       }
-      
-
     }
-  
   };
 
   const handleSave = async (platform: string) => {
@@ -928,24 +1101,35 @@ export function AIGenerator() {
       setError("Please generate content first");
       return;
     }
+    console.log("generated image = ", generatedImage);
     setSuccess({ state: false, message: "" });
     try {
-      // protected route
-      const {
-        data: { user },
-      } = await supabase.auth.getUser();
-      if (!user) throw new Error("No authenticated user found");
-
-      console.log(date.toString());
-      const post = {
-        platform: "twitter",
-        content: generatedContent,
-        media_urls: [],
-        scheduled_for: date,
-        status: "pending",
-      };
       const accountInfo = await getSocialMediaAccountInfo("twitter");
-      const { access_token, refresh_token } = accountInfo;
+      const { api_key } = accountInfo;
+      const isApiKeyValid = await validatekey(api_key);
+      if (!isApiKeyValid) {
+        setError(
+          "Invalid API key! If you haven't generated one yet, please follow the instructions on the dashboard after clicking 'Connect Social Accounts' to create your API key."
+        );
+        return;
+      }
+
+      const post = generatedImage
+        ? {
+            platform: "twitter",
+            content: generatedContent,
+            media_urls: [generatedImage],
+            scheduled_for: date,
+            status: "pending",
+          }
+        : {
+            platform: "twitter",
+            content: generatedContent,
+            media_urls: [],
+            scheduled_for: date,
+            status: "pending",
+          };
+
       if (!postId) {
         const createdPost = await createPost(post);
         console.log("createdPost (in tweet) = ", createdPost);
@@ -954,51 +1138,67 @@ export function AIGenerator() {
           {
             method: "POST",
             headers: {
+              Accept: "application/json",
               "Content-Type": "application/json",
             },
-            body: JSON.stringify({
-              access_token,
-              refresh_token,
-              data: generatedContent,
-              date: date.toString(),
-              jobId: createdPost?.id,
-            }),
+            body: JSON.stringify(
+              generatedImage
+                ? {
+                    api_key,
+                    data: generatedContent,
+                    date: date,
+                    jobId: createdPost?.id,
+                    image: generatedImage,
+                  }
+                : {
+                    api_key,
+                    data: generatedContent,
+                    date: date,
+                    jobId: createdPost?.id,
+                  }
+            ),
           }
         );
-        console.log(
-          "scheduled response from API  =  ",
-          await scheduledResponse.json()
-        );
+        const data = await scheduledResponse.json();
+        console.log("data = ", data);
       } else {
         const scheduledResponse = await fetch(
           `${BACKEND_APIPATH.BASEURL}/schedule/post/api`,
           {
             method: "POST",
             headers: {
+              Accept: "application/json",
               "Content-Type": "application/json",
             },
-            body: JSON.stringify({
-              access_token,
-              refresh_token,
-              data: generatedContent,
-              date: date.toString(),
-              jobId: postId,
-            }),
+            body: JSON.stringify(
+              generatedImage
+                ? {
+                    api_key,
+                    data: generatedContent,
+                    date: date,
+                    jobId: postId,
+                    image: generatedImage,
+                  }
+                : {
+                    api_key,
+                    data: generatedContent,
+                    date: date,
+                    jobId: postId,
+                  }
+            ),
           }
         );
-        console.log(
-          "scheduled response from API  =  ",
-          await scheduledResponse.json()
-        );
+        const data = await scheduledResponse.json();
+        console.log("data = ", data);
       }
       setSuccess({ state: true, message: "Content Scheduled Successfully !!" });
       removeToast();
     } catch (err: any) {
-      setError(err.message);
+      console.log(err);
+      setError("Something went wrong !");
+      removeToast();
     } finally {
       setShowScheduleModal(false);
-      setTopic("");
-      setGeneratedContent("");
     }
   };
   const handleScheduleInstaPost = async (
@@ -1008,17 +1208,22 @@ export function AIGenerator() {
     setSuccess({ state: false, message: "" });
     if (!generatedImage) {
       setError("Please Provide Image For Uploading On Instagram");
+      removeToast() ; 
       return;
     }
     if (!generatedContent) {
       setError("Please generate content first");
+      removeToast() ; 
       return;
     }
     try {
       const accountInfo = await getSocialMediaAccountInfo("instagram");
-      const { access_token, userId } = accountInfo;
-      if (!access_token || !userId) {
-        setError("Something went wrong while fetching user information");
+      const { api_key } = accountInfo;
+      const isApiKeyValid = await validatekey(api_key);
+      if (!isApiKeyValid) {
+        setError(
+          "Invalid API key! If you haven't generated one yet, please follow the instructions on the dashboard after clicking 'Connect Social Accounts' to create your API key."
+        );
         return;
       }
       if (!postId) {
@@ -1030,17 +1235,17 @@ export function AIGenerator() {
           status: "pending",
         };
         const createdPost = await createPost(post);
-        console.log("createdPost (in instagram) = ", createdPost);
+        
         const response = await fetch(
           `${BACKEND_APIPATH.BASEURL}/schedule/post/instagram`,
           {
             method: "POST",
             headers: {
-              Authorization: `Bearer ${access_token}`,
+              Accept: "application/json",
               "Content-Type": "application/json",
             },
             body: JSON.stringify({
-              IG_USER_ID: userId,
+              api_key,
               date: date,
               caption: generatedContent,
               imageUrl: generatedImage,
@@ -1049,7 +1254,7 @@ export function AIGenerator() {
           }
         );
         const data = await response.json();
-        console.log("scheduled insta post api ", data);
+        console.log("data = ", data);
         setSuccess({
           state: true,
           message: "Content Scheduled Successfully !!",
@@ -1061,11 +1266,11 @@ export function AIGenerator() {
           {
             method: "POST",
             headers: {
-              Authorization: `Bearer ${access_token}`,
+              Accept: "application/json",
               "Content-Type": "application/json",
             },
             body: JSON.stringify({
-              IG_USER_ID: userId,
+              api_key,
               date: date,
               caption: generatedContent,
               jobId: postId,
@@ -1073,12 +1278,17 @@ export function AIGenerator() {
           }
         );
         const data = await response.json();
-        console.log("scheduled insta post api ", data);
+        console.log("data = ", data);
       }
-      setShowScheduleModal(false);
-      // create scheduled post
+      setSuccess({ state: true, message: "Content Scheduled Successfully" });
+      removeToast();
     } catch (err) {
       console.log(err);
+      setError("Something went wrong !");
+      removeToast();
+    }
+    finally {
+      setShowScheduleModal(false);
     }
   };
   const handleScheduleLinkedinPost = async (
@@ -1086,32 +1296,63 @@ export function AIGenerator() {
     postId: null | string = null
   ) => {
     setSuccess({ state: false, message: "" });
+    if (!generatedContent) {
+      setError("Please generate content first");
+      return;
+    }
+
+    console.log("generated image = ", generatedImage);
     try {
       const accountInfo = await getSocialMediaAccountInfo("linkedin");
-      const { access_token, userId } = accountInfo;
+      const { api_key } = accountInfo;
+      const isApiKeyValid = await validatekey(api_key);
+      if (!isApiKeyValid) {
+        setError(
+          "Invalid API key! If you haven't generated one yet, please follow the instructions on the dashboard after clicking 'Connect Social Accounts' to create your API key."
+        );
+        return;
+      }
       if (!postId) {
-        const post = {
-          platform: "linkedin",
-          content: generatedContent,
-          media_urls: [],
-          scheduled_for: date,
-          status: "pending",
-        };
+        const post = generatedImage
+          ? {
+              platform: "linkedin",
+              content: generatedContent,
+              media_urls: [generatedImage],
+              scheduled_for: date,
+              status: "pending",
+            }
+          : {
+              platform: "linkedin",
+              content: generatedContent,
+              media_urls: [],
+              scheduled_for: date,
+              status: "pending",
+            };
         const createdPost = await createPost(post);
         const response = await fetch(
           `${BACKEND_APIPATH.BASEURL}/schedule/post/linkedin`,
           {
             method: "POST",
             headers: {
-              Authorization: `Bearer ${access_token}`,
+              Accept: "application/json",
               "Content-Type": "application/json",
             },
-            body: JSON.stringify({
-              id: userId,
-              text: generatedContent,
-              date,
-              jobId: createdPost?.id,
-            }),
+            body: JSON.stringify(
+              generatedImage
+                ? {
+                    api_key,
+                    text: generatedContent,
+                    date,
+                    jobId: createdPost?.id,
+                    image: generatedImage,
+                  }
+                : {
+                    api_key,
+                    text: generatedContent,
+                    date,
+                    jobId: createdPost?.id,
+                  }
+            ),
           }
         );
         const data = await response.json();
@@ -1122,15 +1363,25 @@ export function AIGenerator() {
           {
             method: "POST",
             headers: {
-              Authorization: `Bearer ${access_token}`,
+              Accept: "application/json",
               "Content-Type": "application/json",
             },
-            body: JSON.stringify({
-              id: userId,
-              text: generatedContent,
-              date,
-              jobId: postId,
-            }),
+            body: JSON.stringify(
+              generatedImage
+                ? {
+                    api_key,
+                    text: generatedContent,
+                    date,
+                    jobId: postId,
+                    image: generatedImage,
+                  }
+                : {
+                    api_key,
+                    text: generatedContent,
+                    date,
+                    jobId: postId,
+                  }
+            ),
           }
         );
         const data = await response.json();
@@ -1141,22 +1392,23 @@ export function AIGenerator() {
       removeToast();
     } catch (err) {
       console.log(err);
+      setError("Something went wrong !");
+      removeToast();
     } finally {
       setShowScheduleModal(false);
     }
   };
   const loadHistoryItem = (item: any) => {
-    console.log("loaded history item = " , item ) ; 
+    console.log("loaded history item = ", item);
     console.log("current plan id = ", item?.id);
     setCurrentPlanId(item?.id);
     setTopic(item?.topic || "");
     setGeneratedContent(item?.content || "");
     setSelectedPlatforms([item?.platform]);
-    setGeneratedTopics(item?.generatedTopics || [] ) ; 
-    setStoredTopic(item?.topic) ;
+    setGeneratedTopics(item?.generatedTopics || []);
+    setStoredTopic(item?.topic);
     console.log("media inside history =- ", typeof item?.media);
     console.log("item media = ", item?.media);
-    
 
     if (item?.media) {
       handleFileByExtension(item?.media);
@@ -1225,36 +1477,33 @@ export function AIGenerator() {
   };
 
   const handleNewPlanCreation = async () => {
-    setIsGeneratingNewPlan(true) ;
-    try{
-    const {
-      data: { user },
-    } = await supabase.auth.getUser();
-    if (!user) throw new Error("No user found");
-    const createdPlan = await createPlan({
-      profile_id: user.id,
-      strategy_id: null,
-      platform: selectedPlatforms[0],
-      format: formats[0],
-      topic : "",
-      suggestion: "New Plan",
-      status: "pending",
-      scheduled_for: null,
-      is_keyword: false,
-      generatedTopics : [] 
-    });
-    setCurrentPlanId(createdPlan?.id) ; 
-    setRefreshPage(prev=>!prev) ; 
+    setIsGeneratingNewPlan(true);
+    try {
+      const {
+        data: { user },
+      } = await supabase.auth.getUser();
+      if (!user) throw new Error("No user found");
+      const createdPlan = await createPlan({
+        profile_id: user.id,
+        strategy_id: null,
+        platform: selectedPlatforms[0],
+        format: formats[0],
+        topic: "",
+        suggestion: "New Plan",
+        status: "pending",
+        scheduled_for: null,
+        is_keyword: false,
+        generatedTopics: [],
+      });
+      setCurrentPlanId(createdPlan?.id);
+      setRefreshPage((prev) => !prev);
+    } catch (err) {
+      console.log(err);
+      setError("Something went wrong");
+    } finally {
+      setIsGeneratingNewPlan(false);
     }
-    catch(err) 
-    {
-      console.log(err) ;
-      setError('Something went wrong') ;
-    }
-    finally{
-      setIsGeneratingNewPlan(false) ;
-    }
-  }
+  };
 
   if (isLoading) {
     return (
@@ -1266,7 +1515,17 @@ export function AIGenerator() {
   return (
     <div className="max-w-4xl mx-auto ">
       <h1 className="text-xl flex items-center gap-4  sm:text-2xl md:text-3xl font-bold text-white mb-6 sm:mb-8">
-        Custom Post generator <button disabled={isGeneratingNewPlan} onClick={handleNewPlanCreation} title="Create new empty plan" className={`${isGeneratingNewPlan ? 'cursor-not-allowed' : "cursor-pointer"}`}><Plus className="h-6 w-6 font-bold" /></button> 
+        Custom Post generator{" "}
+        <button
+          disabled={isGeneratingNewPlan}
+          onClick={handleNewPlanCreation}
+          title="Create new empty plan"
+          className={`${
+            isGeneratingNewPlan ? "cursor-not-allowed" : "cursor-pointer"
+          }`}
+        >
+          <Plus className="h-6 w-6 font-bold" />
+        </button>
       </h1>
 
       {showVideoPopup && generatedVideo && generatedMedia && (
@@ -1325,7 +1584,6 @@ export function AIGenerator() {
                   Enter Your niche topic
                 </label>
                 <input
-                  
                   type="text"
                   id="topic"
                   value={topic}
@@ -1334,33 +1592,36 @@ export function AIGenerator() {
                   placeholder="Niches like statistics, motivational quotes, and educational,etc content remain popular"
                 />
               </div>
-              {Array.isArray(generatedTopics) && 
-                  generatedTopics?.length > 0  && <div className="flex gap-2 items-start flex-wrap ">
-                    <h1 className="text-sm font-medium text-gray-300">Select a topic below based on your above niche</h1>
-                    <div className="flex gap-2 items-start flex-wrap">{
-                  generatedTopics.map(
-                    (item: string, index: number) => {
-                      return (
-                        <button
-                          title={item}
-                          className={`${
-                            topic === item
-                              ? "bg-purple-600 text-white"
-                              : "bg-gray-700 text-gray-300 hover:bg-gray-600"
-                          } px-3 py-1 rounded-full text-xs sm:text-sm transition-colors`}
-                          onClick={() => {
-                            setTopic(item);
-                          }}
-                          key={index}
-                        >
-                          {item?.length > 10
-                            ? item.substring(0, 20) + "..."
-                            : item}
-                        </button>
-                      );
-                    }
-                  )}</div>
-              </div>}
+              {Array.isArray(generatedTopics) &&
+                generatedTopics?.length > 0 && (
+                  <div className="flex gap-2 items-start flex-wrap ">
+                    <h1 className="text-sm font-medium text-gray-300">
+                      Select a topic below based on your above niche
+                    </h1>
+                    <div className="flex gap-2 items-start flex-wrap">
+                      {generatedTopics.map((item: string, index: number) => {
+                        return (
+                          <button
+                            title={item}
+                            className={`${
+                              topic === item
+                                ? "bg-purple-600 text-white"
+                                : "bg-gray-700 text-gray-300 hover:bg-gray-600"
+                            } px-3 py-1 rounded-full text-xs sm:text-sm transition-colors`}
+                            onClick={() => {
+                              setTopic(item);
+                            }}
+                            key={index}
+                          >
+                            {item?.length > 10
+                              ? item.substring(0, 20) + "..."
+                              : item}
+                          </button>
+                        );
+                      })}
+                    </div>
+                  </div>
+                )}
 
               <div className="grid grid-cols-1 gap-4 w-full">
                 {accounts.length > 0 && (
@@ -1373,29 +1634,26 @@ export function AIGenerator() {
                     </label>
                     <div className="flex flex-wrap gap-2">
                       {platforms.map((platform: string, index: number) => {
+                        const matchedAccount = accounts.find(
+                          (account) => account?.platform === platform
+                        );
+
+                        if (!matchedAccount) return null;
+
                         return (
-                          accounts.find(
-                            (account) => account?.platform == platform
-                          ) && (
-                            <button
-                              className={`${
-                                selectedPlatforms.some(
-                                  (selectedPlatform: string) =>
-                                    selectedPlatform === platform
-                                )
-                                  ? "bg-purple-600 text-white"
-                                  : "bg-gray-700 text-gray-300 hover:bg-gray-600"
-                              } px-3 py-1 rounded-full text-xs sm:text-sm transition-colors`}
-                              onClick={() => {
-                                setSelectedPlatforms((prev: any) => {
-                                  return [platform];
-                                });
-                              }}
-                              key={index}
-                            >
-                              {platform}
-                            </button>
-                          )
+                          <button
+                            key={index}
+                            className={`${
+                              selectedPlatforms.includes(platform)
+                                ? "bg-purple-600 text-white"
+                                : "bg-gray-700 text-gray-300 hover:bg-gray-600"
+                            } px-3 py-1 rounded-full text-xs sm:text-sm transition-colors`}
+                            onClick={() => {
+                              setSelectedPlatforms([platform]);
+                            }}
+                          >
+                            {platform}
+                          </button>
                         );
                       })}
                     </div>
@@ -1491,48 +1749,48 @@ export function AIGenerator() {
               </div>
 
               <div className="flex flex-col md:flex md:flex-row gap-2 ">
-              <div className="flex-1 mt-4">
-                <button
-                  onClick={() => {
-                    handleGenerateTopics(topic, selectedPlatforms[0]);
-                  }}
-                  disabled={loading || generatingSuggestion}
-                  className="w-full bg-purple-600 hover:bg-purple-700 text-white px-4 py-2 rounded-md flex items-center justify-center space-x-2 disabled:opacity-50 text-sm sm:text-base transition-colors"
-                >
-                  {loadingTopics ? (
-                    <>
-                      <Loader className="h-4 w-4 sm:h-5 sm:w-5 animate-spin" />
-                      <span>Generating...</span>
-                    </>
-                  ) : (
-                    <>
-                      <Sparkles className="h-4 w-4 sm:h-5 sm:w-5" />
-                      <span>{"Generate Topics"}</span>
-                    </>
-                  )}
-                </button>
-              </div>
-              <div className="flex-1 mt-4">
-                <button
-                  onClick={() => {
-                    handleGenerate();
-                  }}
-                  disabled={loadingTopics }
-                  className={`w-full bg-purple-600 hover:bg-purple-700 text-white px-4 py-2 rounded-md flex items-center justify-center space-x-2 disabled:opacity-50 text-sm sm:text-base transition-colors `}
-                >
-                  {loading ? (
-                    <>
-                      <Loader className="h-4 w-4 sm:h-5 sm:w-5 animate-spin" />
-                      <span>Generating...</span>
-                    </>
-                  ) : (
-                    <>
-                      <Sparkles className="h-4 w-4 sm:h-5 sm:w-5" />
-                      <span>{"Generate Content"}</span>
-                    </>
-                  )}
-                </button>
-              </div>
+                <div className="flex-1 mt-4">
+                  <button
+                    onClick={() => {
+                      handleGenerateTopics(topic, selectedPlatforms[0]);
+                    }}
+                    disabled={loading || generatingSuggestion}
+                    className="w-full bg-purple-600 hover:bg-purple-700 text-white px-4 py-2 rounded-md flex items-center justify-center space-x-2 disabled:opacity-50 text-sm sm:text-base transition-colors"
+                  >
+                    {loadingTopics ? (
+                      <>
+                        <Loader className="h-4 w-4 sm:h-5 sm:w-5 animate-spin" />
+                        <span>Generating...</span>
+                      </>
+                    ) : (
+                      <>
+                        <Sparkles className="h-4 w-4 sm:h-5 sm:w-5" />
+                        <span>{"Generate Topics"}</span>
+                      </>
+                    )}
+                  </button>
+                </div>
+                <div className="flex-1 mt-4">
+                  <button
+                    onClick={() => {
+                      handleGenerate();
+                    }}
+                    disabled={loadingTopics}
+                    className={`w-full bg-purple-600 hover:bg-purple-700 text-white px-4 py-2 rounded-md flex items-center justify-center space-x-2 disabled:opacity-50 text-sm sm:text-base transition-colors `}
+                  >
+                    {loading ? (
+                      <>
+                        <Loader className="h-4 w-4 sm:h-5 sm:w-5 animate-spin" />
+                        <span>Generating...</span>
+                      </>
+                    ) : (
+                      <>
+                        <Sparkles className="h-4 w-4 sm:h-5 sm:w-5" />
+                        <span>{"Generate Content"}</span>
+                      </>
+                    )}
+                  </button>
+                </div>
               </div>
               {
                 <div className="relative space-y-4">
@@ -1591,7 +1849,11 @@ export function AIGenerator() {
                       <label className="block text-sm font-medium text-gray-300 mb-2">
                         Generated Content
                       </label>
-                      <Editor initialContent={generatedContent} setGeneratedContent = {setGeneratedContent }  keywordGenerated={keywordGenerated} />
+                      <Editor
+                        initialContent={generatedContent}
+                        setGeneratedContent={setGeneratedContent}
+                        keywordGenerated={keywordGenerated}
+                      />
                     </div>
                   )}
 
@@ -1599,7 +1861,7 @@ export function AIGenerator() {
                     <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-3">
                       <button
                         onClick={() => {
-                          handleGenerate()
+                          handleGenerate();
                         }}
                         className="bg-purple-600 hover:bg-purple-700 text-white px-4 py-2 rounded-md flex items-center justify-center space-x-2 text-sm sm:text-base transition-colors"
                       >

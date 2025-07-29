@@ -275,6 +275,7 @@ async function generatePost(req, res) {
     )}.
 
 Guidelines:
+- Max response size  280 characters
 - Base the content on the strategy: "${topic}"
 - Tailor it specifically for the ${platform} platform
 - Follow platform best practices: ${platformGuide[platform]}${
@@ -292,7 +293,7 @@ Guidelines:
 - Make the content niche-specific, insightful, practical, and authentic
 - Avoid markdown formatting entirely
 - **Do not use parentheses under any circumstances**
-- Keep the response concise and under 200 words`;
+`;
 
     // Use fetch API to call Grok
     const response = await fetch("https://api.x.ai/v1/chat/completions", {

@@ -114,9 +114,37 @@ export async function getSocialAccounts() {
     .select('*')
     .eq('profile_id', user.id);
 
+    console.log("account ****** => " , accounts ) ; 
+
   if (error) throw error;
   return accounts;
 }
+export async function updateSocialAccount(updatedData : any ) {
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user) throw new Error('No user found');
+
+  const { data, error } = await supabase
+    .from('social_accounts')
+    .update(updatedData)  
+    .eq('profile_id', user.id)
+  if (error) throw error;
+  return data;
+}
+
+export async function updateSocialAccountUsername(updatedData: { platform: string; username: string }) {
+  const { data: { user }, error: authError } = await supabase.auth.getUser();
+  if (!user) throw authError || new Error('No user found');
+
+  const { data, error } = await supabase
+    .from('social_accounts')
+    .update({ username: updatedData.username })  // only update username
+    .eq('profile_id', user.id)
+    .eq('platform', updatedData.platform);       // update based on platform
+
+  if (error) throw error;
+  return data;
+}
+
 export async function getSocialMediaAccountInfo(platform : string ) 
 {
   const {data : {user} , error : error1} = await supabase.auth.getUser() ; 
@@ -134,10 +162,25 @@ export async function getSocialMediaAccountInfo(platform : string )
 
 }
 
+export async function deleteSocialMediaAccount(platform: string) {
+  const { data: { user }, error: authError } = await supabase.auth.getUser();
+  if (!user) throw authError;
+
+  const { error } = await supabase
+    .from('social_accounts')
+    .delete()
+    .eq('profile_id', user.id)
+    .eq('platform', platform);
+
+  if (error) throw error;
+
+  ;
+}
+
 export async function linkSocialAccount(account: Omit<Tables['social_accounts']['Insert'], 'profile_id'>) {
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) throw new Error('No user found');
-
+  console.log("information = " , account) ;
   const { data, error } = await supabase
     .from('social_accounts')
     .insert([{ ...account, profile_id: user.id }])
