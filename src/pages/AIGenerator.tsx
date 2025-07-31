@@ -726,6 +726,9 @@ export function AIGenerator() {
           suggestion: content,
           topic,
           is_keyword: false,
+          platform: selectedPlatforms[0]
+          
+          
         });
 
         await handleVideoGeneration(userid, currentPlanId, videoGenPrompt);
@@ -744,6 +747,7 @@ export function AIGenerator() {
           suggestion: content,
           topic,
           is_keyword: false,
+          platform: selectedPlatforms[0]
         });
 
         await handleVideoGeneration(userid, currentPlanId, videoGenPrompt);
@@ -831,6 +835,7 @@ export function AIGenerator() {
             is_keyword: true,
             suggestion,
             generatedTopics: topics,
+            platform: selectedPlatforms[0]
           });
         }
         if (profile?.tokens - 10 >= 0) {
@@ -879,6 +884,7 @@ export function AIGenerator() {
             is_keyword: true,
             suggestion,
             generatedTopics: topics,
+            platform: selectedPlatforms[0]
           });
         }
         if (profile?.tokens - 10 >= 0) {
@@ -968,6 +974,7 @@ export function AIGenerator() {
           suggestion: content,
           topic,
           is_keyword: false,
+          platform: selectedPlatforms[0]
         });
         // content = await generatePostUsingGrok(topic, selectedPlatforms[0]);
         setGeneratedContent(content);
@@ -1043,6 +1050,7 @@ export function AIGenerator() {
           suggestion: content,
           topic,
           is_keyword: false,
+          platform: selectedPlatforms[0]
         });
         setGeneratedContent(content);
         if (profile?.tokens - 10 >= 0) {
@@ -1570,7 +1578,7 @@ export function AIGenerator() {
               </div>
             )}
             {success.state && (
-              <div className="bg-green-600 text-white p-3 sm:p-4 rounded-md text-sm">
+              <div className="bg-green-600 text-white p-3 sm:p-4 rounded-md text-sm overflow-x-auto">
                 {success.message}
               </div>
             )}

@@ -486,7 +486,7 @@ export function Dashboard() {
             </span>
             <span className="xs:hidden">
               {accounts.find((account) => account?.platform == "twitter")
-                ? "Disconnect "+ "@" + findUsername("twitter"  , accounts )
+                ? "Connected "+ "@" + findUsername("twitter"  , accounts )
                 : "Connect"}
             </span>
             <Link2 className="h-3 w-3 sm:h-4 sm:w-4 flex-shrink-0" />
@@ -513,7 +513,7 @@ export function Dashboard() {
             </span>
             <span className="xs:hidden">
               {accounts.find((account) => account?.platform == "linkedin")
-                ?  "Disconnect "+ "@" + findUsername("linkedin"  , accounts )
+                ?  "Connected "+ "@" + findUsername("linkedin"  , accounts )
                 : "Connect"}
             </span>
             <Link2 className="h-3 w-3 sm:h-4 sm:w-4 flex-shrink-0" />
@@ -540,7 +540,7 @@ export function Dashboard() {
             </span>
             <span className="xs:hidden">
               {accounts.find((account) => account?.platform == "instagram")
-                ? "Disconnect "+ "@" + findUsername("instagram"  , accounts )
+                ? "Connected "+ "@" + findUsername("instagram"  , accounts )
                 : "Connect"}
             </span>
             <Link2 className="h-3 w-3 sm:h-4 sm:w-4 flex-shrink-0" />

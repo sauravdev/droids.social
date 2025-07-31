@@ -345,10 +345,14 @@ Guidelines:
   } catch (error) {
     if (userId && planId) {
       console.log("updated plan suggestion in grok api (inside catch) ");
-      await updateContentPlan(userId, planId, {
-        suggestion:
-          "Something went wrong while generating content please try with some another model",
-      });
+      try {
+    await updateContentPlan(userId, planId, {
+      suggestion:
+        "Something went wrong while generating content please try with some another model",
+    });
+  } catch (err) {
+    console.error("Failed to update content plan inside catch:", err);
+  }
     }
     console.error("Grok API Error:", error);
     return res.status(500).json({
