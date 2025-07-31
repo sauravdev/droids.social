@@ -785,13 +785,13 @@ export function PostGenerator({
   const removeToast = () => {
     setTimeout(() => {
       setSuccess({ state: false, message: "" });
-    }, 1500);
+    }, 3000);
   };
 
   const removeErrorToast = () => {
     setTimeout(() => {
       setError(null);
-    }, 1500);
+    }, 3000);
   };
 
   return (

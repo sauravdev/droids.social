@@ -39,11 +39,19 @@ const scheduleContent = async (api_key, text, postId = null, image = "") => {
     }
     if (data?.code == 102) {
       await updateScheduledPost(postId, {
-        error:
-          "Invalid api key recieved",
+        error: "Invalid api key recieved",
       });
       return { status: 102, state: false, message: "" };
     }
+
+    if (data?.code == 136) {
+      await updateScheduledPost(postId, {
+        error:
+          "Something went wrong while posting image please generate again and then post",
+      });
+      return { status: 136, status: false, message: "" };
+    }
+
     if (
       data?.errors &&
       Array.isArray(data?.errors) &&
@@ -59,9 +67,7 @@ const scheduleContent = async (api_key, text, postId = null, image = "") => {
             "here is an issue authorizing your Linkedin account. Login to x.com to verify your account status and then try unlinking Linkedin and relinking on the social accounts page.",
         });
         return { status: 272, state: false, message: "" };
-      } 
-
-      else if (errorInfo?.code == 132) {
+      } else if (errorInfo?.code == 132) {
         await updateScheduledPost(postId, {
           error:
             "Your post is too long for Linkedin. Please shorten to 280 characters. Overage: 506 characters.",
@@ -91,8 +97,10 @@ const scheduleContent = async (api_key, text, postId = null, image = "") => {
     ) {
       postUrl = data?.postIds?.[0]?.postUrl;
       if (postId) {
-        console.log(`Updating post status to 'published' for postId: ${postId}`);
-        await updateScheduledPost(postId, { status: "published" , error : "" });
+        console.log(
+          `Updating post status to 'published' for postId: ${postId}`
+        );
+        await updateScheduledPost(postId, { status: "published", error: "" });
       }
     }
     return {
@@ -135,6 +143,12 @@ const uploadContent = async (api_key, text, postId = null, image = "") => {
     console.log("response from (ayrshare) = ", data);
     if (data?.code == 106) {
       return { status: 106, state: false, message: "" };
+    }
+    if (data?.code == 102) {
+      return { status: 102, state: false, message: "" };
+    }
+    if (data?.code == 136) {
+      return { status: 136, status: false, message: "" };
     }
     if (
       data?.errors &&
@@ -214,6 +228,17 @@ const uploadContentHandler = async (req, res) => {
           message:
             "here is an issue authorizing your Linkedin account. Login to x.com to verify your account status and then try unlinking linkedin and relinking on the social accounts page.",
         });
+      } else if (!state && status == 102) {
+        return res.status(400).json({
+          message: "Invalid api key",
+        });
+      } else if (!state && status == 136) {
+        return res
+          .status(429)
+          .json({
+            message:
+              "Something went wrong while posting image please generate again and then post",
+          });
       } else if (!state && status == 132) {
         return res.status(400).json({
           message:
@@ -253,6 +278,17 @@ const uploadContentHandler = async (req, res) => {
           message:
             "Your post is too long for linkedin. Please shorten to 280 characters. Overage: 506 characters.",
         });
+      } else if (!state && status == 102) {
+        return res.status(400).json({
+          message: "Invalid api key",
+        });
+      } else if (!state && status == 136) {
+        return res
+          .status(429)
+          .json({
+            message:
+              "Something went wrong while posting image please generate again and then post",
+          });
       } else if (!state && status == 106) {
         return res
           .status(429)
@@ -292,12 +328,12 @@ const uploadContentHandler = async (req, res) => {
 };
 
 const scheduleContentHandler = async (req, res) => {
-  const { api_key , text, date, jobId, image } = req.body;
-  console.log("schedule api body = " , req.body)
+  const { api_key, text, date, jobId, image } = req.body;
+  console.log("schedule api body = ", req.body);
   if (!jobId) {
     return res.status(400).json({ error: "Invalid body : Missing jobId" });
   }
-  
+
   if (!api_key) {
     return res.status(401).json({ message: "Unauthorized" });
   }

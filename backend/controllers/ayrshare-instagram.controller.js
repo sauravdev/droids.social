@@ -46,10 +46,16 @@ const scheduleContent = async (
     }
     if (data?.code == 102) {
       await updateScheduledPost(postId, {
-        error:
-          "Invalid api key recieved",
+        error: "Invalid api key recieved",
       });
       return { status: 102, state: false, message: "" };
+    }
+    if (data?.code == 136) {
+      await updateScheduledPost(postId, {
+        error:
+          "Something went wrong while posting image please generate again and then post",
+      });
+      return { status: 136, status: false, message: "" };
     }
     if (
       data?.errors &&
@@ -66,11 +72,7 @@ const scheduleContent = async (
             "here is an issue authorizing your X/Instagram account. Login to x.com to verify your account status and then try unlinking Instagram and relinking on the social accounts page.",
         });
         return { status: 272, state: false, message: "" };
-      } 
-
-      
-      
-      else if (errorInfo?.code == 132) {
+      } else if (errorInfo?.code == 132) {
         await updateScheduledPost(postId, {
           error:
             "Your post is too long for Instagram. Please shorten to 280 characters. Overage: 506 characters.",
@@ -92,7 +94,7 @@ const scheduleContent = async (
         return { status: 169, state: false, message: "" };
       }
     }
-    
+
     let postUrl = "";
     if (
       data?.postIds &&
@@ -101,8 +103,10 @@ const scheduleContent = async (
     ) {
       postUrl = data?.postIds?.[0]?.postUrl;
       if (postId) {
-        console.log(`Updating post status to 'published' for postId: ${postId}`);
-        await updateScheduledPost(postId, { status: "published"  , error  : ""});
+        console.log(
+          `Updating post status to 'published' for postId: ${postId}`
+        );
+        await updateScheduledPost(postId, { status: "published", error: "" });
       }
     }
     return {
@@ -154,6 +158,12 @@ const uploadContent = async (
     if (data?.code == 106) {
       return { status: 106, state: false, message: "" };
     }
+    if (data?.code == 102) {
+      return { status: 102, state: false, message: "" };
+    }
+    if (data?.code == 136) {
+      return { status: 136, status: false, message: "" };
+    }
     if (
       data?.errors &&
       Array.isArray(data?.errors) &&
@@ -164,11 +174,9 @@ const uploadContent = async (
         return { status: 156, state: false, message: "" };
       } else if (errorInfo?.code == 272) {
         return { status: 272, state: false, message: "" };
-      } 
-      else if (errorInfo?.code == 132) {
+      } else if (errorInfo?.code == 132) {
         return { status: 132, state: false, message: "" };
-      }
-      else if (errorInfo?.code == 137) {
+      } else if (errorInfo?.code == 137) {
         return { status: 137, state: false, message: "" };
       } else if (errorInfo?.code == 169) {
         return { status: 169, state: false, message: "" };
@@ -233,16 +241,23 @@ const uploadContentHandler = async (req, res) => {
       message:
         "Your post is too long for Instagram. Please shorten to 280 characters. Overage: 506 characters.",
     });
-  } 
-
-  else if (!state && status == 272) {
+  } else if (!state && status == 272) {
     return res.status(400).json({
       message:
         "here is an issue authorizing your Instagram account. Login to x.com to verify your account status and then try unlinking Instagram and relinking on the social accounts page.",
     });
-  }
-  
-  else if (!state && status == 169) {
+  } else if (!state && status == 136) {
+    return res
+      .status(429)
+      .json({
+        message:
+          "Something went wrong while posting image please generate again and then post",
+      });
+  } else if (!state && status == 102) {
+    return res.status(400).json({
+      message: "Invalid api key",
+    });
+  } else if (!state && status == 169) {
     return res.status(400).json({
       message: "A Premium or Business Plan is required to access this feature.",
     });
@@ -323,5 +338,4 @@ const scheduleContentHandler = async (req, res) => {
   }
 };
 
-
-export {uploadContentHandler , scheduleContentHandler} ; 
+export { uploadContentHandler, scheduleContentHandler };

@@ -743,8 +743,9 @@ export function Dashboard() {
         <h2 className="text-lg sm:text-xl font-bold text-white mb-3 sm:mb-4">
           Upcoming Content
         </h2>
+        
         <div className="space-y-3 sm:space-y-4">
-          {posts
+          {posts?.length == 0 ? <div className="text-gray-200">No upcoming content</div> : posts
             .filter(
               (post) =>
                 post?.status === "pending" &&
@@ -756,6 +757,7 @@ export function Dashboard() {
                 key={post.id}
                 className="flex flex-col sm:flex-row sm:items-center justify-between bg-gray-700 p-3 sm:p-4 rounded-lg gap-3 sm:gap-0"
               >
+                
                 <div className="min-w-0 flex-1">
                   <p className="text-white font-medium text-sm sm:text-base truncate">
                     {post.content.slice(0, 50)}...

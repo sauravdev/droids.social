@@ -122,7 +122,7 @@ function CarouselGenerator() {
   const removeToast = () => {
     setTimeout(() => {
       setSuccess({ state: false, message: "" });
-    }, 2500);
+    }, 3000);
   };
 
   const handleBrandLogoUpload = (event: React.ChangeEvent<HTMLInputElement>) => {

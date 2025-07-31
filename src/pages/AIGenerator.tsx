@@ -147,7 +147,7 @@ export function AIGenerator() {
     setTimeout(() => {
       setSuccess({ state: false, message: "" });
       setError("");
-    }, 1500);
+    }, 3000);
   };
 
   const [model, setModel] = useState(["openai", "grok"]);

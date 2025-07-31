@@ -309,21 +309,21 @@ export function ContentStrategy() {
         setError("Video posting on instagram is currently not supported !");
         setTimeout(() => {
           setError("");
-        }, 1500);
+        }, 3000);
         return;
       }
       if (format === "carousel" && platform == "instagram") {
         setError("Carousel posting on instagram is currently not supported !");
         setTimeout(() => {
           setError("");
-        }, 1500);
+        }, 3000);
         return;
       }
       if (selectedPlan.format == "image" && selectedPlan?.media && selectedPlan?.media == "NULL") {
         setError("Please generate an image first !");
         setTimeout(() => {
           setError("");
-        }, 1500);
+        }, 3000);
         return;
       }
       const response = await createPost({
