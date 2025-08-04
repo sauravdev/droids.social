@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import {
   Twitter,
   Linkedin,
@@ -122,6 +122,23 @@ function CarouselGenerator() {
   const navigateTo = useNavigate();
   const [createdByText, setCreatedByText] = useState("Created by");
   const [authorName, setAuthorName] = useState(profile?.full_name || "User");
+  
+  // Add state to track window width for responsive updates
+  const [windowWidth, setWindowWidth] = useState(window.innerWidth);
+
+  // Add useEffect to handle window resize events
+  useEffect(() => {
+    const handleResize = () => {
+      setWindowWidth(window.innerWidth);
+    };
+
+    window.addEventListener('resize', handleResize);
+    
+    // Cleanup event listener on component unmount
+    return () => {
+      window.removeEventListener('resize', handleResize);
+    };
+  }, []);
 
   const handleCreatedByChange = (e) => {
     setCreatedByText(e.target.textContent);
@@ -199,6 +216,225 @@ function CarouselGenerator() {
         slide.id === id ? { ...slide, ...updates } : slide
       )
     );
+  };
+
+  // Create a hidden slide element optimized for PDF export
+  const createPDFSlideElement = (slide: CarouselSlide, index: number): HTMLElement => {
+    const slideElement = document.createElement('div');
+    slideElement.className = 'pdf-slide';
+    slideElement.style.cssText = `
+      width: 1080px !important;
+      height: 1350px !important;
+      min-height: 1350px !important;
+      max-height: 1350px !important;
+      padding: 24px !important;
+      margin: 0 !important;
+      box-sizing: border-box !important;
+      display: flex !important;
+      flex-direction: column !important;
+      align-items: center !important;
+      justify-content: space-between !important;
+      background-color: ${slide.backgroundColor} !important;
+      color: ${slide.textColor} !important;
+      overflow: hidden !important;
+      position: absolute !important;
+      top: -9999px !important;
+      left: -9999px !important;
+      font-family: ${slide.contentFont} !important;
+    `;
+
+    // Image container
+    if (slide.image) {
+      const imageContainer = document.createElement('div');
+      imageContainer.style.cssText = `
+        width: 100% !important;
+        max-width: 1032px !important;
+        height: auto !important;
+        max-height: 600px !important;
+        display: flex !important;
+        align-items: center !important;
+        justify-content: center !important;
+        margin: 0 auto !important;
+        border-radius: 8px !important;
+        overflow: hidden !important;
+      `;
+      
+      const img = document.createElement('img');
+      img.src = slide.image;
+      img.alt = 'Slide image';
+      img.style.cssText = `
+        width: 100% !important;
+        height: auto !important;
+        max-height: 600px !important;
+        object-fit: cover !important;
+        border-radius: 8px !important;
+      `;
+      
+      imageContainer.appendChild(img);
+      slideElement.appendChild(imageContainer);
+    }
+
+    // Content container
+    const contentContainer = document.createElement('div');
+    contentContainer.style.cssText = `
+      flex: 1 !important;
+      width: 100% !important;
+      max-width: 900px !important;
+      display: flex !important;
+      flex-direction: column !important;
+      align-items: center !important;
+      justify-content: center !important;
+      gap: 20px !important;
+      margin: 40px 0 !important;
+      padding: 0 60px !important;
+      box-sizing: border-box !important;
+    `;
+
+    // Header
+    const header = document.createElement('h2');
+    header.style.cssText = `
+      font-family: ${slide.headerFont} !important;
+      font-size: 36px !important;
+      font-weight: bold !important;
+      line-height: 1.4 !important;
+      letter-spacing: 0.5px !important;
+      text-align: center !important;
+      margin: 0 !important;
+      padding: 0 !important;
+      width: 100% !important;
+      color: ${slide.textColor} !important;
+      display: flex !important;
+      align-items: center !important;
+      justify-content: center !important;
+      gap: 8px !important;
+      word-wrap: break-word !important;
+      overflow-wrap: break-word !important;
+    `;
+
+    if (slide.emoji) {
+      const emojiSpan = document.createElement('span');
+      emojiSpan.textContent = slide.emoji;
+      emojiSpan.style.cssText = `
+        font-size: 36px !important;
+        line-height: 1 !important;
+        flex-shrink: 0 !important;
+      `;
+      header.appendChild(emojiSpan);
+    }
+
+    const headerText = document.createElement('span');
+    headerText.textContent = slide.header;
+    headerText.style.cssText = `
+      flex: 1 !important;
+      text-align: center !important;
+      color: ${slide.textColor} !important;
+      font-family: ${slide.headerFont} !important;
+      font-size: 36px !important;
+      font-weight: bold !important;
+      line-height: 1.4 !important;
+      letter-spacing: 0.5px !important;
+      word-wrap: break-word !important;
+      overflow-wrap: break-word !important;
+    `;
+    header.appendChild(headerText);
+
+    // Content text
+    const contentText = document.createElement('div');
+    contentText.textContent = slide.content;
+    contentText.style.cssText = `
+      width: 100% !important;
+      max-width: 100% !important;
+      min-height: 120px !important;
+      font-family: ${slide.contentFont} !important;
+      font-size: 28px !important;
+      line-height: 1.6 !important;
+      letter-spacing: 0.5px !important;
+      text-align: center !important;
+      padding: 20px !important;
+      margin: 0 !important;
+      color: ${slide.textColor} !important;
+      word-wrap: break-word !important;
+      overflow-wrap: break-word !important;
+      box-sizing: border-box !important;
+    `;
+
+    contentContainer.appendChild(header);
+    contentContainer.appendChild(contentText);
+    slideElement.appendChild(contentContainer);
+
+    // Footer
+    const footer = document.createElement('div');
+    footer.style.cssText = `
+      width: 100% !important;
+      display: flex !important;
+      align-items: center !important;
+      justify-content: space-between !important;
+      padding: 0 20px !important;
+      margin-top: auto !important;
+      font-size: 18px !important;
+      opacity: 0.8 !important;
+      flex-shrink: 0 !important;
+    `;
+
+    // Logo container
+    const logoContainer = document.createElement('div');
+    logoContainer.style.cssText = `
+      width: 120px !important;
+      height: 80px !important;
+      display: flex !important;
+      align-items: center !important;
+      justify-content: center !important;
+      flex-shrink: 0 !important;
+    `;
+
+    if (brandLogo) {
+      const logo = document.createElement('img');
+      logo.src = brandLogo;
+      logo.alt = 'Brand logo';
+      logo.style.cssText = `
+        max-width: 100% !important;
+        max-height: 100% !important;
+        object-fit: contain !important;
+      `;
+      logoContainer.appendChild(logo);
+    }
+
+    // Author section
+    const authorSection = document.createElement('div');
+    authorSection.style.cssText = `
+      font-size: 18px !important;
+      color: ${slide.textColor} !important;
+      flex-shrink: 0 !important;
+      text-align: right !important;
+    `;
+
+    const authorText = `${createdByText} `;
+    const authorSpan = document.createElement('span');
+    authorSpan.textContent = authorText;
+
+    if (linkedinProfile) {
+      const link = document.createElement('a');
+      link.href = linkedinProfile;
+      link.textContent = authorName;
+      link.style.cssText = `
+        color: #3B82F6 !important;
+        text-decoration: underline !important;
+        font-size: 18px !important;
+      `;
+      authorSection.appendChild(authorSpan);
+      authorSection.appendChild(link);
+    } else {
+      const nameSpan = document.createElement('span');
+      nameSpan.textContent = authorName;
+      authorSection.appendChild(authorSpan);
+      authorSection.appendChild(nameSpan);
+    }
+
+    footer.appendChild(logoContainer);
+    footer.appendChild(authorSection);
+    slideElement.appendChild(footer);
+
+    return slideElement;
   };
 
   const generateCarousel = async () => {
@@ -418,70 +654,77 @@ Do **not** include watermarks, logos, or text overlays. Make the image visually 
     try {
       // Set PDF dimensions to match Instagram/LinkedIn carousel aspect ratio (1080x1350)
       const pdf = new jsPDF("p", "px", [1080, 1350]);
-      const pdfPages = [];
+      const tempElements: HTMLElement[] = [];
 
       for (let i = 0; i < slides.length; i++) {
-        const slide = document.getElementById(`slide-${i}`);
-        if (!slide) continue;
+        // Create a temporary PDF-optimized slide element
+        const tempSlide = createPDFSlideElement(slides[i], i);
+        document.body.appendChild(tempSlide);
+        tempElements.push(tempSlide);
 
-        // Increase canvas scale for higher resolution and better text clarity
-        const canvas = await html2canvas(slide, {
-          scale: 3, // Increased scale for sharper text
+        // Wait for images to load
+        const images = tempSlide.getElementsByTagName('img');
+        if (images.length > 0) {
+          await Promise.all(Array.from(images).map(img => {
+            return new Promise((resolve) => {
+              if (img.complete) {
+                resolve(null);
+              } else {
+                img.onload = () => resolve(null);
+                img.onerror = () => resolve(null);
+              }
+            });
+          }));
+        }
+
+        // Create high-quality canvas with consistent settings
+        const canvas = await html2canvas(tempSlide, {
+          scale: 2, // Good balance between quality and performance
+          width: 1080,
+          height: 1350,
           backgroundColor: slides[i].backgroundColor,
           logging: false,
           useCORS: true,
-          windowWidth: 1080, // Ensure consistent width
-          windowHeight: 1350, // Ensure consistent height
-          onclone: (clonedDoc) => {
-            // Adjust styles in the cloned document to improve text rendering
-            const clonedSlide = clonedDoc.getElementById(`slide-${i}`);
-            if (clonedSlide) {
-              clonedSlide.style.fontSize = slides[i].headerSize; // Preserve header font size
-              clonedSlide.style.lineHeight = "1.5"; // Increase line height for better spacing
-              clonedSlide.style.letterSpacing = "0.5px"; // Add slight letter spacing
-              clonedSlide.style.transform = "none"; // Remove any transforms
-              const textElements =
-                clonedSlide.querySelectorAll(".editable-text");
-              textElements.forEach((el) => {
-                el.style.fontSize = slides[i].contentSize; // Preserve content font size
-                el.style.lineHeight = "1.6"; // Improve text spacing
-                el.style.padding = "15px"; // Add padding for better layout
-              });
-            }
-          },
+          allowTaint: true,
+          removeContainer: false,
+          foreignObjectRendering: false,
         });
 
-        const imgData = canvas.toDataURL("image/jpeg", 0.95); // Higher quality JPEG
-        pdfPages.push(imgData);
+        const imgData = canvas.toDataURL("image/jpeg", 0.95);
+        
         if (i > 0) pdf.addPage([1080, 1350], "p");
-        pdf.addImage(imgData, "JPEG", 0, 0, 1080, 1350, undefined, "FAST"); // Use FAST compression for better performance
+        pdf.addImage(imgData, "JPEG", 0, 0, 1080, 1350, undefined, "FAST");
 
-        // Add clickable link overlay
-        const links = slide.querySelectorAll("a[href]");
-        links.forEach((link) => {
-          const rect = link.getBoundingClientRect();
-          const slideRect = slide.getBoundingClientRect();
-
-          const x = (rect.left - slideRect.left) * (1080 / slideRect.width);
-          const y = (rect.top - slideRect.top) * (1350 / slideRect.height);
-          const width = rect.width * (1080 / slideRect.width);
-          const height = rect.height * (1350 / slideRect.height);
-
-          pdf.link(x, y, width, height, { url: link.href });
-        });
+        // Add clickable link overlay if LinkedIn profile exists
+        if (linkedinProfile) {
+          const linkRect = {
+            x: 750, // Approximate position of author name
+            y: 1280,
+            width: 300,
+            height: 30
+          };
+          pdf.link(linkRect.x, linkRect.y, linkRect.width, linkRect.height, { url: linkedinProfile });
+        }
       }
 
+      // Clean up temporary elements
+      tempElements.forEach(element => {
+        document.body.removeChild(element);
+      });
+
       const pdfBlob = pdf.output("blob");
-      console.log("pdf blob", pdfBlob);
       const pdfUrl = URL.createObjectURL(pdfBlob);
       const downloadLink = document.createElement("a");
       downloadLink.href = pdfUrl;
-      downloadLink.download = "generated.pdf";
-      downloadLink.textContent = "Download PDF";
+      downloadLink.download = `${topic.replace(/[^a-zA-Z0-9]/g, '_')}_carousel.pdf`;
       document.body.appendChild(downloadLink);
       downloadLink.click();
+      document.body.removeChild(downloadLink);
+      
+      // Clean up
+      URL.revokeObjectURL(pdfUrl);
+      
       setSuccess({ state: true, message: "PDF Downloaded successfully !!" });
-
       removeToast();
     } catch (err) {
       setError("Error exporting to PDF: " + (err?.message || "Unknown error"));
@@ -500,42 +743,49 @@ Do **not** include watermarks, logos, or text overlays. Make the image visually 
     setError(null);
     try {
       const pdf = new jsPDF("p", "px", [1080, 1350]);
-      const pdfPages = [];
+      const tempElements: HTMLElement[] = [];
 
       for (let i = 0; i < slides.length; i++) {
-        const slide = document.getElementById(`slide-${i}`);
-        if (!slide) continue;
+        const tempSlide = createPDFSlideElement(slides[i], i);
+        document.body.appendChild(tempSlide);
+        tempElements.push(tempSlide);
 
-        const canvas = await html2canvas(slide, {
-          scale: 3,
+        // Wait for images to load
+        const images = tempSlide.getElementsByTagName('img');
+        if (images.length > 0) {
+          await Promise.all(Array.from(images).map(img => {
+            return new Promise((resolve) => {
+              if (img.complete) {
+                resolve(null);
+              } else {
+                img.onload = () => resolve(null);
+                img.onerror = () => resolve(null);
+              }
+            });
+          }));
+        }
+
+        const canvas = await html2canvas(tempSlide, {
+          scale: 2,
+          width: 1080,
+          height: 1350,
           backgroundColor: slides[i].backgroundColor,
           logging: false,
           useCORS: true,
-          windowWidth: 1080,
-          windowHeight: 1350,
-          onclone: (clonedDoc) => {
-            const clonedSlide = clonedDoc.getElementById(`slide-${i}`);
-            if (clonedSlide) {
-              clonedSlide.style.fontSize = slides[i].headerSize;
-              clonedSlide.style.lineHeight = "1.5";
-              clonedSlide.style.letterSpacing = "0.5px";
-              clonedSlide.style.transform = "none";
-              const textElements =
-                clonedSlide.querySelectorAll(".editable-text");
-              textElements.forEach((el) => {
-                el.style.fontSize = slides[i].contentSize;
-                el.style.lineHeight = "1.6";
-                el.style.padding = "15px";
-              });
-            }
-          },
+          allowTaint: true,
+          removeContainer: false,
+          foreignObjectRendering: false,
         });
 
         const imgData = canvas.toDataURL("image/jpeg", 0.95);
-        pdfPages.push(imgData);
         if (i > 0) pdf.addPage([1080, 1350], "p");
         pdf.addImage(imgData, "JPEG", 0, 0, 1080, 1350, undefined, "FAST");
       }
+
+      // Clean up temporary elements
+      tempElements.forEach(element => {
+        document.body.removeChild(element);
+      });
 
       const pdfBlob = pdf.output("blob");
       console.log("pdf blob", pdfBlob);
@@ -589,42 +839,49 @@ Do **not** include watermarks, logos, or text overlays. Make the image visually 
     setError(null);
     try {
       const pdf = new jsPDF("p", "px", [1080, 1350]);
-      const pdfPages = [];
+      const tempElements: HTMLElement[] = [];
 
       for (let i = 0; i < slides.length; i++) {
-        const slide = document.getElementById(`slide-${i}`);
-        if (!slide) continue;
+        const tempSlide = createPDFSlideElement(slides[i], i);
+        document.body.appendChild(tempSlide);
+        tempElements.push(tempSlide);
 
-        const canvas = await html2canvas(slide, {
-          scale: 3,
+        // Wait for images to load
+        const images = tempSlide.getElementsByTagName('img');
+        if (images.length > 0) {
+          await Promise.all(Array.from(images).map(img => {
+            return new Promise((resolve) => {
+              if (img.complete) {
+                resolve(null);
+              } else {
+                img.onload = () => resolve(null);
+                img.onerror = () => resolve(null);
+              }
+            });
+          }));
+        }
+
+        const canvas = await html2canvas(tempSlide, {
+          scale: 2,
+          width: 1080,
+          height: 1350,
           backgroundColor: slides[i].backgroundColor,
           logging: false,
           useCORS: true,
-          windowWidth: 1080,
-          windowHeight: 1350,
-          onclone: (clonedDoc) => {
-            const clonedSlide = clonedDoc.getElementById(`slide-${i}`);
-            if (clonedSlide) {
-              clonedSlide.style.fontSize = slides[i].headerSize;
-              clonedSlide.style.lineHeight = "1.5";
-              clonedSlide.style.letterSpacing = "0.5px";
-              clonedSlide.style.transform = "none";
-              const textElements =
-                clonedSlide.querySelectorAll(".editable-text");
-              textElements.forEach((el) => {
-                el.style.fontSize = slides[i].contentSize;
-                el.style.lineHeight = "1.6";
-                el.style.padding = "15px";
-              });
-            }
-          },
+          allowTaint: true,
+          removeContainer: false,
+          foreignObjectRendering: false,
         });
 
         const imgData = canvas.toDataURL("image/jpeg", 0.95);
-        pdfPages.push(imgData);
         if (i > 0) pdf.addPage([1080, 1350], "p");
         pdf.addImage(imgData, "JPEG", 0, 0, 1080, 1350, undefined, "FAST");
       }
+
+      // Clean up temporary elements
+      tempElements.forEach(element => {
+        document.body.removeChild(element);
+      });
 
       const pdfBlob = pdf.output("blob");
       console.log("pdf blob", pdfBlob);
@@ -685,6 +942,22 @@ Do **not** include watermarks, logos, or text overlays. Make the image visually 
     setPostingOnLinkedIn(true);
     await exportToPDF();
     setPostingOnLinkedIn(false);
+  };
+
+  // Helper function to get responsive styles for preview - now uses windowWidth state
+  const getResponsiveStyles = () => {
+    const isMobile = windowWidth < 768;
+    const isTablet = windowWidth < 1024;
+    
+    return {
+      slideWidth: isMobile ? "100%" : isTablet ? "600px" : "800px",
+      slideHeight: isMobile ? "auto" : "auto",
+      headerSize: isMobile ? "18px" : isTablet ? "24px" : "28px",
+      contentSize: isMobile ? "14px" : isTablet ? "16px" : "18px",
+      imagePadding: isMobile ? "8px" : "12px",
+      imageMaxHeight: isMobile ? "200px" : isTablet ? "300px" : "400px",
+      footerSize: isMobile ? "12px" : "14px",
+    };
   };
 
   return (
@@ -937,182 +1210,198 @@ Do **not** include watermarks, logos, or text overlays. Make the image visually 
 
       {/* Preview and Editor sections */}
       {slides.length > 0 && (
-        <div className="bg-gray-800 rounded-xl p-6 px-24">
+        <div className="bg-gray-800 rounded-xl p-3 sm:p-6 sm:px-12 lg:px-24">
           <h2 className="text-xl font-bold text-white mb-4">Preview & Edit</h2>
-          <div className="flex flex-col gap-4 w-full">
-            {slides.map((slide, index) => (
-              <div
-                onClick={() => setCurrentSlide(index)}
-                id={`slide-${index}`}
-                key={slide.id}
-                className={`${
-                  currentSlide == index ? "border-2 border-purple-500" : ""
-                } carousel-slide flex flex-col items-center justify-between p-6 rounded-lg shadow-lg w-full`}
-                style={{
-                  backgroundColor: slide.backgroundColor,
-                  color: slide.textColor,
-                  backgroundImage: slide.backgroundColor.includes("gradient")
-                    ? slide.backgroundColor
-                    : undefined,
-                  minHeight: "1350px", // Fixed height for PDF consistency
-                  width: "1080px", // Fixed width for PDF consistency
-                  boxSizing: "border-box",
-                }}
-              >
-                <input
-                  type="file"
-                  accept="image/*"
-                  onChange={(e: any) => {
-                    const file = e.target.files[0];
-                    if (file) {
-                      const reader = new FileReader();
-                      reader.onloadend = () => {
-                        updateSlide(slide.id, {
-                          image: reader.result as string,
-                          isCustomImage: true,
-                        });
-                      };
-                      reader.readAsDataURL(file);
-                    }
+          <div className="flex flex-col gap-4 w-full max-w-4xl mx-auto">
+            {slides.map((slide, index) => {
+              const responsiveStyles = getResponsiveStyles();
+              return (
+                <div
+                  onClick={() => setCurrentSlide(index)}
+                  id={`slide-${index}`}
+                  key={slide.id}
+                  className={`${
+                    currentSlide == index ? "border-2 border-purple-500" : ""
+                  } carousel-slide flex flex-col items-center justify-between p-3 sm:p-6 rounded-lg shadow-lg w-full mx-auto cursor-pointer transition-all duration-200`}
+                  style={{
+                    backgroundColor: slide.backgroundColor,
+                    color: slide.textColor,
+                    backgroundImage: slide.backgroundColor.includes("gradient")
+                      ? slide.backgroundColor
+                      : undefined,
+                    width: responsiveStyles.slideWidth,
+                    aspectRatio: "4/5",
+                    minHeight: "300px",
+                    boxSizing: "border-box",
                   }}
-                  className="hidden"
-                  id={`custom-image-upload-${slide.id}`}
-                />
-
-                {slide.image ? (
-                  <label
-                    htmlFor={`custom-image-upload-${slide.id}`}
-                    className="block cursor-pointer w-full rounded-md"
-                  >
-                    <img
-                      className="rounded-sm w-full h-auto max-h-[800px] object-cover mx-auto"
-                      src={slide?.image}
-                      alt="Slide image"
-                    />
-                    {!slide.isCustomImage && (
-                      <div className="absolute top-2 right-2 bg-black/50 text-white px-2 py-1 rounded text-xs">
-                        AI Generated
-                      </div>
-                    )}
-                  </label>
-                ) : (
-                  <label
-                    htmlFor={`custom-image-upload-${slide.id}`}
-                    className="cursor-pointer bg-blue-500 hover:bg-blue-600 text-white px-4 py-2 rounded-md flex items-center justify-center h-[800px] "
-                  >
-                    Upload Image
-                  </label>
-                )}
-
-                {/* Slide Content */}
-                <div className="flex flex-col items-center justify-center space-y-4 w-full gap-4 my-10 px-20">
-                  <h2
-                    style={{
-                      fontFamily: slide.headerFont,
-                      fontSize: slide.headerSize,
-                      lineHeight: "1.5",
-                      letterSpacing: "0.5px",
+                >
+                  <input
+                    type="file"
+                    accept="image/*"
+                    onChange={(e: any) => {
+                      const file = e.target.files[0];
+                      if (file) {
+                        const reader = new FileReader();
+                        reader.onloadend = () => {
+                          updateSlide(slide.id, {
+                            image: reader.result as string,
+                            isCustomImage: true,
+                          });
+                        };
+                        reader.readAsDataURL(file);
+                      }
                     }}
-                    className="text-center font-bold flex items-center space-x-2 w-full"
-                  >
-                    <span>{slide.emoji}</span>
+                    className="hidden"
+                    id={`custom-image-upload-${slide.id}`}
+                  />
+
+                  {slide.image ? (
+                    <label
+                      htmlFor={`custom-image-upload-${slide.id}`}
+                      className="block cursor-pointer w-full rounded-md relative"
+                    >
+                      <img
+                        className="rounded-sm w-full h-auto object-cover mx-auto"
+                        style={{ maxHeight: responsiveStyles.imageMaxHeight }}
+                        src={slide?.image}
+                        alt="Slide image"
+                      />
+                      {!slide.isCustomImage && (
+                        <></>
+                      )}
+                    </label>
+                  ) : (
+                    <label
+                      htmlFor={`custom-image-upload-${slide.id}`}
+                      className="cursor-pointer bg-blue-500 hover:bg-blue-600 text-white px-4 py-2 rounded-md flex items-center justify-center w-full"
+                      style={{ height: responsiveStyles.imageMaxHeight }}
+                    >
+                      Upload Image
+                    </label>
+                  )}
+
+                  {/* Slide Content */}
+                  <div className="flex flex-col items-center justify-center space-y-2 sm:space-y-4 w-full gap-2 sm:gap-4 my-4 sm:my-6 px-4 sm:px-8">
+                    <h2
+                      style={{
+                        fontFamily: slide.headerFont,
+                        fontSize: responsiveStyles.headerSize,
+                        lineHeight: "1.4",
+                        letterSpacing: "0.3px",
+                      }}
+                      className="text-center font-bold flex items-center space-x-1 sm:space-x-2 w-full"
+                    >
+                      <span style={{ fontSize: responsiveStyles.headerSize }}>{slide.emoji}</span>
+                      <div
+                        contentEditable="true"
+                        suppressContentEditableWarning={true}
+                        className="text-center bg-transparent outline-none w-full tracking-wide"
+                        onBlur={(e) =>
+                          updateSlide(slide.id, {
+                            header: e.currentTarget.innerText,
+                          })
+                        }
+                      >
+                        {slide.header}
+                      </div>
+                    </h2>
+
                     <div
-                      contentEditable="true"
-                      suppressContentEditableWarning={true}
-                      className="text-center bg-transparent outline-none w-full tracking-widest"
+                      contentEditable
+                      suppressContentEditableWarning
+                      style={{
+                        minHeight: windowWidth < 768 ? "40px" : "60px",
+                        maxWidth: "100%",
+                        wordBreak: "break-word",
+                        overflowWrap: "break-word",
+                        textAlign: "center",
+                        outline: "none",
+                        padding: responsiveStyles.imagePadding,
+                        fontFamily: slide.contentFont,
+                        fontSize: responsiveStyles.contentSize,
+                        lineHeight: "1.5",
+                        letterSpacing: "0.3px",
+                      }}
+                      className="editable-text tracking-wide bg-transparent"
                       onBlur={(e) =>
                         updateSlide(slide.id, {
-                          header: e.currentTarget.innerText,
+                          content: e.currentTarget.innerText,
                         })
                       }
                     >
-                      {slide.header}
-                    </div>
-                  </h2>
-
-                  <div
-                    contentEditable
-                    suppressContentEditableWarning
-                    style={{
-                      minHeight: "100px",
-                      maxWidth: "100%",
-                      wordBreak: "break-word",
-                      overflowWrap: "break-word",
-                      textAlign: "center",
-                      outline: "none",
-                      padding: "15px",
-                      fontFamily: slide.contentFont,
-                      fontSize: slide.contentSize,
-                      lineHeight: "1.6",
-                      letterSpacing: "0.5px",
-                    }}
-                    className="editable-text tracking-widest bg-transparent text-white"
-                    onBlur={(e) =>
-                      updateSlide(slide.id, {
-                        content: e.currentTarget.innerText,
-                      })
-                    }
-                  >
-                    {slide.content}
-                  </div>
-                </div>
-
-                {/* Footer */}
-                <div className="w-full flex items-center justify-between text-sm opacity-75">
-                  <div className="flex items-center gap-2">
-                    <div
-                      style={{
-                        width: "100px",
-                        height: "64px",
-                        flexShrink: 0,
-                        display: "flex",
-                        alignItems: "center",
-                        justifyContent: "center",
-                        background: "transparent",
-                      }}
-                    >
-                      <img
-                        src={brandLogo}
-                        alt="Brand logo"
-                        style={{
-                          maxWidth: "100%",
-                          maxHeight: "100%",
-                          objectFit: "contain",
-                        }}
-                      />
+                      {slide.content}
                     </div>
                   </div>
 
-                  <div className="capitalize tracking-widest flex-shrink-0">
-                    <span
-                      contentEditable={true}
-                      suppressContentEditableWarning={true}
-                      className="outline-none focus:ring-1 focus:ring-blue-300 rounded px-1"
-                      onBlur={handleCreatedByChange}
-                    >
-                      {createdByText}
-                    </span>{" "}
-                    <a
-                      href={linkedinProfile}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="text-blue-600 hover:text-blue-800 underline cursor-pointer outline-none focus:ring-1 focus:ring-blue-300 rounded px-1"
-                      style={{
-                        color: "#2563eb",
-                        textDecoration: "underline",
-                        WebkitPrintColorAdjust: "exact",
-                        colorAdjust: "exact",
-                      }}
-                      contentEditable={true}
-                      onBlur={handleAuthorNameChange}
-                      suppressContentEditableWarning={true}
-                    >
-                      {authorName}
-                    </a>
+                  {/* Footer */}
+                  <div className="w-full flex items-center justify-between opacity-75 mt-auto pt-2">
+                    <div className="flex items-center gap-2">
+                      {brandLogo && (
+                        <div
+                          style={{
+                            width: windowWidth < 768 ? "60px" : "80px",
+                            height: windowWidth < 768 ? "40px" : "50px",
+                            flexShrink: 0,
+                            display: "flex",
+                            alignItems: "center",
+                            justifyContent: "center",
+                            background: "transparent",
+                          }}
+                        >
+                          <img
+                            src={brandLogo}
+                            alt="Brand logo"
+                            style={{
+                              maxWidth: "100%",
+                              maxHeight: "100%",
+                              objectFit: "contain",
+                            }}
+                          />
+                        </div>
+                      )}
+                    </div>
+
+                    <div className="capitalize tracking-wide flex-shrink-0" style={{ fontSize: responsiveStyles.footerSize }}>
+                      <span
+                        contentEditable={true}
+                        suppressContentEditableWarning={true}
+                        className="outline-none focus:ring-1 focus:ring-blue-300 rounded px-1"
+                        onBlur={handleCreatedByChange}
+                      >
+                        {createdByText}
+                      </span>{" "}
+                      {linkedinProfile ? (
+                        <a
+                          href={linkedinProfile}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="text-blue-400 hover:text-blue-300 underline cursor-pointer outline-none focus:ring-1 focus:ring-blue-300 rounded px-1"
+                          style={{
+                            color: "#60A5FA",
+                            textDecoration: "underline",
+                            fontSize: responsiveStyles.footerSize,
+                          }}
+                          contentEditable={true}
+                          onBlur={handleAuthorNameChange}
+                          suppressContentEditableWarning={true}
+                        >
+                          {authorName}
+                        </a>
+                      ) : (
+                        <span
+                          contentEditable={true}
+                          suppressContentEditableWarning={true}
+                          className="outline-none focus:ring-1 focus:ring-blue-300 rounded px-1"
+                          onBlur={handleAuthorNameChange}
+                        >
+                          {authorName}
+                        </span>
+                      )}
+                    </div>
                   </div>
                 </div>
-              </div>
-            ))}
+              );
+            })}
           </div>
 
           {generatedCaption && (
@@ -1130,7 +1419,7 @@ Do **not** include watermarks, logos, or text overlays. Make the image visually 
               <label className="block text-sm font-medium text-gray-300 mb-2">
                 Theme
               </label>
-              <div className="grid grid-cols-4 gap-2">
+              <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
                 {themes.map((theme, index) => (
                   <button
                     key={index}
@@ -1159,7 +1448,7 @@ Do **not** include watermarks, logos, or text overlays. Make the image visually 
               <label className="block text-sm font-medium text-gray-300 mb-2">
                 Emoji
               </label>
-              <div className="flex flex-wrap gap-2">
+              <div className="grid grid-cols-5 sm:flex sm:flex-wrap gap-2">
                 {emojis.map((emoji, index) => (
                   <button
                     key={index}

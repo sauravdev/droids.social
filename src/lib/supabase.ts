@@ -54,7 +54,7 @@ export const supabase = createClient(supabaseUrl, supabaseAnonKey, {
         return await fetchWithRetry(...args);
       } catch (err) {
         console.error('Supabase fetch error:', err);
-        throw new Error("Network error");
+        throw new Error(err?.message );
       }
     }
   },
