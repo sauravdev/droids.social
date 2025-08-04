@@ -15,7 +15,7 @@ import {
   Upload,
   Sparkles,
 } from "lucide-react";
-import { generatePost } from "../lib/openai";
+import { generatePost, generateTopics, generateTopicsUsingGrok } from "../lib/openai";
 import { generateImage } from "../lib/openai";
 import { supabase } from "../lib/supabase";
 import html2canvas from "html2canvas";
@@ -92,7 +92,9 @@ function CarouselGenerator() {
   const { profile, updateProfile } = useProfile();
   const { createPost } = useScheduledPosts();
   const [topic, setTopic] = useState("");
-  const [platform, setPlatform] = useState<"linkedin" | "instagram">("linkedin");
+  const [platform, setPlatform] = useState<"linkedin" | "instagram">(
+    "linkedin"
+  );
   const [slides, setSlides] = useState<CarouselSlide[]>([]);
   const [currentSlide, setCurrentSlide] = useState(0);
   const [generating, setGenerating] = useState(false);
@@ -103,10 +105,20 @@ function CarouselGenerator() {
   const [postingOnInsta, setPostingOnInsta] = useState<boolean>(false);
   const [postingOnLinkedin, setPostingOnLinkedIn] = useState<boolean>(false);
   const [showScheduleModal, setShowScheduleModal] = useState<boolean>(false);
-  const [schedulingInstagramCarousel, setSchedulingInstagramCarousel] = useState<boolean>(false);
+  const [loadingTopics, setLoadingTopics] = useState<boolean>(false);
+  const [schedulingInstagramCarousel, setSchedulingInstagramCarousel] =
+    useState<boolean>(false);
   const [generatedCaption, setGeneratedCaption] = useState<string>("");
-  const { setRefreshHeader } = useAuth();
-  const [success, setSuccess] = useState<Success>({ state: false, message: "" });
+  const {
+    setRefreshHeader,
+    carouselGeneratedTopics,
+    setCarouselGeneratedTopics,
+    selectedModel
+  } = useAuth();
+  const [success, setSuccess] = useState<Success>({
+    state: false,
+    message: "",
+  });
   const navigateTo = useNavigate();
   const [createdByText, setCreatedByText] = useState("Created by");
   const [authorName, setAuthorName] = useState(profile?.full_name || "User");
@@ -119,13 +131,58 @@ function CarouselGenerator() {
     setAuthorName(e.target.textContent);
   };
 
+  const handleGenerateTopics = async (topic: string, platform: string) => {
+    console.log("topic generation called ... ");
+    setSuccess({ state: false, message: "" });
+    if (profile?.tokens - 10 < 0) {
+      setError("You do not have enough tokens for post generation ..");
+      navigateTo("/pricing");
+      return;
+    }
+
+    if (!topic) {
+      setError("Please enter a topic");
+      return;
+    }
+
+    setLoadingTopics(true);
+    setError(null);
+    setCarouselGeneratedTopics([]);
+
+    let suggestion = "";
+    try {
+      if (selectedModel == "grok") {
+        suggestion = await generateTopicsUsingGrok(topic, platform);
+        // setGeneratedContent(suggestion);
+      } else if (selectedModel == "openai") {
+        suggestion = await generateTopics(topic, platform);
+        // setGeneratedContent(suggestion);
+      }
+      const topics = JSON.parse(suggestion) || [];
+      setCarouselGeneratedTopics(topics || []);
+     
+      if (profile?.tokens - 10 >= 0) {
+        await updateProfile({ tokens: profile?.tokens - 10 });
+        setRefreshHeader((prev) => !prev);
+      }
+      
+    } catch (err: any) {
+      setError("Something went wrong !. Please try again");
+    } finally {
+      setLoadingTopics(false);
+      
+    }
+  };
+
   const removeToast = () => {
     setTimeout(() => {
       setSuccess({ state: false, message: "" });
     }, 3000);
   };
 
-  const handleBrandLogoUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
+  const handleBrandLogoUpload = (
+    event: React.ChangeEvent<HTMLInputElement>
+  ) => {
     const file = event.target.files?.[0];
     if (file) {
       const reader = new FileReader();
@@ -138,7 +195,9 @@ function CarouselGenerator() {
 
   const updateSlide = (id: string, updates: Partial<CarouselSlide>) => {
     setSlides((prevSlides) =>
-      prevSlides.map((slide) => (slide.id === id ? { ...slide, ...updates } : slide))
+      prevSlides.map((slide) =>
+        slide.id === id ? { ...slide, ...updates } : slide
+      )
     );
   };
 
@@ -157,27 +216,25 @@ function CarouselGenerator() {
     setError(null);
 
     try {
-      const prompt = `Do latest internet search and create a high-quality, professional, informative carousel post about "${topic}" optimized for ${platform} (e.g., Instagram, LinkedIn), consisting of exactly 5 slides. Design it to be visually appealing, little bit concise, and engaging, using emojis to enhance tone and draw attention. Follow this structure:
+      const prompt = `Do latest internet search and create a high-quality, professional, informative carousel post about "${topic}" optimized for ${platform} (e.g., Instagram, LinkedIn), consisting of exactly 5 slides. Design it to be visually appealing, and engaging, using emojis to enhance tone and draw attention. Follow this structure:
 
-Intro Slide: A bold, attention-grabbing headline that introduces the topic, paired with an emoji to set the mood.
+Intro hero Slide: A bold, attention-grabbing headline that introduces the topic, paired with an emoji to set the mood.
 
-Content Slide 1: One key insight about the topic which is informative and thought-provoking with some details.
+Content Slide 1: One key core idea and insight about the topic which is informative and thought-provoking with some details.
 
-Content Slide 2: Another key insight or value-adding point which is informative.
+Content Slide 2: Continuation of the first slide core idea with additional details and information.
 
-Content Slide 3: A final strong insight, quote, or tip which is informative and little detailed.
+Content Slide 3: Continuation of the second slide core idea with additional details and information.
 
-Outro Slide: A summary and call-to-action (e.g., "Follow for more," "Share your thoughts"), paired with an impactful emoji.
+Outro Slide: final strong insight, quote, or tip which is informative and little detailed and a summary with  call-to-action (e.g., "Follow for more," "Share your thoughts"), paired with an impactful emoji.
 
 Guidelines:
 
-Keep text concise (max 30-40 words per slide) to suit carousel readability.
+Keep text concise (max 50-60 words per slide) to suit carousel readability.
 
 Use platform-appropriate tone (e.g., professional for LinkedIn, casual for Instagram).
 
 Select emojis that align with the topic and enhance emotional appeal.
-
-Avoid overloading slides with multiple points—focus on one idea per slide with little detail
 
 Format the output as a JSON array of 5 objects, each containing:
 
@@ -194,7 +251,9 @@ emoji: A single, relevant emoji as a string (e.g., "🚀")`;
           const imageURI = await generateImage(prompt);
           console.log("image generated = ", imageURI);
           try {
-            const proxyUrl = `${BACKEND_APIPATH.BASEURL}/fetch-image?url=${encodeURIComponent(imageURI)}`;
+            const proxyUrl = `${
+              BACKEND_APIPATH.BASEURL
+            }/fetch-image?url=${encodeURIComponent(imageURI)}`;
             const response = await fetch(proxyUrl);
             const blob = await response.blob();
             const imageObjectUrl = URL.createObjectURL(blob);
@@ -280,7 +339,10 @@ Do **not** include watermarks, logos, or text overlays. Make the image visually 
     }
   };
 
-  async function uploadToSupabase(imageData: File | Blob, fileName: string): Promise<string | null> {
+  async function uploadToSupabase(
+    imageData: File | Blob,
+    fileName: string
+  ): Promise<string | null> {
     try {
       const { data, error } = await supabase.storage
         .from("profile-images")
@@ -331,7 +393,9 @@ Do **not** include watermarks, logos, or text overlays. Make the image visually 
       const fileName = `Uploads/Dalle-slide-${timestamp}-${i}.jpeg`;
       const publicUrl = await uploadToSupabase(imgBlob, fileName);
       if (publicUrl) {
-        console.log(`Image for page ${i} uploaded successfully! Public URL: ${publicUrl}`);
+        console.log(
+          `Image for page ${i} uploaded successfully! Public URL: ${publicUrl}`
+        );
         imageUrls.push(publicUrl);
       }
     }
@@ -376,7 +440,8 @@ Do **not** include watermarks, logos, or text overlays. Make the image visually 
               clonedSlide.style.lineHeight = "1.5"; // Increase line height for better spacing
               clonedSlide.style.letterSpacing = "0.5px"; // Add slight letter spacing
               clonedSlide.style.transform = "none"; // Remove any transforms
-              const textElements = clonedSlide.querySelectorAll(".editable-text");
+              const textElements =
+                clonedSlide.querySelectorAll(".editable-text");
               textElements.forEach((el) => {
                 el.style.fontSize = slides[i].contentSize; // Preserve content font size
                 el.style.lineHeight = "1.6"; // Improve text spacing
@@ -455,7 +520,8 @@ Do **not** include watermarks, logos, or text overlays. Make the image visually 
               clonedSlide.style.lineHeight = "1.5";
               clonedSlide.style.letterSpacing = "0.5px";
               clonedSlide.style.transform = "none";
-              const textElements = clonedSlide.querySelectorAll(".editable-text");
+              const textElements =
+                clonedSlide.querySelectorAll(".editable-text");
               textElements.forEach((el) => {
                 el.style.fontSize = slides[i].contentSize;
                 el.style.lineHeight = "1.6";
@@ -496,7 +562,10 @@ Do **not** include watermarks, logos, or text overlays. Make the image visually 
         const data = await response.json();
         console.log("response from insta carousel api = ", data);
       } catch (err: any) {
-        console.log("Something went wrong while publishing carousel ", err || err?.message);
+        console.log(
+          "Something went wrong while publishing carousel ",
+          err || err?.message
+        );
       }
       setSuccess({ state: true, message: "Content scheduled successfully" });
       removeToast();
@@ -507,7 +576,10 @@ Do **not** include watermarks, logos, or text overlays. Make the image visually 
     }
   };
 
-  const handleScheduleCarouselOnInstagram = async (date: string, postId: null | string = null) => {
+  const handleScheduleCarouselOnInstagram = async (
+    date: string,
+    postId: null | string = null
+  ) => {
     setSchedulingInstagramCarousel(true);
     setSuccess({ state: false, message: "" });
     if (slides.length === 0) {
@@ -537,7 +609,8 @@ Do **not** include watermarks, logos, or text overlays. Make the image visually 
               clonedSlide.style.lineHeight = "1.5";
               clonedSlide.style.letterSpacing = "0.5px";
               clonedSlide.style.transform = "none";
-              const textElements = clonedSlide.querySelectorAll(".editable-text");
+              const textElements =
+                clonedSlide.querySelectorAll(".editable-text");
               textElements.forEach((el) => {
                 el.style.fontSize = slides[i].contentSize;
                 el.style.lineHeight = "1.6";
@@ -594,13 +667,19 @@ Do **not** include watermarks, logos, or text overlays. Make the image visually 
       removeToast();
     } catch (error: any) {
       setError(error?.message);
-      console.log("Something went wrong while scheduling carousel post for instagram => ", error || error?.message);
+      console.log(
+        "Something went wrong while scheduling carousel post for instagram => ",
+        error || error?.message
+      );
     } finally {
       setSchedulingInstagramCarousel(false);
     }
   };
 
-  const handleScheduleCarouselOnLinkedin = (date: string, postId: null | string = null) => {};
+  const handleScheduleCarouselOnLinkedin = (
+    date: string,
+    postId: null | string = null
+  ) => {};
 
   const handleLinkedinExport = async () => {
     setPostingOnLinkedIn(true);
@@ -616,7 +695,10 @@ Do **not** include watermarks, logos, or text overlays. Make the image visually 
       <div className="bg-gray-800 rounded-xl p-6">
         <div className="space-y-6">
           <div>
-            <label htmlFor="topic" className="block text-sm font-medium text-gray-300 mb-2">
+            <label
+              htmlFor="topic"
+              className="block text-sm font-medium text-gray-300 mb-2"
+            >
               Topic
             </label>
             <input
@@ -629,21 +711,62 @@ Do **not** include watermarks, logos, or text overlays. Make the image visually 
             />
           </div>
 
+          {Array.isArray(carouselGeneratedTopics) &&
+                carouselGeneratedTopics?.length > 0 && (
+                  <div className="flex flex-col  gap-2 items-start flex-wrap ">
+                    <h1 className="text-sm font-medium text-gray-300">
+                      Select a topic below based on your above niche
+                    </h1>
+                    <div className="flex gap-2 items-start flex-wrap">
+                      {carouselGeneratedTopics.map((item: string, index: number) => {
+                        return (
+                          <button
+                            disabled={generating || loadingTopics }
+                          
+                            title={item}
+                            className={`${(generating || loadingTopics) ? "cursor-not-allowed" : "cursor-pointer"} ${
+                              topic === item
+                                ? "bg-purple-600 text-white"
+                                : "bg-gray-700 text-gray-300 hover:bg-gray-600"
+                            } px-3 py-1 rounded-full text-xs sm:text-sm transition-colors`}
+                            onClick={() => {
+                              setTopic(item);
+                            }}
+                            key={index}
+                          >
+                            {item?.length > 40
+                              ? item.substring(0, 40) + "..."
+                              : item}
+                          </button>
+                        );
+                      })}
+                    </div>
+                  </div>
+                )}
+
           <div>
-            <label className="block text-sm font-medium text-gray-300 mb-2">Platform</label>
+            <label className="block text-sm font-medium text-gray-300 mb-2">
+              Platform
+            </label>
             <div className="flex space-x-4">
               <button
+                disabled={generating || loadingTopics }
                 onClick={() => setPlatform("linkedin")}
-                className={`px-4 py-2 rounded-lg ${
-                  platform === "linkedin" ? "bg-blue-600 text-white" : "bg-gray-700 text-gray-300 hover:bg-gray-600"
+                className={`px-4 py-2 rounded-lg ${(generating || loadingTopics) ? "cursor-not-allowed" : "cursor-pointer"} ${
+                  platform === "linkedin"
+                    ? "bg-blue-600 text-white"
+                    : "bg-gray-700 text-gray-300 hover:bg-gray-600"
                 }`}
               >
                 LinkedIn
               </button>
               <button
+                disabled={generating || loadingTopics }
                 onClick={() => setPlatform("instagram")}
-                className={`px-4 py-2 rounded-lg ${
-                  platform === "instagram" ? "bg-pink-600 text-white" : "bg-gray-700 text-gray-300 hover:bg-gray-600"
+                className={`px-4 py-2 rounded-lg  ${(generating || loadingTopics) ? "cursor-not-allowed" : "cursor-pointer"}  ${
+                  platform === "instagram"
+                    ? "bg-pink-600 text-white"
+                    : "bg-gray-700 text-gray-300 hover:bg-gray-600"
                 }`}
               >
                 Instagram
@@ -652,7 +775,9 @@ Do **not** include watermarks, logos, or text overlays. Make the image visually 
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-gray-300 mb-2">Brand Logo</label>
+            <label className="block text-sm font-medium text-gray-300 mb-2">
+              Brand Logo
+            </label>
             <div className="flex items-center space-x-4">
               <input
                 type="file"
@@ -669,7 +794,10 @@ Do **not** include watermarks, logos, or text overlays. Make the image visually 
                 <span>Upload Logo</span>
               </label>
               {brandLogo && (
-                <button onClick={() => setBrandLogo(null)} className="text-red-400 hover:text-red-300">
+                <button
+                  onClick={() => setBrandLogo(null)}
+                  className="text-red-400 hover:text-red-300"
+                >
                   Remove
                 </button>
               )}
@@ -678,7 +806,10 @@ Do **not** include watermarks, logos, or text overlays. Make the image visually 
 
           {platform == "linkedin" && (
             <div>
-              <label htmlFor="linkedin" className="block text-sm font-medium text-gray-300 mb-2">
+              <label
+                htmlFor="linkedin"
+                className="block text-sm font-medium text-gray-300 mb-2"
+              >
                 LinkedIn Profile URL
               </label>
               <input
@@ -692,11 +823,28 @@ Do **not** include watermarks, logos, or text overlays. Make the image visually 
             </div>
           )}
 
-          <div className="flex space-x-4">
+          <div className="flex flex-col items-start  w-full space-y-4 md:space-y-0  md:flex md:flex-row md:space-x-4">
+          <button
+              onClick={() => {handleGenerateTopics(topic , platform )}}
+              disabled={generating || loadingTopics || !topic}
+              className={`w-full flex-1 bg-purple-600 hover:bg-purple-700 text-white px-4 py-2 rounded-lg flex items-center justify-center space-x-2 disabled:opacity-50 ${(generating || loadingTopics || !topic) ? "cursor-not-allowed" : "cursor-pointer"  }`}
+            >
+              {loadingTopics ? (
+                <>
+                  <Loader className="h-5 w-5 animate-spin" />
+                  <span>Generating...</span>
+                </>
+              ) : (
+                <>
+                  <Sparkles className="h-5 w-5" />
+                  <span>Generate Topics</span>
+                </>
+              )}
+            </button>
             <button
               onClick={generateCarousel}
-              disabled={generating || !topic}
-              className="flex-1 bg-purple-600 hover:bg-purple-700 text-white px-4 py-2 rounded-lg flex items-center justify-center space-x-2 disabled:opacity-50"
+              disabled={loadingTopics || generating || !topic}
+              className={` w-full flex-1 bg-purple-600 hover:bg-purple-700 text-white px-4 py-2 rounded-lg flex items-center justify-center space-x-2 disabled:opacity-50 ${(loadingTopics || generating || !topic) ? "cursor-not-allowed" : "cursor-pointer"}`}
             >
               {generating ? (
                 <>
@@ -711,11 +859,13 @@ Do **not** include watermarks, logos, or text overlays. Make the image visually 
               )}
             </button>
 
+           
+
             {slides.length > 0 && (
               <button
                 onClick={exportToPDF}
                 disabled={exporting}
-                className="flex-1 bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-lg flex items-center justify-center space-x-2 disabled:opacity-50"
+                className="w-full flex-1 bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-lg flex items-center justify-center space-x-2 disabled:opacity-50"
               >
                 {exporting ? (
                   <>
@@ -772,11 +922,15 @@ Do **not** include watermarks, logos, or text overlays. Make the image visually 
           </div>
 
           {error && (
-            <div className="bg-red-900 text-white px-4 py-3 rounded-lg">{error}</div>
+            <div className="bg-red-900 text-white px-4 py-3 rounded-lg">
+              {error}
+            </div>
           )}
 
           {success.state && (
-            <div className="bg-green-600 text-white px-3 py-2 sm:px-4 rounded-md text-sm">{success.message}</div>
+            <div className="bg-green-600 text-white px-3 py-2 sm:px-4 rounded-md text-sm">
+              {success.message}
+            </div>
           )}
         </div>
       </div>
@@ -797,7 +951,9 @@ Do **not** include watermarks, logos, or text overlays. Make the image visually 
                 style={{
                   backgroundColor: slide.backgroundColor,
                   color: slide.textColor,
-                  backgroundImage: slide.backgroundColor.includes("gradient") ? slide.backgroundColor : undefined,
+                  backgroundImage: slide.backgroundColor.includes("gradient")
+                    ? slide.backgroundColor
+                    : undefined,
                   minHeight: "1350px", // Fixed height for PDF consistency
                   width: "1080px", // Fixed width for PDF consistency
                   boxSizing: "border-box",
@@ -824,7 +980,10 @@ Do **not** include watermarks, logos, or text overlays. Make the image visually 
                 />
 
                 {slide.image ? (
-                  <label htmlFor={`custom-image-upload-${slide.id}`} className="block cursor-pointer w-full rounded-md">
+                  <label
+                    htmlFor={`custom-image-upload-${slide.id}`}
+                    className="block cursor-pointer w-full rounded-md"
+                  >
                     <img
                       className="rounded-sm w-full h-auto max-h-[800px] object-cover mx-auto"
                       src={slide?.image}
@@ -861,7 +1020,11 @@ Do **not** include watermarks, logos, or text overlays. Make the image visually 
                       contentEditable="true"
                       suppressContentEditableWarning={true}
                       className="text-center bg-transparent outline-none w-full tracking-widest"
-                      onBlur={(e) => updateSlide(slide.id, { header: e.currentTarget.innerText })}
+                      onBlur={(e) =>
+                        updateSlide(slide.id, {
+                          header: e.currentTarget.innerText,
+                        })
+                      }
                     >
                       {slide.header}
                     </div>
@@ -884,7 +1047,11 @@ Do **not** include watermarks, logos, or text overlays. Make the image visually 
                       letterSpacing: "0.5px",
                     }}
                     className="editable-text tracking-widest bg-transparent text-white"
-                    onBlur={(e) => updateSlide(slide.id, { content: e.currentTarget.innerText })}
+                    onBlur={(e) =>
+                      updateSlide(slide.id, {
+                        content: e.currentTarget.innerText,
+                      })
+                    }
                   >
                     {slide.content}
                   </div>
@@ -960,7 +1127,9 @@ Do **not** include watermarks, logos, or text overlays. Make the image visually 
           {/* Slide Editor */}
           <div className="mt-6 space-y-4">
             <div>
-              <label className="block text-sm font-medium text-gray-300 mb-2">Theme</label>
+              <label className="block text-sm font-medium text-gray-300 mb-2">
+                Theme
+              </label>
               <div className="grid grid-cols-4 gap-2">
                 {themes.map((theme, index) => (
                   <button
@@ -974,7 +1143,9 @@ Do **not** include watermarks, logos, or text overlays. Make the image visually 
                     className="h-10 rounded-lg cursor-pointer border-transparent hover:border-purple-500 transition-colors"
                     style={{
                       background: theme.bg,
-                      backgroundImage: theme.bg.includes("gradient") ? theme.bg : undefined,
+                      backgroundImage: theme.bg.includes("gradient")
+                        ? theme.bg
+                        : undefined,
                       minHeight: "auto",
                       padding: "20px",
                       breakInside: "avoid",
@@ -985,12 +1156,16 @@ Do **not** include watermarks, logos, or text overlays. Make the image visually 
             </div>
 
             <div>
-              <label className="block text-sm font-medium text-gray-300 mb-2">Emoji</label>
+              <label className="block text-sm font-medium text-gray-300 mb-2">
+                Emoji
+              </label>
               <div className="flex flex-wrap gap-2">
                 {emojis.map((emoji, index) => (
                   <button
                     key={index}
-                    onClick={() => updateSlide(slides[currentSlide].id, { emoji })}
+                    onClick={() =>
+                      updateSlide(slides[currentSlide].id, { emoji })
+                    }
                     className="w-10 h-10 flex items-center justify-center bg-gray-700 rounded-lg hover:bg-gray-600 text-xl"
                   >
                     {emoji}
@@ -1000,12 +1175,16 @@ Do **not** include watermarks, logos, or text overlays. Make the image visually 
             </div>
 
             <div>
-              <label className="block text-sm font-medium text-gray-300 mb-2">Bullet Style</label>
+              <label className="block text-sm font-medium text-gray-300 mb-2">
+                Bullet Style
+              </label>
               <div className="flex flex-wrap gap-2">
                 {icons.map((icon, index) => (
                   <button
                     key={index}
-                    onClick={() => updateSlide(slides[currentSlide].id, { icon })}
+                    onClick={() =>
+                      updateSlide(slides[currentSlide].id, { icon })
+                    }
                     className="w-10 h-10 flex items-center justify-center bg-gray-700 rounded-lg hover:bg-gray-600 text-xl"
                   >
                     {icon}
@@ -1015,7 +1194,9 @@ Do **not** include watermarks, logos, or text overlays. Make the image visually 
             </div>
 
             <div>
-              <label className="block text-sm font-medium text-gray-300 mb-2">Font Style</label>
+              <label className="block text-sm font-medium text-gray-300 mb-2">
+                Font Style
+              </label>
               <div className="grid grid-cols-2 gap-2">
                 {fonts.map((font, index) => (
                   <button
@@ -1051,7 +1232,11 @@ Do **not** include watermarks, logos, or text overlays. Make the image visually 
             created_at: new Date().toISOString(),
             updated_at: new Date().toISOString(),
           }}
-          onSchedule={platform == "instagram" ? handleScheduleCarouselOnInstagram : handleScheduleCarouselOnLinkedin}
+          onSchedule={
+            platform == "instagram"
+              ? handleScheduleCarouselOnInstagram
+              : handleScheduleCarouselOnLinkedin
+          }
           onClose={() => setShowScheduleModal(false)}
         />
       )}

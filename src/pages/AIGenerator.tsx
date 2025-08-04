@@ -726,9 +726,7 @@ export function AIGenerator() {
           suggestion: content,
           topic,
           is_keyword: false,
-          platform: selectedPlatforms[0]
-          
-          
+          platform: selectedPlatforms[0],
         });
 
         await handleVideoGeneration(userid, currentPlanId, videoGenPrompt);
@@ -747,7 +745,7 @@ export function AIGenerator() {
           suggestion: content,
           topic,
           is_keyword: false,
-          platform: selectedPlatforms[0]
+          platform: selectedPlatforms[0],
         });
 
         await handleVideoGeneration(userid, currentPlanId, videoGenPrompt);
@@ -835,7 +833,7 @@ export function AIGenerator() {
             is_keyword: true,
             suggestion,
             generatedTopics: topics,
-            platform: selectedPlatforms[0]
+            platform: selectedPlatforms[0],
           });
         }
         if (profile?.tokens - 10 >= 0) {
@@ -884,7 +882,7 @@ export function AIGenerator() {
             is_keyword: true,
             suggestion,
             generatedTopics: topics,
-            platform: selectedPlatforms[0]
+            platform: selectedPlatforms[0],
           });
         }
         if (profile?.tokens - 10 >= 0) {
@@ -974,7 +972,7 @@ export function AIGenerator() {
           suggestion: content,
           topic,
           is_keyword: false,
-          platform: selectedPlatforms[0]
+          platform: selectedPlatforms[0],
         });
         // content = await generatePostUsingGrok(topic, selectedPlatforms[0]);
         setGeneratedContent(content);
@@ -1050,7 +1048,7 @@ export function AIGenerator() {
           suggestion: content,
           topic,
           is_keyword: false,
-          platform: selectedPlatforms[0]
+          platform: selectedPlatforms[0],
         });
         setGeneratedContent(content);
         if (profile?.tokens - 10 >= 0) {
@@ -1216,12 +1214,12 @@ export function AIGenerator() {
     setSuccess({ state: false, message: "" });
     if (!generatedImage) {
       setError("Please Provide Image For Uploading On Instagram");
-      removeToast() ; 
+      removeToast();
       return;
     }
     if (!generatedContent) {
       setError("Please generate content first");
-      removeToast() ; 
+      removeToast();
       return;
     }
     try {
@@ -1243,7 +1241,7 @@ export function AIGenerator() {
           status: "pending",
         };
         const createdPost = await createPost(post);
-        
+
         const response = await fetch(
           `${BACKEND_APIPATH.BASEURL}/schedule/post/instagram`,
           {
@@ -1294,8 +1292,7 @@ export function AIGenerator() {
       console.log(err);
       setError("Something went wrong !");
       removeToast();
-    }
-    finally {
+    } finally {
       setShowScheduleModal(false);
     }
   };

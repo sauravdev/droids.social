@@ -26,6 +26,9 @@ interface AuthContextType {
   setSelectedModel: React.Dispatch<React.SetStateAction<string>>;
   customModels  : any[] , 
   setCustomModels : React.Dispatch<React.SetStateAction<any[]>>;
+
+  carouselGeneratedTopics :string[],
+  setCarouselGeneratedTopics :React.Dispatch<React.SetStateAction<any[]>>;
 }
 
 const AuthContext = createContext<AuthContextType>({
@@ -40,7 +43,11 @@ const AuthContext = createContext<AuthContextType>({
   tokens : 0  , 
   setTokens : () => {} ,
   isUsingGoogleAuth  : false  , 
-  setIsUsingGoogleAuth : () => {}  
+
+  setIsUsingGoogleAuth : () => {}  ,
+  carouselGeneratedTopics : []  , 
+  setCarouselGeneratedTopics : () => {} 
+
 });
 
 export function AuthProvider({ children }: { children: React.ReactNode }) {
@@ -57,6 +64,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [selectedModel, setSelectedModel] =  useState<string>(models[0] || "");
   const {loadCustomModels } = useCustomModel() ; 
   const {customModels , setCustomModels} = useState<any>([]);
+
+  const [carouselGeneratedTopics ,setCarouselGeneratedTopics  ] = useState([]); 
 
   // models, setModels , selectedModel, setSelectedModel
   const navigate = useNavigate();
@@ -361,7 +370,7 @@ useEffect(() => {
   // }, [session]);
 
   return (
-    <AuthContext.Provider value={{ session, loading, isFirstLogin, connectionError , refreshHeader , setRefreshHeader  , paymentStatus , setPaymentStatus  , tokens , setTokens , isUsingGoogleAuth , setIsUsingGoogleAuth ,  models, setModels , selectedModel, setSelectedModel}}>
+    <AuthContext.Provider value={{ session, loading, isFirstLogin, connectionError , refreshHeader , setRefreshHeader  , paymentStatus , setPaymentStatus  , tokens , setTokens , isUsingGoogleAuth , setIsUsingGoogleAuth ,  models, setModels , selectedModel, setSelectedModel , carouselGeneratedTopics ,setCarouselGeneratedTopics}}>
       {connectionError ? (
         <div className="min-h-screen bg-gray-900 flex items-center justify-center p-4">
           <div className="bg-red-900 text-white px-6 py-4 rounded-lg max-w-md text-center">

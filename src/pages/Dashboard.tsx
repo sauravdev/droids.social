@@ -465,7 +465,7 @@ export function Dashboard() {
 
         {/* Connection buttons */}
         <div className="flex flex-wrap gap-2 sm:gap-4 mb-4">
-          <button
+          {accounts.find((account) => account?.platform == "twitter") && <button
             // onClick={() =>
             //   accounts.find((account) => account?.platform == "twitter")
             //     ? handleDisconnect("twitter")
@@ -473,26 +473,17 @@ export function Dashboard() {
             // }
             onClick={() => {} }
             className={`flex items-center space-x-1 sm:space-x-2 px-3 sm:px-4 py-2 rounded-lg text-xs sm:text-sm transition-colors ${
-              accounts.find((account) => account?.platform == "twitter")
-                ? "bg-red-600 hover:bg-red-700 text-white"
-                : "bg-purple-600 hover:bg-purple-700 text-white"
+             "bg-red-600 hover:bg-red-700 text-white"
             }`}
           >
             <Twitter className="h-4 w-4 sm:h-5 sm:w-5 flex-shrink-0" />
-            <span className="hidden xs:inline">
-              {accounts.find((account) => account?.platform == "twitter")
-                ? "Disconnect Twitter"
-                : "Connect Twitter"}
-            </span>
             <span className="xs:hidden">
-              {accounts.find((account) => account?.platform == "twitter")
-                ? "Connected "+ "@" + findUsername("twitter"  , accounts )
-                : "Connect"}
+                {"Connected "+ "@" + findUsername("twitter"  , accounts )}
             </span>
             <Link2 className="h-3 w-3 sm:h-4 sm:w-4 flex-shrink-0" />
-          </button>
+          </button>}
 
-          <button
+        {  accounts.find((account) => account?.platform == "linkedin") &&  <button
             // onClick={() =>
             //   accounts.find((account) => account?.platform == "linkedin")
             //     ? handleDisconnect("linkedin")
@@ -500,26 +491,17 @@ export function Dashboard() {
             // }
             onClick={() => {} }
             className={`flex items-center space-x-1 sm:space-x-2 px-3 sm:px-4 py-2 rounded-lg text-xs sm:text-sm transition-colors ${
-              accounts.find((account) => account?.platform == "linkedin")
-                ? "bg-red-600 hover:bg-red-700 text-white"
-                : "bg-purple-600 hover:bg-purple-700 text-white"
+            "bg-red-600 hover:bg-red-700 text-white"
             }`}
           >
             <Linkedin className="h-4 w-4 sm:h-5 sm:w-5 flex-shrink-0" />
-            <span className="hidden xs:inline">
-              {accounts.find((account) => account?.platform == "linkedin")
-                ? "Disconnect LinkedIn"
-                : "Connect LinkedIn"}
-            </span>
             <span className="xs:hidden">
-              {accounts.find((account) => account?.platform == "linkedin")
-                ?  "Connected "+ "@" + findUsername("linkedin"  , accounts )
-                : "Connect"}
+              { "Connected "+ "@" + findUsername("linkedin"  , accounts )}
             </span>
             <Link2 className="h-3 w-3 sm:h-4 sm:w-4 flex-shrink-0" />
-          </button>
+          </button>}
 
-          <button
+          {accounts.find((account) => account?.platform == "instagram") && <button
             // onClick={() =>
             //   accounts.find((account) => account?.platform == "instagram")
             //     ? handleDisconnect("instagram")
@@ -527,24 +509,17 @@ export function Dashboard() {
             // }
             onClick={() => {} }
             className={`flex items-center space-x-1 sm:space-x-2 px-3 sm:px-4 py-2 rounded-lg text-xs sm:text-sm transition-colors ${
-              accounts.find((account) => account?.platform == "instagram")
-                ? "bg-red-600 hover:bg-red-700 text-white"
-                : "bg-purple-600 hover:bg-purple-700 text-white"
+              
+                "bg-red-600 hover:bg-red-700 text-white"
             }`}
           >
             <Instagram className="h-4 w-4 sm:h-5 sm:w-5 flex-shrink-0" />
-            <span className="hidden xs:inline">
-              {accounts.find((account) => account?.platform == "instagram")
-                ? "Disconnect Instagram "
-                : "Connect Instagram"  }
-            </span>
+            
             <span className="xs:hidden">
-              {accounts.find((account) => account?.platform == "instagram")
-                ? "Connected "+ "@" + findUsername("instagram"  , accounts )
-                : "Connect"}
+             {"Connected "+ "@" + findUsername("instagram"  , accounts )}
             </span>
             <Link2 className="h-3 w-3 sm:h-4 sm:w-4 flex-shrink-0" />
-          </button>
+          </button>}
 
           <button onClick={handleLoadInstructionModal} className="flex items-center justify-center gap-2 py-2 px-4 bg-gradient-to-r from-purple-500 to-purple-700 text-white font-semibold rounded-lg shadow-md hover:from-purple-600 hover:to-purple-800 transition">
             {/* Ayrshare logo or icon (example: plug icon) */}

@@ -31,7 +31,7 @@ Here's what to include:
             content: prompt,
           },
         ],
-        model: "grok-3-latest",
+        model: "grok-4-latest",
         stream: false,
         temperature: 0.8,
       }),
@@ -112,7 +112,7 @@ Return the response as a short descriptive string like:
             content: prompt,
           },
         ],
-        model: "grok-3-latest",
+        model: "grok-4-latest",
         stream: false,
         temperature: 0.8,
       }),
@@ -169,25 +169,26 @@ async function generateTopics(req, res) {
     For each keyword, analyze real-time trends and discourse to generate one niche-specific, viral post title for ${platform}.
 
     Ensure the titles are:
+
     – Optimized for virality and engagement
     – Use high-performing, niche keywords
     – Inspired by real community insights
     – Reflect expert tone and originality
+    Make sure the titles dont contain the social media platform name like Reddit, X (formerly Twitter), and Google News.
 
     Format the final output strictly as a flat JSON array (no nesting, no keys) of 5 comma-separated titles.
 
     Output format example (match tone and structure):
-
-    json
-    Copy
-    Edit
-    [
-      "Unlock the Power of Prompt Engineering: 3 Real‑World Hacks Every AI Practitioner Needs Today",
-      "Why LLMOps Is the Missing Link in Enterprise AI: Lessons from Reddit & X Buzz",
-      "Vibe Coding: Embracing Flow‑Based Development with LLMs – A Game Changer for Software Teams",
-      "RAG Reloaded: How Retrieval‑Augmented Generation Is Disrupting Knowledge Workflows in 2025",
-      "Battling AI Hallucinations: What Recent Reddit & X Debates Reveal About LLM Trust"
-    ]`;
+json
+Copy
+Edit
+[
+  "Unlock the Power of Prompt Engineering: 3 Real‑World Hacks Every AI Practitioner Needs Today",
+  "Why LLMOps Is the Missing Link in Enterprise AI: Lessons from Reddit & X Buzz",
+  "Vibe Coding: Embracing Flow‑Based Development with LLMs – A Game Changer for Software Teams",
+  "RAG Reloaded: How Retrieval‑Augmented Generation Is Disrupting Knowledge Workflows in 2025",
+  "Battling AI Hallucinations: What Recent Reddit & X Debates Reveal About LLM Trust"
+]`;
 
   try {
     // Use fetch API to call Grok
@@ -208,7 +209,7 @@ async function generateTopics(req, res) {
             content: prompt,
           },
         ],
-        model: "grok-3-latest",
+        model: "grok-4-latest",
         stream: false,
         temperature: 0.8,
       }),
@@ -273,15 +274,14 @@ async function generatePost(req, res) {
     const prompt = `You are a social media expert. Create a high-performing niche post for the topic: "${topic}", optimized for maximum reach, engagement, and virality. The post should align with the following goals: ${goals.join(
       ", "
     )}.
-
+    
 Guidelines:
 - Base the content on the strategy: "${topic}"
 - Tailor it specifically for the ${platform} platform
 - Follow platform best practices: ${platformGuide[platform]}${
       tone ? `, with a ${tone} tone` : ""
     }
-- Research current trends and conversations on the internet and X (Twitter) related to "${topic}", and ensure alignment with what's currently resonating
-- Write in a natural, human, and conversational tone — avoid robotic or generic language
+- Write in a natural, human tone — avoid robotic or generic language
 - Break the content into short, skimmable paragraphs with real line breaks (not \\n or markdown)
 - Ensure the first ~200 characters act as a standalone hook to grab attention in LinkedIn's preview
 - Introduce a clear CTA (e.g., “Comment below”, “Tag a friend”, “Share your thoughts”) within the first 3–5 sentences to ensure visibility before truncation
@@ -292,7 +292,7 @@ Guidelines:
 - Make the content niche-specific, insightful, practical, and authentic
 - Avoid markdown formatting entirely
 - **Do not use parentheses under any circumstances**
-- Keep the response concise and under 200 words
+- Make sure the post is informative , factual and contains the latest data
 `;
 
     // Use fetch API to call Grok
@@ -313,7 +313,7 @@ Guidelines:
             content: prompt,
           },
         ],
-        model: "grok-3-latest",
+        model: "grok-4-latest",
         stream: false,
         temperature: 0.8,
       }),
@@ -346,13 +346,13 @@ Guidelines:
     if (userId && planId) {
       console.log("updated plan suggestion in grok api (inside catch) ");
       try {
-    await updateContentPlan(userId, planId, {
-      suggestion:
-        "Something went wrong while generating content please try with some another model",
-    });
-  } catch (err) {
-    console.error("Failed to update content plan inside catch:", err);
-  }
+        await updateContentPlan(userId, planId, {
+          suggestion:
+            "Something went wrong while generating content please try with some another model",
+        });
+      } catch (err) {
+        console.error("Failed to update content plan inside catch:", err);
+      }
     }
     console.error("Grok API Error:", error);
     return res.status(500).json({
@@ -362,9 +362,9 @@ Guidelines:
   }
 }
 
-export { generatePost, generateTopics, generateVideoGenerationPrompt  ,  generateVideoDescription };
-
-
-
-
-
+export {
+  generatePost,
+  generateTopics,
+  generateVideoGenerationPrompt,
+  generateVideoDescription,
+};

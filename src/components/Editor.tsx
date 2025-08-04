@@ -94,6 +94,11 @@ const Editor: React.FC<RichTextEditorProps> = ({
   // Track the last content that was set to avoid unnecessary updates
   const lastSetContentRef = useRef<string>('');
 
+  // Function to clean up content by replacing &nbsp; with regular spaces
+  const cleanContent = (content: string): string => {
+    return content.replace(/&nbsp;/g, ' ');
+  };
+
   // Initialize content and handle updates from external sources (like regenerate button)
   useEffect(() => {
     if (editorRef.current && initialContent !== undefined) {
@@ -151,22 +156,60 @@ const Editor: React.FC<RichTextEditorProps> = ({
       if (savedRange) {
         setTimeout(() => restoreCursorPosition(savedRange), 0);
       }
-      onChange?.(editorRef.current.innerHTML);
+      // Clean the content before calling onChange
+      const cleanedContent = cleanContent(editorRef.current.innerHTML);
+      onChange?.(cleanedContent);
     }
   };
 
   const handleInput = () => {
     if (editorRef.current) {
-      const currentContent = editorRef.current.innerHTML;
-      console.log("editor data = ", currentContent); 
+      let currentContent = editorRef.current.innerHTML;
+      
+      // Clean up &nbsp; entities
+      const cleanedContent = cleanContent(currentContent);
+      
+      console.log("editor data = ", cleanedContent); 
       
       // Update our tracking ref to prevent unnecessary re-renders
-      lastSetContentRef.current = currentContent;
+      lastSetContentRef.current = cleanedContent;
+      
+      // If the cleaned content is different from current, update the editor
+      if (cleanedContent !== currentContent) {
+        const savedRange = saveCursorPosition();
+        editorRef.current.innerHTML = cleanedContent;
+        if (savedRange) {
+          setTimeout(() => restoreCursorPosition(savedRange), 0);
+        }
+      }
       
       if(!keywordGenerated) {
-        setGeneratedContent(currentContent); 
+        setGeneratedContent(cleanedContent); 
       }
-      onChange?.(currentContent);
+      onChange?.(cleanedContent);
+    }
+  };
+
+  // Handle keydown to prevent &nbsp; creation
+  const handleKeyDown = (e: React.KeyboardEvent) => {
+    if (e.key === ' ') {
+      e.preventDefault();
+      
+      const selection = window.getSelection();
+      if (selection && selection.rangeCount > 0) {
+        const range = selection.getRangeAt(0);
+        const spaceNode = document.createTextNode(' ');
+        
+        range.deleteContents();
+        range.insertNode(spaceNode);
+        range.setStartAfter(spaceNode);
+        range.setEndAfter(spaceNode);
+        
+        selection.removeAllRanges();
+        selection.addRange(range);
+        
+        handleInput();
+      }
     }
   };
 
@@ -199,7 +242,8 @@ const Editor: React.FC<RichTextEditorProps> = ({
         
         if (editorRef.current) {
           editorRef.current.focus();
-          onChange?.(editorRef.current.innerHTML);
+          const cleanedContent = cleanContent(editorRef.current.innerHTML);
+          onChange?.(cleanedContent);
         }
       } else if (editorRef.current) {
        
@@ -209,7 +253,8 @@ const Editor: React.FC<RichTextEditorProps> = ({
         
         editorRef.current.appendChild(link);
         editorRef.current.focus();
-        onChange?.(editorRef.current.innerHTML);
+        const cleanedContent = cleanContent(editorRef.current.innerHTML);
+        onChange?.(cleanedContent);
       }
     }
   };
@@ -229,12 +274,14 @@ const Editor: React.FC<RichTextEditorProps> = ({
       selection.addRange(range);
       
       editorRef.current.focus();
-      onChange?.(editorRef.current.innerHTML);
+      const cleanedContent = cleanContent(editorRef.current.innerHTML);
+      onChange?.(cleanedContent);
     } else if (editorRef.current) {
       // If no selection, append at the end
       editorRef.current.innerHTML += emoji;
       editorRef.current.focus();
-      onChange?.(editorRef.current.innerHTML);
+      const cleanedContent = cleanContent(editorRef.current.innerHTML);
+      onChange?.(cleanedContent);
     }
     
     setShowEmojiPicker(false);
@@ -252,7 +299,8 @@ const Editor: React.FC<RichTextEditorProps> = ({
         range.surroundContents(span);
         setCurrentFontSize(size);
         setShowFontSize(false);
-        onChange?.(editorRef.current?.innerHTML || '');
+        const cleanedContent = cleanContent(editorRef.current?.innerHTML || '');
+        onChange?.(cleanedContent);
       } catch (e) {
         // Fallback for complex selections
         execCommand('fontSize', '7');
@@ -556,6 +604,7 @@ const Editor: React.FC<RichTextEditorProps> = ({
           ref={editorRef}
           contentEditable
           onInput={handleInput}
+          onKeyDown={handleKeyDown}
           className="h-[300px] overflow-y-auto focus:outline-none text-gray-200 leading-relaxed no-scrollbar"
           style={{ fontSize: '16px', lineHeight: '1.6' }}
           suppressContentEditableWarning={true}

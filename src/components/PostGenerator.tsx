@@ -97,6 +97,8 @@ export function PostGenerator({
     );
   }, [plan]);
 
+  
+
   useEffect(() => {
     console.log("change detected in edtior data = ", content);
   }, [content]);
@@ -805,7 +807,14 @@ export function PostGenerator({
 
         <div className="flex items-center space-x-2 flex-shrink-0">
           <button
-            onClick={onSchedule}
+            onClick={() => {onSchedule() ; 
+              setSelectedPlan((prev) => {
+                return {
+                  ...prev,
+                  suggestion : content,
+                };
+              });
+            }}
             className="bg-blue-600 hover:bg-blue-700 text-white px-2 py-1.5 sm:px-3 sm:py-2 rounded-md flex items-center justify-center space-x-1 sm:space-x-2 text-xs sm:text-sm font-medium transition-colors"
             title="Schedule post"
           >

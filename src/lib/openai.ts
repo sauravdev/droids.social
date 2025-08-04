@@ -104,23 +104,15 @@ export async function generateContentStrategy(
   try {
     const prompt = `You are an expert social media strategist.Create a weekly social media content strategy for a ${niche} topic designed to maximize reach, engagement, and virality, with the following goals: ${goals.join(
       ", "
-    )}. Craft posts that feel authentic, human-like, and resonate with the target audience, using trending tactics and platform-specific best practices.
+    )}. Craft posts ideas that feel authentic, human-like, and resonate with the target audience, using trending tactics and platform-specific best practices.
 
 Include:
 Daily Content Suggestions: Realistic, platform-optimized post ideas for ${allowedPlatforms} , covering all days of a week
 Mix of Content Formats: A balanced blend of formats (text, image, video, carousel, poll) with clear, actionable suggestions to spark engagement (e.g., questions, CTAs, relatable hooks).
-search internet and X, find latest trends and discussions in the domain: ${niche} , make sure the content ideas are based on those trends
+search internet and X, find latest trending keywords, trends and discussions in the domain: ${niche} , make sure the content ideas are based on those trends
 
-Guidelines:
-- Design posts to feel conversational, human-like, and authentic—no robotic or generic phrasing.
-- Incorporate viral elements like storytelling, humor, trending hashtags, or emotional hooks where relevant.
-- Tailor content to each platform’s audience and style (e.g., visual for Instagram, professional for LinkedIn, concise for Twitter).
-- Include at least 1 CTA per post (e.g., "Comment below," "Tag a friend," "Save this") to boost interaction.
-- Ensure variety: mix educational, promotional, entertaining, and community-building posts.
-- Post ideas should be detailed , niche and specialised in the domain of ${niche}
-- Posts ideas should also include informative posts
 
-Format the response as a structured JSON object with this schema:
+Format the response as a structured JSON object with this schema, amke sure the topic is very detailed and niche specific:
 {
   "monthly_theme": string,
   "weekly_plans": [{
@@ -152,7 +144,7 @@ Format the response as a structured JSON object with this schema:
         },
       ],
       // model: "gpt-4-turbo-preview",
-      model: "gpt-4o-mini",
+      model: "gpt-4.1",
       response_format: { type: "json_object" },
     });
 
@@ -186,25 +178,26 @@ export async function generateTopics(
     For each keyword, analyze real-time trends and discourse to generate one niche-specific, viral post title for ${platform}.
 
     Ensure the titles are:
+
     – Optimized for virality and engagement
     – Use high-performing, niche keywords
     – Inspired by real community insights
     – Reflect expert tone and originality
+    Make sure the titles dont contain the social media platform name like Reddit, X (formerly Twitter), and Google News.
 
     Format the final output strictly as a flat JSON array (no nesting, no keys) of 5 comma-separated titles.
 
     Output format example (match tone and structure):
-
-    json
-    Copy
-    Edit
-    [
-      "Unlock the Power of Prompt Engineering: 3 Real‑World Hacks Every AI Practitioner Needs Today",
-      "Why LLMOps Is the Missing Link in Enterprise AI: Lessons from Reddit & X Buzz",
-      "Vibe Coding: Embracing Flow‑Based Development with LLMs – A Game Changer for Software Teams",
-      "RAG Reloaded: How Retrieval‑Augmented Generation Is Disrupting Knowledge Workflows in 2025",
-      "Battling AI Hallucinations: What Recent Reddit & X Debates Reveal About LLM Trust"
-    ]`;
+json
+Copy
+Edit
+[
+  "Unlock the Power of Prompt Engineering: 3 Real‑World Hacks Every AI Practitioner Needs Today",
+  "Why LLMOps Is the Missing Link in Enterprise AI: Lessons from Reddit & X Buzz",
+  "Vibe Coding: Embracing Flow‑Based Development with LLMs – A Game Changer for Software Teams",
+  "RAG Reloaded: How Retrieval‑Augmented Generation Is Disrupting Knowledge Workflows in 2025",
+  "Battling AI Hallucinations: What Recent Reddit & X Debates Reveal About LLM Trust"
+]`;
 
     const completion = await openai.chat.completions.create({
       messages: [
@@ -217,7 +210,7 @@ export async function generateTopics(
           content: prompt,
         },
       ],
-      model: "gpt-4o-mini",
+      model: "gpt-4.1",
       // model: "gpt-4-turbo-preview"
     });
     const response = completion.choices[0].message.content;
@@ -255,15 +248,14 @@ export async function generatePost(
     const prompt = `You are a social media expert. Create a high-performing niche post for the topic: "${topic}", optimized for maximum reach, engagement, and virality. The post should align with the following goals: ${goals.join(
       ", "
     )}.
-
+    
 Guidelines:
 - Base the content on the strategy: "${topic}"
 - Tailor it specifically for the ${platform} platform
 - Follow platform best practices: ${platformGuide[platform]}${
       tone ? `, with a ${tone} tone` : ""
     }
-- Research current trends and conversations on the internet and X (Twitter) related to "${topic}", and ensure alignment with what's currently resonating
-- Write in a natural, human, and conversational tone — avoid robotic or generic language
+- Write in a natural, human tone — avoid robotic or generic language
 - Break the content into short, skimmable paragraphs with real line breaks (not \\n or markdown)
 - Ensure the first ~200 characters act as a standalone hook to grab attention in LinkedIn's preview
 - Introduce a clear CTA (e.g., “Comment below”, “Tag a friend”, “Share your thoughts”) within the first 3–5 sentences to ensure visibility before truncation
@@ -274,7 +266,7 @@ Guidelines:
 - Make the content niche-specific, insightful, practical, and authentic
 - Avoid markdown formatting entirely
 - **Do not use parentheses under any circumstances**
-- Keep the response concise and under 200 words`;
+- Make sure the post is informative , factual and contains the latest data`;
 
     const completion = await openai.chat.completions.create({
       messages: [
@@ -287,7 +279,7 @@ Guidelines:
           content: prompt,
         },
       ],
-      model: "gpt-4o-mini",
+      model: "gpt-4.1",
       // model: "gpt-4-turbo-preview"
     });
     // console.log("tokens in prompt = " , countTokens(prompt)) ;
@@ -327,7 +319,7 @@ export async function generateProfileContent(name: string, niche: string) {
         content: prompt,
       },
     ],
-    model: "gpt-4o-mini",
+    model: "gpt-4.1",
     response_format: { type: "json_object" },
   });
 
@@ -355,7 +347,7 @@ export async function generateAIContentSuggestion() {
         content: prompt,
       },
     ],
-    model: "gpt-4o-mini",
+    model: "gpt-4.1",
     response_format: { type: "json_object" },
   });
 
@@ -491,7 +483,7 @@ Here's what to include:
           content: prompt,
         },
       ],
-      model: "gpt-4o-mini",
+      model: "gpt-4.1",
       // model: "gpt-4-turbo-preview"
     });
     const response = completion.choices[0].message.content;
@@ -552,7 +544,7 @@ Return the response as a short descriptive string like:
           content: prompt,
         },
       ],
-      model: "gpt-4o-mini",
+      model: "gpt-4.1",
       // model: "gpt-4-turbo-preview"
     });
     const response = completion.choices[0].message.content;
