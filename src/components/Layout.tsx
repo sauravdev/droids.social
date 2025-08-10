@@ -16,9 +16,18 @@ export function Layout({ children }: LayoutProps) {
   const location = useLocation();
   const isActive = (path: string) => location.pathname === path;
   const [sidebarOpen, setSidebarOpen] = useState(false);
-  const {planType} = useAuth() ; 
+  const {planType , setPlanType} = useAuth() ; 
   useEffect(() => {
     console.log("plan type (layout) = " , planType ) ; 
+    ;(async () => {
+      try {
+        const data = await getSocialAccounts();
+        console.log("social media accounts = ",data);
+        setPlanType(data?.[0]?.planType)
+      } catch (err: any) {
+        console.error('Error loading social accounts:', err);
+      } 
+    })()
   } , [] ) ;
   const navItems =  planType == "Free" ? [
     { to: "/dashboard", icon: <LayoutDashboard />, label: "Dashboard" },

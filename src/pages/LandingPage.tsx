@@ -133,7 +133,7 @@ function LandingPage() {
           </p>
         </div>
 
-        <div className="mt-16 grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
+        <div className="mt-16 grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
         {pricingPlans.map((plan) => (
             plan?.id != "pdt_8kregStG7i8Ow0tdKq6kK" ? <div key={plan.id} className="bg-gray-800 rounded-lg shadow-lg overflow-hidden">
               <div className="px-6 py-8">
@@ -303,23 +303,22 @@ const pricingPlans = [
     features: [
       '3 Social Media Accounts',
       '100 Free Tokens',
-      'Basic Analytics',
       'Content Calendar',
       'Email Support'
     ]
   },
-  {
-    id: 'pdt_dxSbp9be9x6ISDYyZLOjq',
-    name: 'Starter',
-    price: '10',
-    features: [
-      '3 Social Media Accounts',
-      '100 AI-Generated Posts/mo',
-      'Content Calendar',
-      'Email Support',
-    ],
-    tokens: 1000,
-  },
+  // {
+  //   id: 'pdt_dxSbp9be9x6ISDYyZLOjq',
+  //   name: 'Starter',
+  //   price: '10',
+  //   features: [
+  //     '3 Social Media Accounts',
+  //     '100 AI-Generated Posts/mo',
+  //     'Content Calendar',
+  //     'Email Support',
+  //   ],
+  //   tokens: 1000,
+  // },
   {
     id: 'pdt_kaFtp9yz76HqvwH9arGQp',
     name: 'Premium',
