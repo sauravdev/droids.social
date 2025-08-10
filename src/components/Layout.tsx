@@ -1,19 +1,35 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import { LayoutDashboard, Calendar, MessageSquare, BarChart3, Lightbulb, Sparkles, UserCircle, Brain, Image, Menu, X } from 'lucide-react';
 import { Header } from './Header';
 import { Footer } from './Footer';
+import { useSocialAccounts } from '../hooks/useSocialAccounts';
+import { getSocialAccounts } from '../lib/api';
+import { useAuth } from '../context/AuthContext';
 
 interface LayoutProps {
   children: React.ReactNode;
 }
 
 export function Layout({ children }: LayoutProps) {
+  const {accounts} = useSocialAccounts() ; 
   const location = useLocation();
   const isActive = (path: string) => location.pathname === path;
   const [sidebarOpen, setSidebarOpen] = useState(false);
-
-  const navItems = [
+  const {planType} = useAuth() ; 
+  useEffect(() => {
+    console.log("plan type (layout) = " , planType ) ; 
+  } , [] ) ;
+  const navItems =  planType == "Free" ? [
+    { to: "/dashboard", icon: <LayoutDashboard />, label: "Dashboard" },
+    { to: "/strategy", icon: <Lightbulb />, label: "AI Post generator" },
+    { to: "/generator", icon: <Sparkles />, label: "Custom generator" },
+    { to: "/carousel", icon: <Image />, label: "Carousel Generator" },
+    { to: "/calendar", icon: <Calendar />, label: "Content Calendar" },
+    // { to: "/engage", icon: <MessageSquare />, label: "Engagement" },
+    // { to: "/models", icon: <Brain />, label: "Custom Models" },
+    { to: "/settings", icon: <UserCircle />, label: "Profile Settings" }
+  ] : [
     { to: "/dashboard", icon: <LayoutDashboard />, label: "Dashboard" },
     { to: "/strategy", icon: <Lightbulb />, label: "AI Post generator" },
     { to: "/generator", icon: <Sparkles />, label: "Custom generator" },
@@ -23,7 +39,7 @@ export function Layout({ children }: LayoutProps) {
     { to: "/analytics", icon: <BarChart3 />, label: "Analytics" },
     // { to: "/models", icon: <Brain />, label: "Custom Models" },
     { to: "/settings", icon: <UserCircle />, label: "Profile Settings" }
-  ];
+  ] ;
 
   return (
     <div className="min-h-screen bg-gray-900 flex flex-col">

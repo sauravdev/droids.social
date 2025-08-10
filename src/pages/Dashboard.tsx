@@ -56,7 +56,7 @@ export function Dashboard() {
   const [success , setSuccess] = useState("") ; 
   const [refreshDashboard , setRefreshDashboard ]=  useState<boolean>(false); 
   const [loader , setLoader] = useState(false) ;
-  const { paymentStatus } = useAuth();
+  const { paymentStatus , setPlanType } = useAuth();
 
   const removeToast = () => {
     setTimeout(() => {
@@ -98,6 +98,9 @@ export function Dashboard() {
         })
       );
       includedPlatforms = [] ; 
+      let planType = "Free" ; 
+      planType = data?.data?.monthlyPostQuota <= 20 ? "Free" : "Premium"; 
+      setPlanType(planType) ;
       if(data?.data?.activeSocialAccounts && Array.isArray(data?.data?.activeSocialAccounts) && data?.data?.activeSocialAccounts.length > 0 ) 
       {
         const activeAccounts = data?.data?.activeSocialAccounts; 
@@ -111,7 +114,8 @@ export function Dashboard() {
                 api_key: apiKey,
                 access_token: "",
                 refresh_token: "",
-                userId: ""
+                userId: "",
+                planType
               });
             }
           })

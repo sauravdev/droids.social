@@ -2,7 +2,9 @@ import React from 'react';
 import { Link } from 'react-router-dom';
 import { Bot, Rocket, Calendar, MessageSquare, BarChart3, Zap, Target, Sparkles, Check } from 'lucide-react';
 import { HashLink } from 'react-router-hash-link';
+import { useNavigate } from 'react-router-dom';
 function LandingPage() {
+  const navigate = useNavigate()  ; 
   return (
     <div className="min-h-screen bg-gray-900">
       {/* Navigation */}
@@ -132,28 +134,52 @@ function LandingPage() {
         </div>
 
         <div className="mt-16 grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
-          {pricingPlans.map((plan) => (
-            <div key={plan.name} className="bg-gray-800 rounded-lg shadow-lg overflow-hidden h-full">
-              <div className="px-4 py-6">
-                <h3 className="text-xl font-semibold text-white">{plan.name}</h3>
-                <p className="mt-3">
-                  <span className="text-3xl font-extrabold text-white">${plan.price}</span>
+        {pricingPlans.map((plan) => (
+            plan?.id != "pdt_8kregStG7i8Ow0tdKq6kK" ? <div key={plan.id} className="bg-gray-800 rounded-lg shadow-lg overflow-hidden">
+              <div className="px-6 py-8">
+                <h3 className="text-2xl font-semibold text-white">{plan.name}</h3>
+                <p className="mt-4">
+                  <span className="text-4xl font-extrabold text-white">${plan.price}</span>
                   <span className="text-gray-300">/month</span>
                 </p>
-                <ul className="mt-5 space-y-3">
+                <ul className="mt-6 space-y-4">
                   {plan.features.map((feature, index) => (
-                    <li key={index} className="flex items-start">
-                      <Check className="h-5 w-5 text-purple-500 mr-2 flex-shrink-0 mt-0.5" />
-                      <span className="text-sm text-gray-300">{feature}</span>
+                    <li key={index} className="flex items-center">
+                      <Check className="h-5 w-5 text-purple-500 mr-2" />
+                      <span className="text-gray-300">{feature}</span>
                     </li>
                   ))}
                 </ul>
-                <div className="mt-6">
-                  <a
-                    href="#signup"
-                    className="block w-full bg-purple-600 hover:bg-purple-700 text-white font-medium py-2 px-3 rounded-md text-center text-sm"
+                <div className="mt-8">
+                  <button
+                    onClick={() => {navigate('/signup')}}
+                    className="block w-full bg-purple-600 hover:bg-purple-700 text-white font-medium py-2 px-4 rounded-md text-center"
                   >
                     Get Started
+                  </button>
+                </div>
+              </div>
+            </div> : <div key={plan.id} className="bg-gray-800 rounded-lg shadow-lg overflow-hidden">
+              <div className="px-6 py-8">
+                <h3 className="text-2xl font-semibold text-white">{plan.name}</h3>
+                <p className="mt-4">
+                  <span className="text-4xl font-extrabold text-white">Custom Pricing</span>
+                  
+                </p>
+                <ul className="mt-6 space-y-4">
+                  {plan.features.map((feature, index) => (
+                    <li key={index} className="flex items-center">
+                      <Check className="h-5 w-5 text-purple-500 mr-2" />
+                      <span className="text-gray-300">{feature}</span>
+                    </li>
+                  ))}
+                </ul>
+                <div className="mt-8">
+                  <a
+                    href="#contact"
+                    className="block w-full bg-purple-600 hover:bg-purple-700 text-white font-medium py-2 px-4 rounded-md text-center"
+                  >
+                    Contact Us
                   </a>
                 </div>
               </div>
@@ -271,6 +297,7 @@ function LandingPage() {
 
 const pricingPlans = [
   {
+    id: 'Free123',
     name: 'Free',
     price: '0$',
     features: [
@@ -282,40 +309,46 @@ const pricingPlans = [
     ]
   },
   {
+    id: 'pdt_dxSbp9be9x6ISDYyZLOjq',
     name: 'Starter',
-    price: '29',
+    price: '10',
     features: [
       '3 Social Media Accounts',
       '100 AI-Generated Posts/mo',
-      'Basic Analytics',
       'Content Calendar',
-      'Email Support'
-    ]
+      'Email Support',
+    ],
+    tokens: 1000,
   },
   {
-    name: 'Professional',
-    price: '79',
+    id: 'pdt_kaFtp9yz76HqvwH9arGQp',
+    name: 'Premium',
+    price: '160',
     features: [
+      'Premium Ayrshare API', 
       '10 Social Media Accounts',
       'Unlimited AI-Generated Posts',
       'Advanced Analytics',
       'Content Calendar',
       'Priority Support',
-      'Custom Branding'
-    ]
+      'Custom Branding',
+    ],
+    tokens: 5000,
   },
   {
+    id: 'pdt_8kregStG7i8Ow0tdKq6kK',
     name: 'Enterprise',
-    price: '199',
+    price: 'Custom Pricing',
     features: [
       'Unlimited Social Accounts',
       'Unlimited AI-Generated Posts',
       'Advanced Analytics & Reports',
       'Content Calendar',
       '24/7 Priority Support',
-      'Custom AI Training'
-    ]
-  }
+      'Custom AI Training',
+    ],
+    tokens: 10000,
+  },
 ];
 
 const testimonials = [

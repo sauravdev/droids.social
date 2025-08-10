@@ -27,6 +27,9 @@ interface AuthContextType {
   customModels  : any[] , 
   setCustomModels : React.Dispatch<React.SetStateAction<any[]>>;
 
+  planType  : string , 
+  setPlanType : React.Dispatch<React.SetStateAction<string>>
+
   carouselGeneratedTopics :string[],
   setCarouselGeneratedTopics :React.Dispatch<React.SetStateAction<any[]>>;
 }
@@ -46,7 +49,9 @@ const AuthContext = createContext<AuthContextType>({
 
   setIsUsingGoogleAuth : () => {}  ,
   carouselGeneratedTopics : []  , 
-  setCarouselGeneratedTopics : () => {} 
+  setCarouselGeneratedTopics : () => {}, 
+  planType : "Free" , 
+  setPlanType : () => { }
 
 });
 
@@ -64,6 +69,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [selectedModel, setSelectedModel] =  useState<string>(models[0] || "");
   const {loadCustomModels } = useCustomModel() ; 
   const {customModels , setCustomModels} = useState<any>([]);
+
+  const [planType , setPlanType] = useState("Free"); 
 
   const [carouselGeneratedTopics ,setCarouselGeneratedTopics  ] = useState([]); 
 
@@ -370,7 +377,7 @@ useEffect(() => {
   // }, [session]);
 
   return (
-    <AuthContext.Provider value={{ session, loading, isFirstLogin, connectionError , refreshHeader , setRefreshHeader  , paymentStatus , setPaymentStatus  , tokens , setTokens , isUsingGoogleAuth , setIsUsingGoogleAuth ,  models, setModels , selectedModel, setSelectedModel , carouselGeneratedTopics ,setCarouselGeneratedTopics}}>
+    <AuthContext.Provider value={{ session, loading, isFirstLogin, connectionError , refreshHeader , setRefreshHeader  , paymentStatus , setPaymentStatus  , tokens , setTokens , isUsingGoogleAuth , setIsUsingGoogleAuth ,  models, setModels , planType , setPlanType ,  selectedModel, setSelectedModel , carouselGeneratedTopics ,setCarouselGeneratedTopics}}>
       {connectionError ? (
         <div className="min-h-screen bg-gray-900 flex items-center justify-center p-4">
           <div className="bg-red-900 text-white px-6 py-4 rounded-lg max-w-md text-center">
