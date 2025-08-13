@@ -5,6 +5,19 @@ import axios from 'axios' ;
 dotenv.config() 
 const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY});
 
+
+
+
+
+
+
+
+
+
+
+
+
+
 async function uploadDataset(jsonlPath) {
     console.log("json path = " , jsonlPath)  ; 
   try {

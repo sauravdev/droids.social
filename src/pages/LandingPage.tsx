@@ -150,6 +150,9 @@ function LandingPage() {
                     </li>
                   ))}
                 </ul>
+
+
+                
                 <div className="mt-8">
                   <button
                     onClick={() => {navigate('/signup')}}
