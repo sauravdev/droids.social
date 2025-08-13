@@ -44,7 +44,7 @@ export function Pricing() {
       price: '160',
       features: [
         'Premium Ayrshare API', 
-        '10 Social Media Accounts',
+        '3 Social Media Accounts',
         'Unlimited AI-Generated Posts',
         'Advanced Analytics',
         'Content Calendar',
@@ -58,7 +58,7 @@ export function Pricing() {
       name: 'Enterprise',
       price: 'Custom Pricing',
       features: [
-        'Unlimited Social Accounts',
+        '3 Social Media Accounts',
         'Unlimited AI-Generated Posts',
         'Advanced Analytics & Reports',
         'Content Calendar',
