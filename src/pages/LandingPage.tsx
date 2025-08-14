@@ -3,9 +3,19 @@ import { Link } from 'react-router-dom';
 import { Bot, Rocket, Calendar, MessageSquare, BarChart3, Zap, Target, Sparkles, Check } from 'lucide-react';
 import { HashLink } from 'react-router-hash-link';
 import { useNavigate } from 'react-router-dom';
+import { SEOProvider } from '../components/SEOProvider';
+import { softwareApplicationSchema } from '../lib/structuredData';
+
 function LandingPage() {
-  const navigate = useNavigate()  ; 
+  const navigate = useNavigate();
+  
   return (
+    <SEOProvider
+      title="Your AI Social Media Co-Pilot"
+      description="Automate content creation, scheduling & analytics across LinkedIn, Instagram and X in minutes with Socialdroids.ai – no marketing team required."
+      canonical="https://socialdroids.ai/"
+      structuredData={softwareApplicationSchema}
+    >
     <div className="min-h-screen bg-gray-900">
       {/* Navigation */}
       <nav className="bg-gray-800 border-b border-gray-700 sticky top-0 z-50">
@@ -295,6 +305,7 @@ function LandingPage() {
         </div>
       </section>
     </div>
+    </SEOProvider>
   );
 }
 
@@ -302,7 +313,7 @@ const pricingPlans = [
   {
     id: 'Free123',
     name: 'Free',
-    price: '0$',
+    price: '0',
     features: [
       '3 Social Media Accounts',
       '100 Free Tokens',

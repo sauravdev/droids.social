@@ -1,4 +1,6 @@
 import React from 'react';
+import { SEOProvider } from '../components/SEOProvider';
+import { faqSchema } from '../lib/structuredData';
 
 export function Testimonials() {
 
@@ -22,13 +24,39 @@ const testimonials = [
       quote: 'The analytics and AI suggestions have helped us grow our following by 300% in just three months. Incredible results!'
     }
   ];
+
+  const reviewSchema = {
+    "@context": "https://schema.org",
+    "@type": "Review",
+    "itemReviewed": {
+      "@type": "SoftwareApplication",
+      "name": "Socialdroids.ai"
+    },
+    "reviewRating": {
+      "@type": "Rating",
+      "ratingValue": "5",
+      "bestRating": "5"
+    },
+    "author": {
+      "@type": "Person",
+      "name": "Sarah Chen"
+    },
+    "reviewBody": "socialdroids.ai has transformed how we manage our social media. The AI-generated content is incredibly engaging and saves us hours every week."
+  };
    
-    return  <>
-       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+  return (
+    <SEOProvider
+      title="Socialdroids.ai Reviews & Success Stories"
+      description="Read how founders & marketers boosted engagement 3× using Socialdroids AI content engine. Case studies & video quotes."
+      canonical="https://socialdroids.ai/testimonials"
+      structuredData={reviewSchema}
+    >
+      <div className="min-h-screen bg-gray-900 py-20">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="text-center">
-            <h2 className="text-3xl font-extrabold text-white sm:text-4xl">
-              What Our Users Say
-            </h2>
+            <h1 className="text-4xl font-extrabold text-white sm:text-5xl mb-8">
+              What Our Users Are Saying
+            </h1>
           </div>
 
           <div className="mt-16 grid grid-cols-1 gap-8 md:grid-cols-3">
@@ -50,7 +78,9 @@ const testimonials = [
             ))}
           </div>
         </div>
-    </>
+      </div>
+    </SEOProvider>
+  );
 }
 
 export default Testimonials; 

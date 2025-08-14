@@ -1,55 +1,52 @@
-import express from 'express';
-import bodyParser from 'body-parser' ; 
-import cors from 'cors';
-import { loadScheduledJobs } from './test.js';
-import { supabase , testConnection} from './config/supabase.js'
-import { linkedinRouter } from './routes/linkedin.route.js';
-import { twitterRouter } from './routes/twitter.route.js';
-import { instagramRouter } from './routes/instagram.route.js';
-import { openaiRouter } from './routes/oepnai.route.js';
-import axios from 'axios' ;
-import dotenv from 'dotenv' ;
-import { TwitterApi } from 'twitter-api-v2';
-import { paymentRouter } from './routes/payment.route.js';
-import crypto from 'crypto'; 
-import querystring from 'querystring' ;
-import OAuth from 'oauth-1.0a';
-import { googleOAuthRouter } from './routes/googleOAuth.route.js';
-import { grokApiRouter } from './routes/grok-api.route.js';
-import jwt from 'jsonwebtoken' ;
-import razorpayRouter from './routes/razorpayPayment.route.js';
-import { videoGenRouter } from './routes/videoGen.route.js';
-import { dodoRouter } from './routes/dodo.route.js';
-import { userRouter } from './routes/user.route.js';
-dotenv.config() 
+import express from "express";
+import bodyParser from "body-parser";
+import cors from "cors";
+import { loadScheduledJobs } from "./test.js";
+import { supabase, testConnection } from "./config/supabase.js";
+import { linkedinRouter } from "./routes/linkedin.route.js";
+import { twitterRouter } from "./routes/twitter.route.js";
+import { instagramRouter } from "./routes/instagram.route.js";
+import { openaiRouter } from "./routes/oepnai.route.js";
+import axios from "axios";
+import dotenv from "dotenv";
+import { TwitterApi } from "twitter-api-v2";
+import { paymentRouter } from "./routes/payment.route.js";
+import crypto from "crypto";
+import querystring from "querystring";
+import OAuth from "oauth-1.0a";
+import { googleOAuthRouter } from "./routes/googleOAuth.route.js";
+import { grokApiRouter } from "./routes/grok-api.route.js";
+import jwt from "jsonwebtoken";
+import razorpayRouter from "./routes/razorpayPayment.route.js";
+import { videoGenRouter } from "./routes/videoGen.route.js";
+import { dodoRouter } from "./routes/dodo.route.js";
+import { userRouter } from "./routes/user.route.js";
+dotenv.config();
 
-
-dotenv.config() ; 
+dotenv.config();
 const app = express();
 const port = process.env.PORT || 3001;
 app.use(cors());
-app.use(express.json({ limit: '500mb' }));
-app.use(express.urlencoded({ limit: '500mb', extended: true }));
-app.use(twitterRouter); 
-app.use(linkedinRouter)
-app.use(instagramRouter)
-app.use(openaiRouter) ; 
-app.use(paymentRouter) ; 
-app.use(googleOAuthRouter); 
-app.use(grokApiRouter); 
-app.use(razorpayRouter) ;
-app.use(videoGenRouter) ; 
-app.use(dodoRouter); 
-app.use(userRouter); 
+app.use(express.json({ limit: "500mb" }));
+app.use(express.urlencoded({ limit: "500mb", extended: true }));
+app.use(twitterRouter);
+app.use(linkedinRouter);
+app.use(instagramRouter);
+app.use(openaiRouter);
+app.use(paymentRouter);
+app.use(googleOAuthRouter);
+app.use(grokApiRouter);
+app.use(razorpayRouter);
+app.use(videoGenRouter);
+app.use(dodoRouter);
+app.use(userRouter);
 
-
-
-const conn = supabase.conn 
-const data = await testConnection() ; 
-const fullName = data?.[0]?.full_name
+const conn = supabase.conn;
+const data = await testConnection();
+const fullName = data?.[0]?.full_name;
 const scheduledJobsMap = new Map();
 
-// const scheduledJobs = await loadScheduledJobs() 
+// const scheduledJobs = await loadScheduledJobs()
 // if(scheduledJobs)
 // {
 //   console.log("--------------------Displaying all scheduled jobs-------------------")
@@ -58,46 +55,39 @@ const scheduledJobsMap = new Map();
 // })
 // }
 
-
 app.get("/fetch-image", async (req, res) => {
   try {
     const imageUrl = req.query.url; // Get the image URL from the frontend
-    console.log(imageUrl)
+    console.log(imageUrl);
     const response = await axios.get(imageUrl, { responseType: "arraybuffer" });
     res.setHeader("Content-Type", "image/png");
-    res.send(Buffer.from(response.data)); 
+    res.send(Buffer.from(response.data));
   } catch (error) {
     res.status(500).json({ error: "Failed to fetch image" });
   }
 });
 
-
-
-const AK = "ATg988yrLBTLgPnB83mBGG8fLfKMLana"; 
+const AK = "ATg988yrLBTLgPnB83mBGG8fLfKMLana";
 const SK = "Lp4BLyYfk8bHJCH3pQG9JKyJ9YmPtGTd";
 
 function encodeJwtToken(ak, sk) {
   const headers = {
-    alg: 'HS256',
-    typ: 'JWT'
+    alg: "HS256",
+    typ: "JWT",
   };
 
   const payload = {
     iss: ak,
     exp: Math.floor(Date.now() / 1000) + 1800, // Current time + 1800s (30min)
-    nbf: Math.floor(Date.now() / 1000) - 5    // Current time - 5s
+    nbf: Math.floor(Date.now() / 1000) - 5, // Current time - 5s
   };
-  
+
   const token = jwt.sign(payload, sk, { header: headers });
   return token;
 }
 
 const authorization = encodeJwtToken(AK, SK);
 console.log(authorization);
-
-
-
-
 
 // const jsonlData = dataset
 //   .map(entry =>
@@ -114,12 +104,7 @@ console.log(authorization);
 // fs.writeFileSync("dataset.jsonl", jsonlData);
 // console.log("JSONL file created successfully!");
 
-
-
-
-
-
-// fintuningModelF() 
+// fintuningModelF()
 
 // try {
 //   const response = await fetch('http://64.227.142.60:5009/api/process', {
@@ -144,11 +129,10 @@ console.log(authorization);
 // }
 
 app.listen(port, async () => {
-  if(fullName) {
-    console.log(`Hi ${fullName}! supabase connection established...`)
-  }
-  else{
-    console.log("Some error occured while connecting to supabase server....")
+  if (fullName) {
+    console.log(`Hi ${fullName}! supabase connection established...`);
+  } else {
+    console.log("Some error occured while connecting to supabase server....");
   }
   console.log(`Proxy server is running at http://localhost:${port}`);
 });
@@ -158,24 +142,24 @@ app.listen(port, async () => {
 
 // console.log("image base 64 = " , imageBase64) ;
 
+// updateProfileInfo()
 
-// updateProfileInfo() 
-
-
-
-app.post('/api/getRequestToken' , async (req, res) => {
+app.post("/api/getRequestToken", async (req, res) => {
   const oauth = OAuth({
     consumer: {
       key: process.env.Twitter_APP_KEY,
-      secret: process.env.Twitter_APP_SECRET
+      secret: process.env.Twitter_APP_SECRET,
     },
-    signature_method: 'HMAC-SHA1',
+    signature_method: "HMAC-SHA1",
     hash_function(base_string, key) {
-      return crypto.createHmac('sha1', key).update(base_string).digest('base64');
+      return crypto
+        .createHmac("sha1", key)
+        .update(base_string)
+        .digest("base64");
     },
   });
-  const url = 'https://api.twitter.com/oauth/request_token';
-  const method = 'POST';
+  const url = "https://api.twitter.com/oauth/request_token";
+  const method = "POST";
   const callback = process.env.TWITTER_REDIRECT_URI;
 
   const request_data = {
@@ -188,13 +172,13 @@ app.post('/api/getRequestToken' , async (req, res) => {
 
   const headers = {
     ...oauth.toHeader(oauth.authorize(request_data)),
-    'Content-Type': 'application/x-www-form-urlencoded',
+    "Content-Type": "application/x-www-form-urlencoded",
   };
 
   const body = querystring.stringify({ oauth_callback: callback });
 
-  console.log('Headers:', headers);
-  console.log('Body:', body);
+  console.log("Headers:", headers);
+  console.log("Body:", body);
 
   try {
     const response = await fetch(url, {
@@ -204,7 +188,7 @@ app.post('/api/getRequestToken' , async (req, res) => {
     });
 
     const text = await response.text();
-    console.log('Twitter Response:', text);
+    console.log("Twitter Response:", text);
 
     const params = querystring.parse(text);
     if (params.oauth_token && params.oauth_token_secret) {
@@ -214,26 +198,35 @@ app.post('/api/getRequestToken' , async (req, res) => {
         authorization_url: `https://api.twitter.com/oauth/authorize?oauth_token=${params.oauth_token}`,
       });
     } else {
-      throw new Error('Invalid response from Twitter');
+      throw new Error("Invalid response from Twitter");
     }
   } catch (error) {
-    console.error('Error fetching request token:', error);
-    res.status(500).json({ error: 'Failed to fetch request token' });
+    console.error("Error fetching request token:", error);
+    res.status(500).json({ error: "Failed to fetch request token" });
   }
 });
 
-
-app.post('/api/getAccessToken' , async (req, res) => {
+app.post("/api/getAccessToken", async (req, res) => {
   const { oauth_token, oauth_verifier } = req.body;
   if (!oauth_token || !oauth_verifier) {
-    return res.status(400).json({ error: 'Missing oauth_token or oauth_verifier' });
+    return res
+      .status(400)
+      .json({ error: "Missing oauth_token or oauth_verifier" });
   }
 
   try {
-    const response = await fetch('https://api.twitter.com/oauth/access_token', {
-      method: 'POST',
+    const response = await fetch("https://api.twitter.com/oauth/access_token", {
+      method: "POST",
       headers: {
-        Authorization: `OAuth oauth_consumer_key="${process.env.Twitter_APP_KEY}", oauth_nonce="${crypto.randomBytes(16).toString('hex')}", oauth_signature_method="HMAC-SHA1", oauth_timestamp="${Math.floor(Date.now() / 1000)}", oauth_version="1.0"`,
+        Authorization: `OAuth oauth_consumer_key="${
+          process.env.Twitter_APP_KEY
+        }", oauth_nonce="${crypto
+          .randomBytes(16)
+          .toString(
+            "hex"
+          )}", oauth_signature_method="HMAC-SHA1", oauth_timestamp="${Math.floor(
+          Date.now() / 1000
+        )}", oauth_version="1.0"`,
       },
       body: new URLSearchParams({
         oauth_token,
@@ -245,29 +238,18 @@ app.post('/api/getAccessToken' , async (req, res) => {
     const params = querystring.parse(data);
 
     if (params.oauth_token && params.oauth_token_secret) {
-      console.log('Access Token:', params);
+      console.log("Access Token:", params);
       return res.json({
         access_token: params.oauth_token,
         access_token_secret: params.oauth_token_secret,
       });
     } else {
-      throw new Error('Failed to obtain access token');
+      throw new Error("Failed to obtain access token");
     }
   } catch (error) {
-    console.error('Error fetching access token:', error);
-    return res.status(500).json({ error: 'Failed to fetch access token' });
+    console.error("Error fetching access token:", error);
+    return res.status(500).json({ error: "Failed to fetch access token" });
   }
-}
-)
+});
 
-
-
-
-
-
-
-export {scheduledJobsMap}
-
-
-
-
+export { scheduledJobsMap };

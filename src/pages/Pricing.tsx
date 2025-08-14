@@ -6,6 +6,8 @@ import { BACKEND_APIPATH } from '../constants';
 import { getProfile } from '../lib/api';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
+import { SEOProvider } from '../components/SEOProvider';
+import { productSchema } from '../lib/structuredData';
 
 export function Pricing() {
   const { setTokens } = useAuth();
@@ -118,13 +120,18 @@ export function Pricing() {
   };
 
   return (
-    <>
-      {/* <Header /> */}
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="text-center">
-          <h2 className="text-3xl font-extrabold text-white sm:text-4xl">Simple, Transparent Pricing</h2>
-          <p className="mt-4 text-xl text-gray-300">Choose the plan that's right for you</p>
-        </div>
+    <SEOProvider
+      title="Simple, Transparent Pricing"
+      description="Free forever for starters. Scale with affordable plans – Starter $29, Pro $79, Enterprise $199. Unlimited AI posts & analytics."
+      canonical="https://socialdroids.ai/pricing"
+      structuredData={productSchema}
+    >
+      <div className="min-h-screen bg-gray-900 py-20">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="text-center">
+            <h1 className="text-4xl font-extrabold text-white sm:text-5xl mb-8">Pricing That Grows With You</h1>
+            <p className="mt-4 text-xl text-gray-300">Choose the plan that's right for you</p>
+          </div>
 
         <div className="mt-16 grid grid-cols-1 gap-8 md:grid-cols-3">
           {pricingPlans.map((plan) => (
@@ -179,9 +186,9 @@ export function Pricing() {
             </div>
           ))}
         </div>
+        </div>
       </div>
-      {/* <Footer /> */}
-    </>
+    </SEOProvider>
   );
 }
 
