@@ -66,6 +66,24 @@ export function Footer() {
           </div>
         </div>
 
+        {/* Product Hunt Badge */}
+        <div className="mt-6 sm:mt-8 pt-6 sm:pt-8 border-t border-gray-700 flex justify-center">
+          <a 
+            href="https://www.producthunt.com/products/socialdroids-ai?embed=true&utm_source=badge-featured&utm_medium=badge&utm_source=badge-socialdroids&#0045;ai" 
+            target="_blank" 
+            rel="noopener noreferrer"
+            className="inline-block"
+          >
+            <img 
+              src="https://api.producthunt.com/widgets/embed-image/v1/featured.svg?post_id=1004361&theme=light&t=1755317439485" 
+              alt="socialdroids&#0046;ai - Plan&#0046;&#0032;Create&#0046;&#0032;Post&#0046;&#0032;All&#0032;in&#0032;one&#0032;AI&#0045;powered&#0032;workspace | Product Hunt" 
+              style={{ width: '250px', height: '54px' }} 
+              width="250" 
+              height="54" 
+            />
+          </a>
+        </div>
+
         {/* Bottom section */}
         <div className="mt-6 sm:mt-8 pt-6 sm:pt-8 border-t border-gray-700 flex flex-col md:flex-row justify-between items-center gap-4">
           <p className="text-gray-400 text-xs sm:text-sm text-center md:text-left">

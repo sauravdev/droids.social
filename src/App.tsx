@@ -2,6 +2,7 @@ import React, { Suspense } from "react";
 import { Routes, Route, Navigate } from "react-router-dom";
 import { Layout } from "./components/Layout";
 import { useAuth } from "./context/AuthContext";
+import { FloatingWhatsApp } from "./components/WhatsAppChat";
 
 // Lazy load components
 const LandingPage = React.lazy(() => import("./pages/LandingPage"));
@@ -76,170 +77,175 @@ export default function App() {
   }
 
   return (
-    <Suspense fallback={<LoadingSpinner />}>
-      <Routes>
-        {/* Public routes */}
-        <Route
-          path="/"
-          element={!session ? <LandingPage /> : <Navigate to="/dashboard" />}
-        />
-        <Route
-          path="/google-oauth"
-          element={!session ? <GoogleAuth /> : <Navigate to="/dashboard" />}
-        />
-        <Route
-          path="/login"
-          element={!session ? <Login /> : <Navigate to="/dashboard" replace />}
-        />
-        <Route
-          path="/signup"
-          element={!session ? <SignUp /> : <Navigate to="/dashboard" replace />}
-        />
+    <>
+      <Suspense fallback={<LoadingSpinner />}>
+        <Routes>
+          {/* Public routes */}
+          <Route
+            path="/"
+            element={!session ? <LandingPage /> : <Navigate to="/dashboard" />}
+          />
+          <Route
+            path="/google-oauth"
+            element={!session ? <GoogleAuth /> : <Navigate to="/dashboard" />}
+          />
+          <Route
+            path="/login"
+            element={!session ? <Login /> : <Navigate to="/dashboard" replace />}
+          />
+          <Route
+            path="/signup"
+            element={!session ? <SignUp /> : <Navigate to="/dashboard" replace />}
+          />
 
-        {/* Protected routes */}
-        <Route
-          path="/dashboard"
-          element={
-            <ProtectedRoute session={session}>
-              <Dashboard />
-            </ProtectedRoute>
-          }
-        />
-        <Route
-          path="/strategy"
-          element={
-            <ProtectedRoute session={session}>
-              <ContentStrategy />
-            </ProtectedRoute>
-          }
-        />
-        <Route
-          path="/generator"
-          element={
-            <ProtectedRoute session={session}>
-              <AIGenerator />
-            </ProtectedRoute>
-          }
-        />
-        <Route
-          path="/carousel"
-          element={
-            <ProtectedRoute session={session}>
-              <CarouselGenerator />
-            </ProtectedRoute>
-          }
-        />
-        <Route
-          path="/calendar"
-          element={
-            <ProtectedRoute session={session}>
-              <Calendar />
-            </ProtectedRoute>
-          }
-        />
-        <Route
-          path="/analytics"
-          element={
-            <ProtectedRoute session={session}>
-              <Analytics />
-            </ProtectedRoute>
-          }
-        />
-        <Route
-          path="/models"
-          element={
-            <ProtectedRoute session={session}>
-              <CustomModels />
-            </ProtectedRoute>
-          }
-        />
-        <Route
-          path="/settings"
-          element={
-            <ProtectedRoute session={session}>
-              <ProfileSettings />
-            </ProtectedRoute>
-          }
-        />
+          {/* Protected routes */}
+          <Route
+            path="/dashboard"
+            element={
+              <ProtectedRoute session={session}>
+                <Dashboard />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/strategy"
+            element={
+              <ProtectedRoute session={session}>
+                <ContentStrategy />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/generator"
+            element={
+              <ProtectedRoute session={session}>
+                <AIGenerator />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/carousel"
+            element={
+              <ProtectedRoute session={session}>
+                <CarouselGenerator />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/calendar"
+            element={
+              <ProtectedRoute session={session}>
+                <Calendar />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/analytics"
+            element={
+              <ProtectedRoute session={session}>
+                <Analytics />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/models"
+            element={
+              <ProtectedRoute session={session}>
+                <CustomModels />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/settings"
+            element={
+              <ProtectedRoute session={session}>
+                <ProfileSettings />
+              </ProtectedRoute>
+            }
+          />
 
-        {/* Callback routes */}
-        <Route
-          path="/callback/twitter"
-          element={
-            session ? <TwitterCallback /> : <Navigate to="/login" replace />
-          }
-        />
-        <Route
-          path="/settings/callback/linkedin"
-          element={
-            session ? <LinkedInCallback /> : <Navigate to="/login" replace />
-          }
-        />
-        <Route path="/auth/instagram/" element={<InstagramAuth />} />
-        <Route
-          path="/linkedin/callback/auth/linkedIn"
-          element={<LinkedInAuth />}
-        />
+          {/* Callback routes */}
+          <Route
+            path="/callback/twitter"
+            element={
+              session ? <TwitterCallback /> : <Navigate to="/login" replace />
+            }
+          />
+          <Route
+            path="/settings/callback/linkedin"
+            element={
+              session ? <LinkedInCallback /> : <Navigate to="/login" replace />
+            }
+          />
+          <Route path="/auth/instagram/" element={<InstagramAuth />} />
+          <Route
+            path="/linkedin/callback/auth/linkedIn"
+            element={<LinkedInAuth />}
+          />
 
-        {/* Other protected routes */}
-        <Route
-          path="/pricing"
-          element={
-            <ProtectedRoute session={session}>
-              <Pricing />
-            </ProtectedRoute>
-          }
-        />
-        <Route
-          path="/payment-success"
-          element={
-            <ProtectedRoute session={session}>
-              <PaymentSuccess />
-            </ProtectedRoute>
-          }
-        />
-        <Route
-          path="/about"
-          element={
-            <ProtectedRoute session={session}>
-              <About />
-            </ProtectedRoute>
-          }
-        />
-        <Route
-          path="/contact"
-          element={
-            <ProtectedRoute session={session}>
-              <Contact />
-            </ProtectedRoute>
-          }
-        />
-        <Route
-          path="/testimonials"
-          element={
-            <ProtectedRoute session={session}>
-              <Testimonials />
-            </ProtectedRoute>
-          }
-        />
-        <Route
-          path="/howitworks"
-          element={
-            <ProtectedRoute session={session}>
-              <HowItWorks />
-            </ProtectedRoute>
-          }
-        />
+          {/* Other protected routes */}
+          <Route
+            path="/pricing"
+            element={
+              <ProtectedRoute session={session}>
+                <Pricing />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/payment-success"
+            element={
+              <ProtectedRoute session={session}>
+                <PaymentSuccess />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/about"
+            element={
+              <ProtectedRoute session={session}>
+                <About />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/contact"
+            element={
+              <ProtectedRoute session={session}>
+                <Contact />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/testimonials"
+            element={
+              <ProtectedRoute session={session}>
+                <Testimonials />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/howitworks"
+            element={
+              <ProtectedRoute session={session}>
+                <HowItWorks />
+              </ProtectedRoute>
+            }
+          />
 
-        <Route
-          path="/instruction-modal"
-          element={
-            <ProtectedRoute session={session}>
-              <InstructionsModal />
-            </ProtectedRoute>
-          }
-        />
-      </Routes>
-    </Suspense>
+          <Route
+            path="/instruction-modal"
+            element={
+              <ProtectedRoute session={session}>
+                <InstructionsModal />
+              </ProtectedRoute>
+            }
+          />
+        </Routes>
+      </Suspense>
+      
+      {/* Floating WhatsApp Chat Button */}
+      <FloatingWhatsApp />
+    </>
   );
 }

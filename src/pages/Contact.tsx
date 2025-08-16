@@ -1,5 +1,6 @@
 import React from 'react';
 import { SEOProvider } from '../components/SEOProvider';
+import { WhatsAppChat } from '../components/WhatsAppChat';
 
 export function Contact() {
   const contactSchema = {
@@ -59,6 +60,18 @@ export function Contact() {
               </button>
             </div>
           </form>
+          
+          {/* WhatsApp Contact Section */}
+          <div className="mt-12 text-center">
+            <h2 className="text-2xl text-white mb-4">Need Immediate Help?</h2>
+            <p className="text-gray-400 mb-6">
+              Chat with us on WhatsApp for instant support
+            </p>
+            <WhatsAppChat 
+              message="Hi! I need help with Socialdroids.ai"
+              className="text-lg px-6 py-3"
+            />
+          </div>
         </div>
       </div>
     </SEOProvider>

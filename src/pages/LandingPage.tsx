@@ -5,6 +5,7 @@ import { HashLink } from 'react-router-hash-link';
 import { useNavigate } from 'react-router-dom';
 import { SEOProvider } from '../components/SEOProvider';
 import { softwareApplicationSchema } from '../lib/structuredData';
+import { Footer } from '../components/Footer';
 
 function LandingPage() {
   const navigate = useNavigate();
@@ -304,6 +305,9 @@ function LandingPage() {
           </div>
         </div>
       </section>
+      
+      {/* Footer */}
+      <Footer />
     </div>
     </SEOProvider>
   );
