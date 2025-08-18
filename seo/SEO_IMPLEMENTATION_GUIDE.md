@@ -57,6 +57,7 @@
 - [x] Added font preloading for Inter font
 - [x] Added favicon and Apple touch icon references
 - [x] Implemented proper robots meta tags
+- [x] Added Google Analytics 4 tracking (G-LRWTXY86BQ)
 
 ### 7. URL & Heading Hygiene ✅
 
