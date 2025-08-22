@@ -42,6 +42,8 @@ const GoogleAuth = React.lazy(() => import("./components/GoogleAuth"));
 const InstructionsModal = React.lazy(
   () => import("./components/InstructionsModal")
 );
+const Blog = React.lazy(() => import("./pages/Blog"));
+const BlogPost = React.lazy(() => import("./pages/BlogPost"));
 
 // Reuse your existing loading component style
 const LoadingSpinner = () => (
@@ -97,6 +99,10 @@ export default function App() {
             path="/signup"
             element={!session ? <SignUp /> : <Navigate to="/dashboard" replace />}
           />
+          
+          {/* Blog routes - must come before other routes to avoid conflicts */}
+          <Route path="/blog/:slug" element={<BlogPost />} />
+          <Route path="/blog" element={<Blog />} />
 
           {/* Protected routes */}
           <Route

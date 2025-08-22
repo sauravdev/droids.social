@@ -33,6 +33,9 @@ function LandingPage() {
               <HashLink smooth to="/#pricing" className="text-gray-300 hover:text-white text-sm font-medium">
                 Pricing
               </HashLink>
+              <Link to="/blog" className="text-gray-300 hover:text-white text-sm font-medium">
+                Blog
+              </Link>
               <a href="#testimonials" className="text-gray-300 hover:text-white text-sm font-medium">
                 Testimonials
               </a>

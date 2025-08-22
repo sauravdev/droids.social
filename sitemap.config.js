@@ -12,6 +12,10 @@ const urls = [
   { url: '/about', changefreq: 'monthly', priority: 0.6 },
   { url: '/contact', changefreq: 'monthly', priority: 0.6 },
   { url: '/blog', changefreq: 'weekly', priority: 0.7 },
+  { url: '/blog/ai-social-media-strategy-2025', changefreq: 'monthly', priority: 0.6 },
+  { url: '/blog/linkedin-content-automation-guide', changefreq: 'monthly', priority: 0.6 },
+  { url: '/blog/instagram-carousel-automation', changefreq: 'monthly', priority: 0.6 },
+  { url: '/blog/ai-content-calendar-template', changefreq: 'monthly', priority: 0.6 },
 ];
 
 const sitemap = new SitemapStream({ hostname: siteUrl });

@@ -121,6 +121,14 @@ export function Header() {
                   </div>
                   
                   <Link
+                    to="/blog"
+                    onClick={() => setIsMenuOpen(false)}
+                    className="flex items-center px-4 py-2 text-sm text-gray-300 hover:bg-gray-600"
+                  >
+                    <User className="w-4 h-4 mr-2 flex-shrink-0" />
+                    Blog
+                  </Link>
+                  <Link
                     to="/settings"
                     onClick={() => setIsMenuOpen(false)}
                     className="flex items-center px-4 py-2 text-sm text-gray-300 hover:bg-gray-600"

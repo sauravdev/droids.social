@@ -8,7 +8,8 @@
     "build": "vite build",
     "postbuild": "node sitemap.config.js",
     "lint": "eslint .",
-    "preview": "vite preview"
+    "preview": "vite preview",
+    "generate-favicons": "node scripts/generate-favicons.js"
   },
   "dependencies": {
     "@ckeditor/ckeditor5-build-classic": "^44.1.0",
